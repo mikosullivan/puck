@@ -106,18 +106,17 @@ end
 -- ------------------------------------------------------------
 
 local function seed_user(db)
-	return first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	return first(db, "select object_pk from objects where role_core = 'u'").object_pk
 end
 
 --[[
 Insert a fresh cap frame. Matches what engine.run seeds — primitive
-'f', process_cap 1, empty-array ast, stmt_idx 0, owned by the user
+'f', frame_process_cap 1, empty-array frame_ast, frame_stmt_idx 0, owned by the user
 core role.
 ]]
 local function seed_cap(db, user_pk)
 	return first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 end
 
 
@@ -256,8 +255,7 @@ test('non-cap object_pk is rejected by the cap-check trigger', function()
 	local user_pk = seed_user(db)
 
 	local scalar_pk = first(db,
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
-		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
 
 	assert_fails_with(
 		db:exec("insert into debug_log (object_pk, note) values ('" .. scalar_pk .. "', 'hello')"),
@@ -267,14 +265,13 @@ test('non-cap object_pk is rejected by the cap-check trigger', function()
 	db:close()
 end)
 
-test('nested-frame object_pk (primitive f, no process_cap) is rejected', function()
+test('nested-frame object_pk (primitive f, no frame_process_cap) is rejected', function()
 	local db = schema_db()
 	local user_pk = seed_user(db)
 	local cap_pk  = seed_cap(db, user_pk)
 
 	local frame_pk = first(db,
-		"insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', '[]', 0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_ast, frame_stmt_idx, frame_parent, owner_role) values ('o', 'f', '[]', 0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk").object_pk
 
 	assert_fails_with(
 		db:exec("insert into debug_log (object_pk, note) values ('" .. frame_pk .. "', 'hello')"),

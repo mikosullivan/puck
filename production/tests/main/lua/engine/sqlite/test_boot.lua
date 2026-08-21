@@ -56,7 +56,7 @@ h.test("engine.new()'s CVM has the user seed row", function()
 	local e = engine.new()
 	local count = nil
 
-	for row in e.cvm:nrows("select count(*) as n from objects where core_role = 'u'") do
+	for row in e.cvm:nrows("select count(*) as n from objects where role_core = 'u'") do
 		count = row.n
 	end
 
@@ -90,11 +90,11 @@ h.test("each engine.new() gets its own CVM", function()
 	-- Insert a plain HashPrimitive into e1's CVM and verify e2 doesn't see it.
 	-- Non-role inserts need owner_role set; use the user seed as owner.
 	local user_pk
-	for row in e1.cvm:nrows("select object_pk from objects where core_role = 'u'") do
+	for row in e1.cvm:nrows("select object_pk from objects where role_core = 'u'") do
 		user_pk = row.object_pk
 	end
 	local ok = e1.cvm:exec(
-		"insert into objects (primitive, owner_role) values ('h', '" .. user_pk .. "')"
+		"insert into objects (base, owner_role) values ('h', '" .. user_pk .. "')"
 	)
 	h.assert_true(ok == 0, 'insert succeeded on e1 (lsqlite3 exec returns 0 on OK)')
 

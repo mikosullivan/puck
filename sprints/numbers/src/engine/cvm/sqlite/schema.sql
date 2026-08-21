@@ -224,7 +224,7 @@ create table objects (
 	-- index below. Only role rows ('r') may carry a role_core. [ghi]
 	role_core text
 		check (role_core in ('e', 'c', 'u'))
-		check (role_core is null or control = 'r'),
+		check (role_core is null or control is 'r'),
 
 	-- Role-tree parentage. Non-root roles set this. Immutable via
 	-- objects_parent_role_immutable. Only role rows ('r') may carry a
@@ -237,7 +237,7 @@ create table objects (
 	-- the leaves up. [ghi]
 	role_parent text
 		references objects(object_pk)
-		check (role_parent is null or control = 'r'),
+		check (role_parent is null or control is 'r'),
 
 	-- CaspM tree as JSON text. Biconditional with control='f' — every
 	-- frame has an frame_ast, no non-frame does. A cap frame (frame_process_cap=1) has
@@ -276,7 +276,7 @@ create table objects (
 	-- via objects_process_cap_immutable. [ghi]
 	frame_process_cap integer
 		check (frame_process_cap = 1)
-		check (frame_process_cap is null or control = 'f'),
+		check (frame_process_cap is null or control is 'f'),
 
 	-- Sub-frame → parent-frame FK. Frame-only. No cascade. Every frame
 	-- has exactly one anchor: either frame_parent (nested frame) or
@@ -284,7 +284,7 @@ create table objects (
 	-- mutual-exclusion check on this column. [ghi]
 	frame_parent text
 		references objects(object_pk)
-		check (frame_parent is null or control = 'f')
+		check (frame_parent is null or control is 'f')
 		check (control is not 'f'
 			or (frame_parent is not null and frame_process_cap is null)
 			or (frame_parent is null and frame_process_cap is 1)),
@@ -298,7 +298,7 @@ create table objects (
 	-- Frames-only. [ghi]
 	frame_gc integer
 		check (frame_gc = 1)
-		check (frame_gc is null or control = 'f')
+		check (frame_gc is null or control is 'f')
 );
 
 -- Partial index for reachability queries over pinned rows. [ghi]
@@ -874,7 +874,7 @@ begin
 end;
 
 -- frame_parent's target must itself be a frame. The column-level
--- CHECK `check (frame_parent is null or control = 'f')` covers the
+-- CHECK `check (frame_parent is null or control is 'f')` covers the
 -- ROW HOLDING the pointer (must be a frame); this trigger covers the
 -- TARGET (must also be a frame). Together they enforce
 -- "frame_parent links a frame to a frame." Direct control check on

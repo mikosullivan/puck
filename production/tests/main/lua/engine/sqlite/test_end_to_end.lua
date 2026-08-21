@@ -10,7 +10,7 @@
 
 End-to-end assertions. Two programs:
 
-- **Empty program** (`engine.caspm = {}`) — `run()` seeds the cap + frame 0, walks the empty ast (nothing to dispatch), advances the cap to close the process_cap. Returns `{complete = 1, cap_pk = ...}`.
+- **Empty program** (`engine.caspm = {}`) — `run()` seeds the cap + frame 0, walks the empty frame_ast (nothing to dispatch), advances the cap to close the frame_process_cap. Returns `{complete = 1, cap_pk = ...}`.
 - **`$x = 1`** — full dispatch through the handler chain: variable-scalar handler → `frame:set_local_to_scalar('x', 'n', 1)` → scalar + bucket + scopes chain + marker; walker's advance sweeps the marker; frame 0's reap orphans the whole chain; the tail drain unwinds bucket → scopes → scopes[0] → scalar_1 via successive reap-and-cascade cycles. Post-run: cap terminal, `refs` empty, `needs_trace` empty, only the cap and the three core-role seeds remain in `objects`.
 ]]
 
@@ -76,13 +76,13 @@ h.test('$x = 1: runs end-to-end through the dispatch chain', function()
 	h.assert_eq(result.complete, 1, 'result.complete should be 1')
 
 	local cap = first(e.cvm,
-		"select stmt_idx, gc from objects where object_pk = '" .. result.cap_pk .. "'")
+		"select frame_stmt_idx, frame_gc from objects where object_pk = '" .. result.cap_pk .. "'")
 	h.assert_true(cap ~= nil, 'cap should still exist (the cap is the process anchor)')
-	h.assert_eq(tonumber(cap.stmt_idx), 0, 'cap stmt_idx should be 0 (cap is born terminal — empty ast, terminal = length(ast) = 0)')
-	h.assert_true(cap.gc == nil, 'cap gc should be null (caps are exempt from the child-delete → gc=1 cascade)')
+	h.assert_eq(tonumber(cap.frame_stmt_idx), 0, 'cap frame_stmt_idx should be 0 (cap is born terminal — empty frame_ast, terminal = length(frame_ast) = 0)')
+	h.assert_true(cap.frame_gc == nil, 'cap frame_gc should be null (caps are exempt from the child-delete → frame_gc=1 cascade)')
 
 	local cap_kids = scalar(e.cvm,
-		"select count(*) from objects where parent_frame = '" .. result.cap_pk .. "'")
+		"select count(*) from objects where frame_parent = '" .. result.cap_pk .. "'")
 	h.assert_eq(cap_kids, 0, 'cap should have no children (frame 0 reaped)')
 
 	-- The whole orphaned chain (bucket → scopes → scopes[0] → x → scalar_1)

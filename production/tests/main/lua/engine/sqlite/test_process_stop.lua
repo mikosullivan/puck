@@ -15,7 +15,7 @@ Program: `$x = 1\n%process.stop`.
 - Statement 0 dispatches through the variable-scalar handler → the `x` binding lands via the standard frame-local chain, then advances.
 - Statement 1 is `%process.stop` → the ProcessStop handler sets `engine.stopped = true` → the walker breaks BEFORE advancing → run_frame returns without reaping → run() returns `{complete = 0, stopped = 1, cap_pk = ...}`.
 
-Post-halt: frame 0 is still under the cap (walkable via `parent_frame`), the cap sits at its born-terminal state (`stmt_idx = 0, gc = null`), and the `x` binding is still reachable via the ref chain because the frame that owns it never got reaped.
+Post-halt: frame 0 is still under the cap (walkable via `frame_parent`), the cap sits at its born-terminal state (`frame_stmt_idx = 0, frame_gc = null`), and the `x` binding is still reachable via the ref chain because the frame that owns it never got reaped.
 ]]
 
 local h      = require('helpers')
@@ -90,7 +90,7 @@ h.test('%process.stop: frame 0 is still alive at the halt point', function()
 	local result = e:run()
 
 	local kids = scalar(e.cvm,
-		"select count(*) from objects where parent_frame = '" .. result.cap_pk .. "'")
+		"select count(*) from objects where frame_parent = '" .. result.cap_pk .. "'")
 	h.assert_eq(tonumber(kids), 1, 'cap should have frame 0 as its child')
 end)
 
@@ -103,11 +103,11 @@ h.test('%process.stop: the `x` binding is walkable at the halt point', function(
 	e:run()
 
 	local binding = first(e.cvm,
-		"select o.scalar_type, o.scalar_value from objects o "
-		.. "join refs r on r.child = o.object_pk where r.key = 'x'")
+		"select s.scalar_type, s.value from scalars s "
+		.. "join refs r on r.child = s.object_pk where r.key = 'x'")
 	h.assert_not_nil(binding, 'x binding should be walkable via refs')
 	h.assert_eq(binding.scalar_type, 'n', 'x should bind to scalar_type=n')
-	h.assert_eq(tonumber(binding.scalar_value), 1, 'x should bind to value 1')
+	h.assert_eq(tonumber(binding.value), 1, 'x should bind to value 1')
 end)
 
 h.test('%process.stop: the cap sits at its born-terminal state', function()
@@ -116,10 +116,10 @@ h.test('%process.stop: the cap sits at its born-terminal state', function()
 	local result = e:run()
 
 	local cap = first(e.cvm,
-		"select stmt_idx, gc from objects where object_pk = '" .. result.cap_pk .. "'")
+		"select frame_stmt_idx, frame_gc from objects where object_pk = '" .. result.cap_pk .. "'")
 	h.assert_not_nil(cap, 'cap should still exist')
-	h.assert_eq(tonumber(cap.stmt_idx), 0, 'cap stmt_idx should be 0')
-	h.assert_true(cap.gc == nil, 'cap gc should be null')
+	h.assert_eq(tonumber(cap.frame_stmt_idx), 0, 'cap frame_stmt_idx should be 0')
+	h.assert_true(cap.frame_gc == nil, 'cap frame_gc should be null')
 end)
 
 h.test('%process.stop regression: a program without %process.stop still returns complete = 1', function()

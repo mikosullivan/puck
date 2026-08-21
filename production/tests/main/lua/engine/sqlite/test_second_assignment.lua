@@ -14,7 +14,7 @@ Assertions for the rebind path — `$x = 1` followed by `$x = 2`.
 - Statement 1: `$x = 2` dispatches. The upsert_ref path UPDATEs the existing `x` ref's `child` column from scalar_1 to scalar_2. The `refs_mark_needs_trace_after_child_update` trigger inserts scalar_1 into needs_trace.
 - Between-statement drain (in `run_frame`): scalar_1 has no incoming refs (the ref was updated to point at scalar_2, not deleted, but the OLD child is what got marked and it now has no incoming ref). The drain reaps scalar_1; the needs_trace row cascades away with the objects row.
 - Frame 0 hits terminal, `run_frame` reaps it, and the tail drain unwinds the orphaned bucket → scopes → scopes[0] → scalar_2 chain via successive reap-and-cascade cycles.
-- End state: cap alone at (`stmt_idx = 0`, `gc = null`, no children); refs empty; needs_trace empty.
+- End state: cap alone at (`frame_stmt_idx = 0`, `frame_gc = null`, no children); refs empty; needs_trace empty.
 
 ## Test-only trigger on `needs_trace`
 
@@ -42,7 +42,7 @@ Notes on the value expression:
   one type; the decimal specifier doesn't buy anything. `%g` collapses
   '1.0' → '1' and preserves '1.5' as '1.5'.
 
-- Explicit `case when scalar_value is null then 'null'`, NOT
+- Explicit `case when scalar_number is null then 'null'`, NOT
   `coalesce(format(...), 'null')`: SQLite's `format('%g', NULL)`
   returns the STRING '0' rather than NULL, so a coalesce over it
   never falls through and every non-scalar mark would render as ' 0'
@@ -57,8 +57,8 @@ local NEEDS_TRACE_DEBUG_TRIGGER = [[
 			new.process_pk,
 			'mark ' || new.object_pk || ' ' || (
 				select case
-					when scalar_value is null then 'null'
-					else format('%g', scalar_value)
+					when scalar_number is null then 'null'
+					else format('%g', scalar_number)
 				end
 				from objects where object_pk = new.object_pk
 			)
@@ -117,18 +117,18 @@ h.test('$x = 1 ; $x = 2: cap sits at its born-terminal state', function()
 	e:load(SOURCE)
 	local result = e:run()
 
-	local stmt_idx = scalar(e.cvm,
-		"select stmt_idx from objects where object_pk = ?",
+	local frame_stmt_idx = scalar(e.cvm,
+		"select frame_stmt_idx from objects where object_pk = ?",
 		result.cap_pk)
-	h.assert_eq(tonumber(stmt_idx), 0, 'cap stmt_idx should be 0')
+	h.assert_eq(tonumber(frame_stmt_idx), 0, 'cap frame_stmt_idx should be 0')
 
-	local gc = scalar(e.cvm,
-		"select gc from objects where object_pk = ?",
+	local frame_gc = scalar(e.cvm,
+		"select frame_gc from objects where object_pk = ?",
 		result.cap_pk)
-	h.assert_true(gc == nil, 'cap gc should be null')
+	h.assert_true(frame_gc == nil, 'cap frame_gc should be null')
 
 	local kids = scalar(e.cvm,
-		"select count(*) from objects where parent_frame = ?",
+		"select count(*) from objects where frame_parent = ?",
 		result.cap_pk)
 	h.assert_eq(kids, 0, 'cap should have no children (frame 0 reaped)')
 end)
@@ -159,10 +159,10 @@ h.test('$x = 1 ; $x = 2: only cap + three core-role seeds remain in objects', fu
 	local total = scalar(e.cvm, 'select count(*) from objects')
 	h.assert_eq(total, 4, 'expected four object rows (engine/cache/user seeds + cap) after the drain')
 
-	local core_role_count = scalar(e.cvm, 'select count(*) from objects where core_role is not null')
+	local core_role_count = scalar(e.cvm, 'select count(*) from objects where role_core is not null')
 	h.assert_eq(core_role_count, 3, 'expected the three core-role seeds')
 
-	local cap_count = scalar(e.cvm, "select count(*) from objects where process_cap = 1")
+	local cap_count = scalar(e.cvm, "select count(*) from objects where frame_process_cap = 1")
 	h.assert_eq(cap_count, 1, 'expected one cap frame (the process anchor)')
 end)
 
@@ -172,11 +172,11 @@ h.test('$x = 1 ; $x = 2: both scalar values are gone from objects', function()
 	e:run()
 
 	local ones = scalar(e.cvm,
-		"select count(*) from objects where scalar_type = 'n' and scalar_value = 1")
+		"select count(*) from objects where scalar_number = 1")
 	h.assert_eq(ones, 0, 'scalar_1 (the orphaned first-assignment value) should be reaped')
 
 	local twos = scalar(e.cvm,
-		"select count(*) from objects where scalar_type = 'n' and scalar_value = 2")
+		"select count(*) from objects where scalar_number = 2")
 	h.assert_eq(twos, 0, 'scalar_2 (the surviving second-assignment value) should be reaped when frame 0 is')
 end)
 

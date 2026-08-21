@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_needs_trace_lifecycle",
-	"role": "Tests for the needs_trace table's cascade / restrict semantics: `object_pk` FK cascades on object delete, `process_pk` FK restricts (a process can't be deleted while it has outstanding needs_trace rows), a process cap can't advance to terminal while any needs_trace rows still reference it, and gc can't flip 1 → null while needs_trace has rows for the current process.",
+	"role": "Tests for the needs_trace table's cascade / restrict semantics: `object_pk` FK cascades on object delete, `process_pk` FK restricts (a process can't be deleted while it has outstanding needs_trace rows), a process cap can't advance to terminal while any needs_trace rows still reference it, and frame_gc can't flip 1 → null while needs_trace has rows for the current process.",
 	"run": "lua5.4 production/tests/main/lua/engine/run.lua (from repo root)"
 }
 ]]
@@ -79,20 +79,18 @@ end
 -- ------------------------------------------------------------
 
 local function setup(db)
-	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	current_process_pk.register(db, function() return cap_pk end)
 
 	local hash_pk = first(db,
-		"insert into objects (primitive, owner_role) values ('h', '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, owner_role) values ('h', '" .. user_pk .. "') returning object_pk").object_pk
 
 	local scalar_pk = first(db,
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
-		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
 
 	return user_pk, cap_pk, hash_pk, scalar_pk
 end
@@ -236,18 +234,15 @@ test('two different processes can each mark the same object independently', func
 	-- get their own row for the same target object. Uses a single
 	-- registered UDF whose upvalue swings between caps.
 	local db = schema_db()
-	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_a_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	local cap_b_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local scalar_pk = first(db,
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
-		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local current = cap_a_pk
 	current_process_pk.register(db, function() return current end)
@@ -268,18 +263,15 @@ end)
 
 test('deleting the object cascades needs_trace rows for ALL processes marking it', function()
 	local db = schema_db()
-	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_a_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	local cap_b_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local scalar_pk = first(db,
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
-		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local current = cap_a_pk
 	current_process_pk.register(db, function() return current end)
@@ -332,22 +324,21 @@ end)
 -- ============================================================
 
 --[[
-Insert a non-cap nested frame under `cap_pk` with a non-empty ast
-so it starts at stmt_idx=0, NOT at terminal — the ast has length 1,
-so terminal is at stmt_idx=1. Enough headroom to set gc=1 on it
+Insert a non-cap nested frame under `cap_pk` with a non-empty frame_ast
+so it starts at frame_stmt_idx=0, NOT at terminal — the frame_ast has length 1,
+so terminal is at frame_stmt_idx=1. Enough headroom to set frame_gc=1 on it
 without hitting `frames_gc_set_rejects_at_terminal`.
 ]]
 local function insert_nested_frame(db, cap_pk, user_pk)
 	return first(db,
-		"insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		"insert into objects (base, control, frame_ast, frame_stmt_idx, frame_parent, owner_role) values ('o', 'f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
 		.. cap_pk .. "', '" .. user_pk .. "') returning object_pk").object_pk
 end
 
-test('gc 1 → null is rejected while the current process has needs_trace rows', function()
-	-- Mark an object, mark gc=1 on a nested frame (a cap can't have
-	-- gc=1 set — it's born at terminal — so use a nested frame with
-	-- a non-empty ast), then try to reset gc. Rejected — needs_trace
+test('frame_gc 1 → null is rejected while the current process has needs_trace rows', function()
+	-- Mark an object, mark frame_gc=1 on a nested frame (a cap can't have
+	-- frame_gc=1 set — it's born at terminal — so use a nested frame with
+	-- a non-empty frame_ast), then try to reset frame_gc. Rejected — needs_trace
 	-- still has an outstanding entry for the current process.
 	local db = schema_db()
 	local user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
@@ -355,52 +346,49 @@ test('gc 1 → null is rejected while the current process has needs_trace rows',
 
 	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
 		db, 'needs_trace insert')
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. frame_pk .. "'"),
-		db, 'frame gc=1')
+	assert_ok(db:exec("update objects set frame_gc = 1 where object_pk = '" .. frame_pk .. "'"),
+		db, 'frame frame_gc=1')
 
 	assert_fails_with(
-		db:exec("update objects set gc = null where object_pk = '" .. frame_pk .. "'"),
+		db:exec("update objects set frame_gc = null where object_pk = '" .. frame_pk .. "'"),
 		db, 'frames_gc_reset_requires_empty_needs_trace',
-		'gc reset blocked while needs_trace non-empty for current process')
+		'frame_gc reset blocked while needs_trace non-empty for current process')
 	db:close()
 end)
 
-test('gc 1 → null succeeds once needs_trace is cleared', function()
+test('frame_gc 1 → null succeeds once needs_trace is cleared', function()
 	local db = schema_db()
 	local user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
 	local frame_pk = insert_nested_frame(db, cap_pk, user_pk)
 
 	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
 		db, 'needs_trace insert')
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. frame_pk .. "'"),
-		db, 'frame gc=1')
+	assert_ok(db:exec("update objects set frame_gc = 1 where object_pk = '" .. frame_pk .. "'"),
+		db, 'frame frame_gc=1')
 
 	assert_ok(db:exec("delete from needs_trace"), db, 'clear needs_trace')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. frame_pk .. "'"),
-		db, 'gc reset after cleanup')
+	assert_ok(db:exec("update objects set frame_gc = null where object_pk = '" .. frame_pk .. "'"),
+		db, 'frame_gc reset after cleanup')
 	db:close()
 end)
 
-test('gc 1 → null is not blocked by needs_trace rows for a DIFFERENT process', function()
+test('frame_gc 1 → null is not blocked by needs_trace rows for a DIFFERENT process', function()
 	-- Two caps A and B, each with a nested frame under them. Mark an
 	-- object under cap B (by swinging current_process_pk), then swing
-	-- to A and set/reset gc on A's nested frame. Succeeds because A's
+	-- to A and set/reset frame_gc on A's nested frame. Succeeds because A's
 	-- own needs_trace worklist is empty; B's row is scoped to B.
 	local db = schema_db()
-	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_a_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	local cap_b_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local frame_a_pk = insert_nested_frame(db, cap_a_pk, user_pk)
 
 	local scalar_pk = first(db,
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
-		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local current = cap_b_pk
 	current_process_pk.register(db, function() return current end)
@@ -409,10 +397,10 @@ test('gc 1 → null is not blocked by needs_trace rows for a DIFFERENT process',
 		db, 'mark under cap B')
 
 	current = cap_a_pk
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. frame_a_pk .. "'"),
-		db, 'frame_a gc=1')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. frame_a_pk .. "'"),
-		db, 'frame_a gc reset — B\'s worklist doesn\'t block A')
+	assert_ok(db:exec("update objects set frame_gc = 1 where object_pk = '" .. frame_a_pk .. "'"),
+		db, 'frame_a frame_gc=1')
+	assert_ok(db:exec("update objects set frame_gc = null where object_pk = '" .. frame_a_pk .. "'"),
+		db, 'frame_a frame_gc reset — B\'s worklist doesn\'t block A')
 	db:close()
 end)
 
@@ -463,14 +451,12 @@ test('needs_trace persists across connections; traces does not', function()
 	assert(rc == sqlite.OK, 'db1 preflight: ' .. tostring(db1:errmsg()))
 
 	-- Set up state in db1.
-	local user_pk = first(db1, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db1, "select object_pk from objects where role_core = 'u'").object_pk
 	local cap_pk = first(db1,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	current_process_pk.register(db1, function() return cap_pk end)
 	local scalar_pk = first(db1,
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
-		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
 
 	assert_ok(db1:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
 		db1, 'db1 needs_trace insert')

@@ -99,9 +99,9 @@ test("roles: full listing uses the objects_roles partial index, no full scan", f
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from roles")
 	-- Under the 'r'-as-primitive design, the roles view is
-	-- `select object_pk from objects where primitive = 'r'` — a
+	-- `select object_pk from objects where control = 'r'` — a
 	-- single-column filter that reads through the objects_roles
-	-- partial index (WHERE primitive = 'r'). The plan reads
+	-- partial index (WHERE control = 'r'). The plan reads
 	-- "SCAN objects USING COVERING INDEX objects_roles" — that's
 	-- a full scan OF THE INDEX (all indexed rows are wanted), not
 	-- a table scan; the partial predicate keeps it bounded to the
@@ -126,7 +126,7 @@ test("uspace: pk lookup uses the PK index in each union branch", function()
 	db:close()
 end)
 
-test("uspace: full listing uses roles + persistent + process_cap indexes, no full scan", function()
+test("uspace: full listing uses roles + persistent + frame_process_cap indexes, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from uspace")
 	assert_plan_contains(p, "USING COVERING INDEX objects_roles",
@@ -150,9 +150,9 @@ end)
 -- Underlying single-column filters that the views compose from
 -- =============================================================================
 
-test("`where parent_role is not null` uses the objects_parent_role partial index", function()
+test("`where role_parent is not null` uses the objects_parent_role partial index", function()
 	local db = fresh_db()
-	local p = plan(db, "select object_pk from objects where parent_role is not null")
+	local p = plan(db, "select object_pk from objects where role_parent is not null")
 	assert_plan_contains(p, "USING INDEX objects_parent_role")
 	db:close()
 end)
@@ -171,22 +171,22 @@ test("`where persistent = 1` uses the objects_persistent partial index", functio
 	db:close()
 end)
 
-test("`where core_role = 'e'` uses the objects_core_role partial unique index", function()
+test("`where role_core = 'e'` uses the objects_core_role partial unique index", function()
 	local db = fresh_db()
-	local p = plan(db, "select object_pk from objects where core_role = 'e'")
-	-- The core_role column's UNIQUE lives in the objects_core_role
-	-- partial index (`where core_role is not null`).
-	assert_plan_contains(p, "USING INDEX objects_core_role (core_role=?)")
+	local p = plan(db, "select object_pk from objects where role_core = 'e'")
+	-- The role_core column's UNIQUE lives in the objects_core_role
+	-- partial index (`where role_core is not null`).
+	assert_plan_contains(p, "USING INDEX objects_core_role (role_core=?)")
 	db:close()
 end)
 
 test("uspace's cap-frame branch uses the objects_process_cap partial index", function()
 	local db = fresh_db()
-	-- uspace's cap-frame branch is `where primitive = 'f' and process_cap = 1`.
+	-- uspace's cap-frame branch is `where control = 'f' and frame_process_cap = 1`.
 	-- Test that predicate directly against objects so the plan
 	-- output surfaces the specific index; the same predicate inside
 	-- the view flattens to it.
-	local p = plan(db, "select object_pk from objects where primitive = 'f' and process_cap = 1")
+	local p = plan(db, "select object_pk from objects where control = 'f' and frame_process_cap = 1")
 	assert_plan_contains(p, "USING INDEX objects_process_cap")
 	db:close()
 end)

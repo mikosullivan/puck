@@ -1,16 +1,16 @@
 --[[
 {
 	"spec": "test_ast_shape",
-	"role": "Tests for the ast-shape validation on frame INSERT. The `objects_ast_valid_insert` trigger fires on any INSERT into objects with primitive = 'f' and rejects non-array JSON (a hash-shaped ast, a scalar, corrupted text). This test verifies the trigger fires on an ast that decodes as a JSON object."
+	"role": "Tests for the frame_ast-shape validation on frame INSERT. The `objects_ast_valid_insert` trigger fires on any INSERT into objects with control = 'f' and rejects non-array JSON (a hash-shaped frame_ast, a scalar, corrupted text). This test verifies the trigger fires on an frame_ast that decodes as a JSON object."
 }
 ]]
 
 --[[
 # `test_ast_shape`
 
-The engine's shape check for a frame's `ast` value. Enforcement lives at the schema layer — the `objects_ast_valid_insert` trigger fires at INSERT time and rejects any ast that isn't a JSON array. This test sets `caspm` to a Lua hash (which cjson encodes as a JSON object) and verifies the trigger fires with `ast_not_array`.
+The engine's shape check for a frame's `frame_ast` value. Enforcement lives at the schema layer — the `objects_ast_valid_insert` trigger fires at INSERT time and rejects any frame_ast that isn't a JSON array. This test sets `caspm` to a Lua hash (which cjson encodes as a JSON object) and verifies the trigger fires with `ast_not_array`.
 
-Also covered by defense-in-depth: `run_frame` shape-checks the decoded ast after fetching it from the DB, raising `caspm_not_array` if the trigger somehow missed something. Under normal code paths the trigger fires first (at INSERT), so `caspm_not_array` is rarely observed.
+Also covered by defense-in-depth: `run_frame` shape-checks the decoded frame_ast after fetching it from the DB, raising `caspm_not_array` if the trigger somehow missed something. Under normal code paths the trigger fires first (at INSERT), so `caspm_not_array` is rarely observed.
 ]]
 
 local h      = require('helpers')
@@ -40,6 +40,6 @@ h.test('caspm shaped as a JSON object is rejected at insert by the ast_not_array
 	assert_raises_matching(
 		function() e:run() end,
 		'ast_not_array',
-		'expected the ast_not_array trigger to fire on a hash-shaped ast'
+		'expected the ast_not_array trigger to fire on a hash-shaped frame_ast'
 	)
 end)

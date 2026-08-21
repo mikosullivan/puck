@@ -122,12 +122,11 @@ end)
 
 test('current_process_pk() populates needs_trace.process_pk from an INSERT', function()
 	local db = schema_db()
-	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	-- Insert a cap frame.
 	local cap_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	-- Register the UDF pointing at the cap.
 	current_process_pk.register(db, function() return cap_pk end)
@@ -148,11 +147,10 @@ end)
 
 test('INSERT omitting process_pk picks up the DEFAULT from current_process_pk()', function()
 	local db = schema_db()
-	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	current_process_pk.register(db, function() return cap_pk end)
 
@@ -172,20 +170,18 @@ test('INSERT via ref-delete trigger (implicit DEFAULT) records the current proce
 	-- `refs_mark_needs_trace_after_delete` inserted a needs_trace row
 	-- with process_pk defaulted from the UDF.
 	local db = schema_db()
-	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_pk = first(db,
-		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	current_process_pk.register(db, function() return cap_pk end)
 
 	-- Create a hash and a scalar; ref the scalar from the hash.
 	local hash_pk = first(db,
-		"insert into objects (primitive, owner_role) values ('h', '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, owner_role) values ('h', '" .. user_pk .. "') returning object_pk").object_pk
 	local scalar_pk = first(db,
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
-		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
 	assert_ok(db:exec(
 		"insert into refs (parent, child, key, idx) values ('"
 		.. hash_pk .. "', '" .. scalar_pk .. "', 'x', 0)"),
