@@ -18,7 +18,7 @@
 		"debug_log":          "per-process diagnostic log. Free-form note scoped to a process cap; ON DELETE CASCADE from the cap."},
 	"axes": {
 		"base":    "row's underlying storage shape. NOT NULL. Values: 'o' (regular object — the base every user object, frame, and role uses), 'h' (HashPrimitive container), 'a' (ArrayPrimitive container).",
-		"control": "optional CVM control-plane role, layered on top of base='o'. Values: 'f' (frame — carries executable frame_ast + a stmt_idx/gc/parent_frame/process_cap lifecycle), 'r' (role — identity anchor via role_core/role_parent). NULL on plain objects. Cross-column CHECK enforces `control is null or base = 'o'` (a container-that-is-also-a-frame is a schema violation)."},
+		"control": "optional CVM control-plane role, layered on top of base='o'. Values: 'f' (frame — carries executable frame_ast + a frame_stmt_idx/frame_gc/frame_parent/frame_process_cap lifecycle), 'r' (role — identity anchor via role_core/role_parent). NULL on plain objects. Cross-column CHECK enforces `control is null or base = 'o'` (a container-that-is-also-a-frame is a schema violation)."},
 	"scalar_columns": "Scalar-carrying objects use one of four typed columns rather than a polymorphic blob: scalar_string (TEXT — affinity preserves numeric-looking strings verbatim), scalar_number (REAL — affinity forces integer inputs to float, enforcing 'all numbers are floats' at the storage layer), scalar_bool (0/1 integer), scalar_null (marker '1' for the u-type null value; distinct from 'no scalar assigned' which is all four columns null). Cross-column trigger `objects_scalar_at_most_one_column` enforces exclusivity; the `scalars` view coalesces the four into (object_pk, scalar_type, value).",
 	"naming_conventions": {
 		"prefix_by_control_kind": "columns that only apply to a specific control kind wear that kind's prefix. Frame-only: frame_ast, frame_stmt_idx, frame_process_cap, frame_parent, frame_gc. Role-only: role_core, role_parent. Scalar-only: scalar_null, scalar_string, scalar_number, scalar_bool. Reading a `frame_*` column name tells you the column is only meaningful when control='f'.",
@@ -30,13 +30,12 @@
 		"frame_scoped_vars": "(frame_pk, scope_idx, var_name, value_pk) — every variable visible from a frame's scope chain, ordered by scope depth. scope_idx=0 is the frame's own scope; higher indexes are captured scopes.",
 		"object_bucket":     "(object_pk, bucket_pk) — every base='o' row with its bucket pk (or null if not yet materialized).",
 		"object_stack":      "(object_pk, stack_pk) — same shape for stacks."},
-	"gc_cycle_state_machine": "A frame's (stmt_idx, gc) pair moves through a strict state machine enforced by triggers on `objects`. The walker's per-statement operation is `UPDATE frame SET stmt_idx = stmt_idx + 1` — the trigger stack takes care of gc auto-null, child-delete cascades, and the parent's gc auto-set. Names to grep: frames_advance_requires_gc, frames_advance_sets_gc_null, frames_advance_rejects_non_null_gc, frames_gc_change_requires_no_child, frames_gc_set_rejects_at_terminal, frames_gc_reset_requires_empty_needs_trace, frames_delete_requires_no_child, frames_child_delete_sets_parent_gc, frames_no_child_under_terminal_parent, frames_stmt_idx_starts_at_zero, frames_stmt_idx_advances_by_one, frames_gc_starts_null. Each raises with its trigger name as the error id — grep to see what invariant fired.",
-	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the sprint's upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:drain_needs_trace` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
-	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. Only `gc`, `stmt_idx`, `bucket_pk`, `stack_pk`, `debug`, and the scalar columns' NULL→populated transition permit updates.",
+	"gc_cycle_state_machine": "A frame's (frame_stmt_idx, frame_gc) pair moves through a strict state machine enforced by triggers on `objects`. The walker's per-statement operation is `UPDATE frame SET frame_stmt_idx = frame_stmt_idx + 1` — the trigger stack takes care of frame_gc auto-null, child-delete cascades, and the parent's frame_gc auto-set. Names to grep: frames_advance_requires_gc, frames_advance_sets_gc_null, frames_advance_rejects_non_null_gc, frames_gc_change_requires_no_child, frames_gc_set_rejects_at_terminal, frames_gc_reset_requires_empty_needs_trace, frames_delete_requires_no_child, frames_child_delete_sets_parent_gc, frames_no_child_under_terminal_parent, frames_stmt_idx_starts_at_zero, frames_stmt_idx_advances_by_one, frames_gc_starts_null. Each raises with its trigger name as the error id — grep to see what invariant fired.",
+	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:drain_needs_trace` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
+	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. The only columns that permit updates are `frame_gc`, `frame_stmt_idx`, and `debug`; every other column is set once at INSERT and never changes (scalar columns included — the objects_scalar_*_immutable triggers use `is not` null-safe distinctness, so even null→populated raises). Bucket and stack ownership is now a `refs` row rather than dedicated bucket_pk / stack_pk columns, so those don't appear in the mutable-column set anymore.",
 	"companions": {
 		"preflight.sql":       "per-connection temp tables (traces, in_trace) + temp triggers that reproduce cascade semantics across the temp/persistent boundary (SQLite disallows cross-schema FKs). Runs on every connection open.",
-		"current_process_pk":  "engine-supplied UDF returning the currently-dispatching process cap's pk. Called by needs_trace.process_pk's DEFAULT, by debug_log.object_pk's DEFAULT, and by frames_gc_reset_requires_empty_needs_trace's per-process scoping. Every connection must register this UDF before applying the schema, or the schema apply fails."},
-	"sprint_context": "This is the numbers-sprint fork at schema version 12.0. Changes vs. production baseline (9.3): replaced scalar_type + scalar_value polymorphic pair with four typed scalar_* columns (`scalar_string` / `scalar_number` / `scalar_bool` / `scalar_null`); split `primitive` into `base` + `control`; renamed frame-only and role-only columns to prefix by control kind (`ast` → `frame_ast`, `gc` → `frame_gc`, `core_role` → `role_core`, etc.); added `scalars` view. All storage-layer enforcement of 'all numbers are floats' rides on `scalar_number`'s REAL affinity."}
+		"current_process_pk":  "engine-supplied UDF returning the currently-dispatching process cap's pk. Called by needs_trace.process_pk's DEFAULT, by debug_log.object_pk's DEFAULT, and by frames_gc_reset_requires_empty_needs_trace's per-process scoping. Every connection must register this UDF before applying the schema, or the schema apply fails."}}
 */
 
 -- Every connection to a CVM database must run these two pragmas
@@ -270,10 +269,12 @@ create table objects (
 	-- Root-of-frame_process_cap flag. `frame_process_cap = 1` marks this frame as the top
 	-- cap of a call stack — the object identity of the frame_process_cap itself.
 	-- Null on nested frames (which have frame_parent set instead).
-	-- A cap has frame_ast='[]' (see check below), starts at frame_stmt_idx=0, and
-	-- becomes terminal when it reaches frame_stmt_idx=1 with frame_gc=null and no
-	-- children. Frame 0 sits under the cap as a nested frame. Immutable
-	-- via objects_process_cap_immutable. [ghi]
+	-- A cap has frame_ast='[]' (see check below), so json_array_length(frame_ast)=0
+	-- and the terminal predicate `frame_stmt_idx >= json_array_length(frame_ast)`
+	-- is satisfied at frame_stmt_idx=0 — the cap is born terminal and stays there
+	-- for the process's lifetime. The frame_stmt_idx <= json_array_length(frame_ast)
+	-- CHECK structurally forbids the cap from ever advancing past 0. Frame 0 sits
+	-- under the cap as a nested frame. Immutable via objects_process_cap_immutable. [ghi]
 	frame_process_cap integer
 		check (frame_process_cap = 1)
 		check (frame_process_cap is null or control is 'f'),
@@ -490,16 +491,18 @@ create table refs (
 create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
 
--- Non-container parents ('o', 'f', 'r') can hold at most one
--- HashPrimitive child (which serves as its bucket) and at most one
--- ArrayPrimitive child (which serves as its stack). Container parents
--- ('h', 'a') have no such cap — they hold as many children as they
--- want by their native semantics. Owner-owns-bucket / owner-owns-stack
--- is just a normal refs row now; the whole "ownership" story lives in
+-- Non-container parents (base = 'o', which covers plain objects,
+-- frames, and roles alike — control layers on top of 'o') can hold
+-- at most one HashPrimitive child (which serves as its bucket) and
+-- at most one ArrayPrimitive child (which serves as its stack).
+-- Container parents (base = 'h' or 'a') have no such cap — they
+-- hold as many children as they want by their native semantics.
+-- Owner-owns-bucket / owner-owns-stack is just a normal refs row
+-- now; the whole "ownership" story lives in
 -- this one table.
 --
--- Roles ('r') are regular objects for this purpose — they can own a
--- bucket and a stack like any other non-container.
+-- Roles (control = 'r') are regular objects for this purpose — they
+-- can own a bucket and a stack like any other non-container.
 --
 -- Buckets and stacks CAN be shared across multiple owners — the trigger
 -- caps a parent's outgoing 'h'/'a' children but places no cap on a
@@ -1227,9 +1230,13 @@ end;
 -- Frame-column indexes.
 -- ------------------------------------------------------------
 
--- Child-of-frame walk: given a frame pk, find its child sub-frame. [ghi]
-create index objects_frame_by_parent on objects(frame_parent)
-	where control = 'f' and frame_parent is not null;
+-- The child-of-frame walk ("given a frame pk, find its child
+-- sub-frame") is already served by the `objects_one_child_per_frame`
+-- unique partial index above — same key (frame_parent), same predicate
+-- (control='f' and frame_parent is not null). A second non-unique
+-- copy alongside it is pure index-maintenance overhead and buys
+-- nothing at read time; SQLite will pick the unique one for lookups
+-- as readily as for uniqueness enforcement. [ghi]
 
 
 -- ------------------------------------------------------------
@@ -1294,10 +1301,11 @@ where f.control = 'f';
 
 -- ------------------------------------------------------------
 -- object_bucket — every non-container object with its bucket_pk
--- (or null if it hasn't been given one). "Non-container" = base
--- in ('o', 'f'); those are the ones the one-hash-one-array trigger
--- caps, so the correlated subquery returns at most one row and lands
--- safely as a scalar value.
+-- (or null if it hasn't been given one). "Non-container" = base = 'o'
+-- (covers plain objects, frames, and roles alike — control layers on
+-- top of 'o'). Those are the ones the one-hash-one-array trigger caps,
+-- so the correlated subquery returns at most one row and lands safely
+-- as a scalar value.
 --
 -- **No caller yet.** Kept in the schema as a convenience for whoever
 -- eventually needs "give me this object's bucket" without hand-writing
