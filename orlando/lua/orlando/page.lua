@@ -1681,7 +1681,7 @@ end
 --[[ {
     "in":  {"ctx": "table { path = string (fs path to .lua file), title = string?, client_ip = string? }"},
     "out": "string (full HTML page, ready to send over HTTP)",
-    "note": "Renders a .lua source file with vibecode / markdown / code chunks interleaved. See orlando.lua_page for the chunking rules. Uses the same page shell as render_request (sidebar, breadcrumb, footer)."
+    "note": "Renders a .lua source file as one syntax-highlighted <pre><code> block via orlando.lua_page — same shape as render_sql_annotated. Uses the same page shell as render_request (sidebar, breadcrumb, footer)."
 } ]]
 function M.render_lua_annotated(ctx)
     local f, err = io.open(ctx.path, "r")

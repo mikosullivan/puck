@@ -1,151 +1,55 @@
 --[=[
 {
 	"module": "orlando.lua_page",
-	"role": "Render a .lua source file as an annotated HTML body. Splits the source at every `--[[ ... ]]` block, classifies each block (JSON-parseable -> vibecode, `#`-prefixed content -> markdown, anything else -> plain Lua comment left in the code stream), and interleaves rendered vibecode blocks + rendered markdown + syntax-highlighted Lua code chunks. Rewrites `[ghi]` markers inside comments to `.ghi-btn` buttons when opts.doc_path is set — same treatment as sql_page. Every byte of the input source appears in the output; the difference is only visual treatment.",
+	"role": "Render a .lua source file as a single syntax-highlighted HTML body. No chunking, no vibecode extraction, no markdown docstring rendering — the whole file goes through the Lua highlighter and is wrapped in one <pre><code> block. Comments (--, --[[ ]]) stay as Lua comments; the highlighter styles them. Rewrites `[ghi]` markers inside comments to `.ghi-btn` buttons that open the file-issue popup with the source file + line + comment context prefilled — same treatment as sql_page. Buttons only appear where the author placed a `[ghi]` marker; no auto-injection.",
 	"exports": {
-		"chunk": "source string -> array of {kind, body} chunks (kind = 'vibecode' | 'markdown' | 'code')",
-		"render_body": "(source, opts?) -> HTML body string (no page shell, no <html>/<body>). opts.doc_path (optional): when set, `[ghi]` markers get replaced with .ghi-btn buttons carrying data-doc = doc_path, data-line = 1-indexed source line, data-context = trimmed comment text."
+		"render_body": "(source, opts?) -> HTML body string (no page shell, no <html>/<body>). opts.doc_path (optional): when set, `[ghi]` markers get replaced with .ghi-btn buttons carrying data-doc = doc_path, data-line = 1-indexed source line, data-context = trimmed comment text (marker + surrounding whitespace stripped). Wraps the highlighted source in a single <pre class='highlight lua'><code>...</code></pre>."
 	}
 }
 ]=]
 
-local cjson         = require("cjson")
 local lua_highlight = require("orlando.lua_highlight")
-local json_highlight = require("orlando.json_highlight")
 
 local M = {}
-
--- Strip leading and trailing whitespace (spaces + newlines).
-local function trim(s)
-	return (s:gsub("^%s+", ""):gsub("%s+$", ""))
-end
 
 local function attr_escape(s)
 	return (s:gsub("&", "&amp;"):gsub('"', "&quot;"))
 end
 
--- Decide which flavor a --[[ ... ]] block is. Vibecode is anything
--- whose trimmed body parses as JSON. Markdown is anything else whose
--- trimmed body starts with `#`. Everything else stays as an ordinary
--- Lua block comment.
-local function classify_block(body)
-	local stripped = trim(body)
+--[[ {
+	"in":  {"source": "Lua source string", "opts": "optional table; opts.doc_path = repo-relative file path for the file-issue button's data-doc attribute"},
+	"out": "HTML body string (no <html>/<body> shell) with the whole source syntax-highlighted"
+} ]]
+function M.render_body(source, opts)
+	opts = opts or {}
 
-	-- JSON attempt. cjson.decode raises on failure; pcall catches it.
-	local ok = pcall(cjson.decode, stripped)
-
-	if ok then
-		return 'vibecode'
+	if not opts.doc_path or opts.doc_path == "" then
+		-- No button injection — highlight and wrap, plain.
+		local highlighted = lua_highlight.highlight(source)
+		return '<pre class="highlight lua"><code>' .. highlighted .. '</code></pre>'
 	end
 
-	if stripped:sub(1, 1) == '#' then
-		return 'markdown'
-	end
-
-	-- Not JSON, not markdown -> ordinary Lua block comment.
-	return 'code'
-end
-
---[=[ {
-	"in": {"source": "Lua source string"},
-	"out": "array — sequence of {kind, body} chunks in source order. kind='vibecode' or 'markdown' chunks are extracted from --[[ ... ]] blocks; kind='code' chunks are the Lua text between them (which itself may contain non-classified --[[ ... ]] block comments, left in place for the Lua syntax highlighter)."
-} ]=]
-function M.chunk(source)
-	local chunks = {}
-	local code_start = 1
-	local pos = 1
-
-	while pos <= #source do
-		local start, s_end = source:find("%-%-%[%[", pos)
-		if not start then break end
-
-		local body_start = s_end + 1
-		local close_start, close_end = source:find("%]%]", body_start)
-
-		if not close_start then break end
-
-		local body = source:sub(body_start, close_start - 1)
-		local kind = classify_block(body)
-
-		if kind == 'code' then
-			-- Non-classified block: leave inside the surrounding code
-			-- stream so the Lua highlighter treats it as a comment.
-			pos = close_end + 1
-		else
-			-- Emit any code that sat before this block.
-			if start > code_start then
-				local before = source:sub(code_start, start - 1)
-				if trim(before) ~= "" then
-					table.insert(chunks, {kind = 'code', body = before})
-				end
-			end
-
-			table.insert(chunks, {kind = kind, body = body})
-			code_start = close_end + 1
-			pos = code_start
-		end
-	end
-
-	-- Trailing code after the last classified block.
-	if code_start <= #source then
-		local trailing = source:sub(code_start)
-		if trim(trailing) ~= "" then
-			table.insert(chunks, {kind = 'code', body = trailing})
-		end
-	end
-
-	return chunks
-end
-
--- Render a vibecode block the same way markdown pages render their
--- `~~~vibecode` fences: collapsible <details> with JSON highlighted
--- inside via json_highlight (page.lua's highlight_json_blocks does
--- the same thing after unwrapping the fence).
-local function render_vibecode(body)
-	local highlighted = json_highlight.highlight(trim(body))
-	return '<details class="vibecode"><summary>vibecode</summary>'
-		.. '<div class="vibecode-code"><pre>' .. highlighted
-		.. '</pre></div></details>'
-end
-
--- Render a markdown chunk via lunamark. Deferred require so this
--- module only pulls in lunamark when it's actually asked to render
--- markdown (test harnesses that only exercise chunk() skip it).
-local function render_markdown(body)
-	local lunamark = require("lunamark")
-	local writer = lunamark.writer.html5.new()
-	local parse = lunamark.reader.markdown.new(writer, {
-		fenced_code_blocks = true,
-	})
-	return (parse(trim(body)))
-end
-
--- Render a Lua code chunk with syntax highlighting. Leading and
--- trailing whitespace is trimmed so back-to-back chunks don't get
--- an extra blank line pile-up in the page.
-local function render_code(body)
-	local trimmed = trim(body)
-
-	if trimmed == "" then
-		return ""
-	end
-
-	local highlighted = lua_highlight.highlight(trimmed)
-	return '<pre class="highlight lua"><code>' .. highlighted .. '</code></pre>'
-end
-
--- [ghi] preprocessing — same shape as sql_page's. Walk the source
--- line by line, number every [ghi] occurrence as [ghi:N], and capture
--- (line, context) into a parallel table. Context is the marker line's
--- comment text with the marker itself stripped; standalone `-- [ghi]`
--- lines walk back to find the last content-carrying comment. Line
--- comment syntax is `--` (same as SQL — the character-class doesn't
--- change between the two languages).
-local function preprocess_ghi(source)
+	-- Preprocess: walk source line by line. For each `[ghi]` occurrence
+	-- (there can be more than one per line, though rare), replace it
+	-- with `[ghi:N]` where N is a running 1-based index — a
+	-- per-occurrence sentinel the highlighter passes through unchanged
+	-- (letters + digits + brackets are non-special text). Capture the
+	-- context (line number + trimmed comment text) into a parallel
+	-- table so the post-highlight pass can rebuild each button with
+	-- data-line / data-context attributes.
+	--
+	-- Context extraction: the marker's own line is the natural source
+	-- for most inline markers (`-- some text [ghi]`). Standalone
+	-- markers (`-- [ghi]` on their own line) have empty own-line
+	-- content, so we walk back through the containing comment block
+	-- to find the last content-carrying line and use that instead.
+	-- Line comment syntax is `--` — same character-class as SQL,
+	-- so this loop matches sql_page's shape.
 	local lines = {}
 	for line in (source .. "\n"):gmatch("([^\n]*)\n") do
 		table.insert(lines, line)
 	end
+	-- Drop the trailing empty line the loop appended.
 	if lines[#lines] == "" then table.remove(lines) end
 
 	local function is_comment(l) return l and l:match("^%s*%-%-") ~= nil end
@@ -183,14 +87,13 @@ local function preprocess_ghi(source)
 		end
 	end
 
-	return table.concat(lines, "\n"), contexts
-end
+	local rewritten_source = table.concat(lines, "\n")
 
--- Post-process the concatenated HTML: replace every [ghi:N] with a
--- fully-annotated .ghi-btn. Contexts come from preprocess_ghi.
-local function inject_ghi_buttons(html, contexts, doc_path)
-	local doc = attr_escape(doc_path)
-	return (html:gsub("%[ghi:(%d+)%]", function(n)
+	local highlighted = lua_highlight.highlight(rewritten_source)
+
+	-- Post-process: replace each `[ghi:N]` with a fully-annotated button.
+	local doc = attr_escape(opts.doc_path)
+	highlighted = highlighted:gsub("%[ghi:(%d+)%]", function(n)
 		local ctx = contexts[tonumber(n)] or {}
 		local line = tostring(ctx.line or 0)
 		local text = attr_escape(ctx.text or "")
@@ -199,43 +102,9 @@ local function inject_ghi_buttons(html, contexts, doc_path)
 			.. ' data-line="' .. line .. '"'
 			.. ' data-context="' .. text .. '"'
 			.. '>ghi</button>'
-	end))
-end
+	end)
 
---[[ {
-	"in": {"source": "Lua source string", "opts": "optional table; opts.doc_path = repo-relative file path for the file-issue button's data-doc attribute"},
-	"out": "HTML body string (no <html>/<body> shell) with vibecode / markdown / code chunks rendered in source order"
-} ]]
-function M.render_body(source, opts)
-	opts = opts or {}
-
-	local contexts
-	local processed_source = source
-
-	if opts.doc_path and opts.doc_path ~= "" then
-		processed_source, contexts = preprocess_ghi(source)
-	end
-
-	local chunks = M.chunk(processed_source)
-	local parts = {}
-
-	for _, chunk in ipairs(chunks) do
-		if chunk.kind == 'vibecode' then
-			table.insert(parts, render_vibecode(chunk.body))
-		elseif chunk.kind == 'markdown' then
-			table.insert(parts, render_markdown(chunk.body))
-		else
-			table.insert(parts, render_code(chunk.body))
-		end
-	end
-
-	local html = table.concat(parts, "\n")
-
-	if contexts then
-		html = inject_ghi_buttons(html, contexts, opts.doc_path)
-	end
-
-	return html
+	return '<pre class="highlight lua"><code>' .. highlighted .. '</code></pre>'
 end
 
 return M
