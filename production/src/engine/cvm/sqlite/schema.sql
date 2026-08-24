@@ -492,36 +492,78 @@ create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
 
 -- Non-container parents (base = 'o', which covers plain objects,
--- frames, and roles alike — control layers on top of 'o') can hold
--- at most one HashPrimitive child (which serves as its bucket) and
--- at most one ArrayPrimitive child (which serves as its stack).
--- Container parents (base = 'h' or 'a') have no such cap — they
--- hold as many children as they want by their native semantics.
--- Owner-owns-bucket / owner-owns-stack is just a normal refs row
--- now; the whole "ownership" story lives in
--- this one table.
+-- frames, and roles alike — control layers on top of 'o') carry their
+-- top-level properties as keyed refs under a strict shape: at most one
+-- bucket (`key = 'b'`), one platters (`key = 'p'`), and one shadow
+-- (`key = 's'`). Every ref out of an 'o'-parent MUST use one of those
+-- three keys; any other key or a null key is rejected.
 --
--- Roles (control = 'r') are regular objects for this purpose — they
--- can own a bucket and a stack like any other non-container.
+-- Storage-shape reasoning: modelling the object's structural
+-- properties as three well-known keys under a hash means the
+-- "at most one" cap comes for free from `unique(parent, key)` — no
+-- separate cap trigger needed. Each key/target-shape pairing is
+-- enforced by its own type-check trigger below.
 --
--- Buckets and stacks CAN be shared across multiple owners — the trigger
--- caps a parent's outgoing 'h'/'a' children but places no cap on a
--- child's incoming refs. Two 'o' rows can both point at the same hash;
--- the graph reads exactly like the refs table shows. The trigger name
--- says "owner" because "owner" is the domain term for the parent side
--- of a bucket/stack ref, not because it implies exclusive ownership. [ghi]
-create trigger refs_owner_at_most_one_hash_and_one_array
+-- Property → key → target-base:
+--   bucket   → 'b' → 'h' (a hash of state entries)
+--   platters → 'p' → 'a' (an ordered array of classes, innermost-first)
+--   shadow   → 's' → 'h' (a hash consulted first at dispatch)
+--
+-- The three properties are optional — an object with none of them is
+-- a bare stub. Materialize on demand.
+--
+-- Roles (control = 'r') are regular objects for this purpose — same
+-- b/p/s shape as any other 'o'-based row.
+--
+-- Buckets/platters/shadows CAN be shared across multiple owners — the
+-- triggers cap a parent's outgoing edges by key but place no cap on a
+-- child's incoming refs. Two 'o' rows can both point at the same
+-- hash; the graph reads exactly like the refs table shows.
+--
+-- Two of the three (b and s) both target base='h' rows. They're
+-- distinguished by the KEY on the ref, not by the target's shape.
+-- Consult the key to know which slot you're looking at. [ghi]
+create trigger refs_object_parent_key_must_be_bps
 before insert on refs
 when (select base from objects where object_pk = new.parent) = 'o'
-	and (select base from objects where object_pk = new.child) in ('h', 'a')
-	and exists (
-		select 1 from refs r
-		join objects c on c.object_pk = r.child
-		where r.parent = new.parent
-			and c.base = (select base from objects where object_pk = new.child)
-	)
+	and (new.key is null or new.key not in ('b', 'p', 's'))
 begin
-	select raise(abort, 'refs_owner_at_most_one_hash_and_one_array: a non-container object can hold at most one hash (its bucket) and one array (its stack) as refs children');
+	select raise(abort, 'refs_object_parent_key_must_be_bps: refs from a non-container object (base=''o'') must have key in (''b'', ''p'', ''s'')');
+end;
+
+-- key='b' → target must be a hash (base='h'). The bucket is the
+-- object's state hash. Fires on any INSERT where the parent is an
+-- 'o'-row and the key is 'b'; verifies the child's base. [ghi]
+create trigger refs_key_b_target_must_be_hash
+before insert on refs
+when new.key = 'b'
+	and (select base from objects where object_pk = new.parent) = 'o'
+	and (select base from objects where object_pk = new.child) is not 'h'
+begin
+	select raise(abort, 'refs_key_b_target_must_be_hash: a ref with key=''b'' (bucket) must point at a hash (base=''h'')');
+end;
+
+-- key='p' → target must be an array (base='a'). The platters are the
+-- object's ordered class array, innermost-first. [ghi]
+create trigger refs_key_p_target_must_be_array
+before insert on refs
+when new.key = 'p'
+	and (select base from objects where object_pk = new.parent) = 'o'
+	and (select base from objects where object_pk = new.child) is not 'a'
+begin
+	select raise(abort, 'refs_key_p_target_must_be_array: a ref with key=''p'' (platters) must point at an array (base=''a'')');
+end;
+
+-- key='s' → target must be a hash (base='h'). The shadow is the
+-- top-of-dispatch hash — always consulted first, before the
+-- platters. Same target-shape as bucket; distinguished by the key. [ghi]
+create trigger refs_key_s_target_must_be_hash
+before insert on refs
+when new.key = 's'
+	and (select base from objects where object_pk = new.parent) = 'o'
+	and (select base from objects where object_pk = new.child) is not 'h'
+begin
+	select raise(abort, 'refs_key_s_target_must_be_hash: a ref with key=''s'' (shadow) must point at a hash (base=''h'')');
 end;
 
 -- refs rows are mostly immutable — `debug` is freely editable (it's
