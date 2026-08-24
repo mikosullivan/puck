@@ -137,24 +137,12 @@ Track 2 commits (7-10) have staged dependencies — revert as a group.
 
 ## Outstanding issues
 
-### Design gaps
-
-#### No primitive class objects seeded
-
-No Number / String / Boolean / Null class rows are seeded at bootstrap. The dispatch chain says "primitive class if present" but the "class" side of the primitive-class relationship is undefined — there's no actual class row for the dispatcher to reach when it hits the primitive-class layer. Method dispatch on a scalar today can't resolve anything past the empty platters + empty engine_class (scalars don't carry engine_class).
-
-The next sprint tackles this for `String` first, which will settle the pattern for the other primitives.
-
 ### Cross-sprint dependencies
 
 - **[method-call sprint](https://puck.uno/sprints/method-call/)** — Track 2 hard-blocks on this. Currently seed-only.
 - **[lazy-params sprint](https://puck.uno/sprints/lazy-params/)** — the agent's future `.tap` and short-circuit methods need lazy args. Not a Track 1 blocker.
 - **[undeclared-read sprint](https://puck.uno/sprints/undeclared-read/)** — parallel; no blocking relation.
 - **[remove-debug-column sprint](https://puck.uno/sprints/remove-debug-column/)** — cleanup; can land in either order.
-
-### Parser gaps
-
-- **`$foo.obj.pk` doesn't parse today.** The transpiler + normalizer haven't been extended to produce a fc-shape for `.obj.pk` (or any general `.X.Y` method-call chain). Once dispatch exists, this needs a parser pass to produce the right CaspM. Not a Track 1 blocker; blocks Track 2's end-to-end test.
 
 ### Follow-on work
 
