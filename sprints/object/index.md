@@ -8,6 +8,22 @@
 
 Implement Caspian's Object class and enough of the primitive classes to make class-based dispatch real. First-class classes with class stacks, `.new` constructors, and per-instance method lookup — the foundation the rest of the language will build on.
 
+## Core concept — an object IS a record
+
+Every object in Caspian is exactly one row in the `objects` table. There is no other kind of object. No transient in-memory-only objects, no Lua-side handles that stand in for a Caspian object without a record, no "value that will get an id later" — if it doesn't have a row, it isn't an object yet, and the language can't see it.
+
+**"Object" and "record" are used interchangeably.** They aren't strictly synonymous — "record" names the storage row, "object" names the language-level entity that lives in it — but the mapping is one-to-one, so nothing in the design distinguishes them and Miko often calls the same thing by whichever word fits the sentence. Follow that convention in sprint-internal writing.
+
+## The three object properties
+
+Every object carries up to three properties. Which of the three are present depends on what kind of object it is; all three are optional except that an object with none of them is just a bare stub and effectively useless.
+
+- **bucket** — the state hash. Physically, a `base='h'` object linked from the record via a keyless ref, holding entries keyed by name (locals, fields, rv, whatever). Mutable — entries can be added, removed, or updated at any time. Fresh objects don't have a bucket until something needs to store state; materialize-on-demand.
+- **stack** — the class chain the instance carries. The ordered list of classes contributing methods to this instance, innermost-first. Mutable — classes can be pushed on or popped off during the object's lifetime (that's how `add_class`, singleton methods, etc. work). Bare Object instances have Object as the only entry; primitives have their primitive class + Object; user-defined instances layer their class(es) on top.
+- **primitive** — the underlying scalar payload. One of `scalar_string`, `scalar_integer`, `scalar_frac`, `scalar_bool`, or one of the null flavors. Present only on scalar instances (Number, String, Boolean, Null); absent on bare Object and user-defined non-scalar instances. **Immutable** — schema-enforced. Once written at row-insert time, it can never change. Every other property can shift over the object's life; the primitive is the one thing that's forever.
+
+The immutability of primitive is what gives Caspian's scalars their value-type feel. A Number that IS `1` cannot BECOME `2` — you make a fresh Number for `2`. Two Numbers with the same primitive but different class stacks or buckets are still distinct objects (different rows), but they're indistinguishable at the primitive level. That asymmetry is deliberate.
+
 ## What already exists in spec
 
 Spec is settled at [requirements/built-in-classes](https://puck.uno/requirements/built-in-classes/):
