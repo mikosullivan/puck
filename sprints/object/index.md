@@ -12,7 +12,7 @@ Implement Caspian's Object class and enough of the primitive classes to make cla
 
 Every object in Caspian is exactly one row in the `objects` table. There is no other kind of object. No transient in-memory-only objects, no Lua-side handles that stand in for a Caspian object without a record, no "value that will get an id later" — if it doesn't have a row, it isn't an object yet, and the language can't see it.
 
-**"Object" and "record" are used interchangeably.** They aren't strictly synonymous — "record" names the storage row, "object" names the language-level entity that lives in it — but the mapping is one-to-one, so nothing in the design distinguishes them and Miko often calls the same thing by whichever word fits the sentence. Follow that convention in sprint-internal writing.
+**"Object" and "record" are used interchangeably.** They aren't strictly synonymous — "record" names the storage row, "object" names the language-level entity that lives in it — but the mapping is one-to-one, so nothing in the design distinguishes them.
 
 ## The three object properties
 
