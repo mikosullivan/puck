@@ -49,7 +49,7 @@ Plus `frames_no_child_under_terminal_parent` — reject inserting a child under 
 
 Every frame carries an implicit return-value slot — a ref from the frame's bucket with `key='rv'` pointing at any object. Fresh frames have no rv (implicitly null). Handlers and primitives set rv while the frame is executing; child-delete propagates it up on reap.
 
-**Storage.** rv is not a dedicated column — it's an entry in `refs` under the frame's bucket, alongside whatever else lives there (scopes, locals, etc.). The bucket itself is a `base='h'` object linked from the frame via a keyless ref. Materialize-on-demand: fresh frames don't have a bucket until something needs one; a set_rv call creates the bucket if it doesn't exist yet.
+**Storage.** rv is not a dedicated column — it's an entry in `refs` under the frame's bucket, alongside whatever else lives there (scopes, locals, etc.). The bucket itself is a `base='h'` object linked from the frame via a ref keyed `'b'` (the b/p/s object-property shape). Materialize-on-demand: fresh frames don't have a bucket until something needs one; a set_rv call creates the bucket if it doesn't exist yet.
 
 **Reap-time propagation.** `frames_child_delete_propagates_rv` (BEFORE DELETE trigger) copies the reaping child's rv to the parent's rv slot. Three cases the trigger handles:
 

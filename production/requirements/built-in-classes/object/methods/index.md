@@ -6,7 +6,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_built_in_object_methods",
-	"role": "spec for the `obj` method namespace on every Caspian value — including how the namespace itself works (inherited automatically from Object, dispatched as normal methods on the receiver, not an isolation boundary, cannot be overridden — engine hardcodes the name; no user-facing final-method facility in V1) plus the full method catalog. Methods spec'd: `.id` (returns the receiver's identity as a string assigned by CVM at construction; immutable; survives serialization; opaque — the format is CVM's concern), `.truthy?` (returns truthiness derived from the receiver's primitive field: false/null primitive → false; anything else or no primitive field → true; immutable per instance), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes in top-to-bottom order, with `.ensure($class)`, `.add_unconditionally($class)`, and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.add_unconditionally($class)` always pushes a new platter regardless of existing membership — verbose name deliberately since the always-push case is rare — and has the same bare/block form pair with the block form always adding and always removing at exit; both add methods place the new platter on TOP of the stack (just below the shadow if one exists), so its methods win at dispatch — same shape as Ruby's `obj.extend(Module)`; the stack is walked top-to-bottom / first-to-last for method lookup; `.shadow` accepts `ensure: true` to create the shadow if missing), `.methods` (returns a lazy methods object that behaves like a Hash for all non-mutating operations — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests; per-lookup walk of the class graph so single-method access doesn't materialize the whole set; `.keys` returns a fresh array on each call and can differ between calls if the class was mutated; nested namespaces surface as single entries — `.methods.keys` includes `'obj'` and other nested-namespace names but not the nested members underneath; mutating operations like `[:name] = value` and `.delete` raise; access-scoped so private methods surface when called from inside the class body via %self.obj.methods but not from outside; composes with the caller pattern), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's LIVE stack array — the returned reference IS the object's stack, not a snapshot, so pushing/splicing/reordering/deleting entries or editing platter fields mutates the object directly; `.classes.ensure` and `.classes.add_unconditionally` are convenience wrappers on top of this raw access; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg; framing: stack is mutable from outside but bucket has no external-mutation surface at all, an intentional asymmetry treating bucket as encapsulated state and stack as extendable-behavior surface, gated to user + owning role), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — two independent object-level immutability axes plus a shortcut that locks both; each with permanent and block-scoped forms; `.freeze_bucket` is top-level-only on the receiver's own bucket, does not cascade into nested structures; freezing primitive-value contents like Hash keys or Array elements is NOT covered here — that's a direct `.freeze` method on the primitive itself) and the companion frozen-predicate surface (`.bucket_frozen?`, `.stack_frozen?`, `.frozen?` — each returns true iff the corresponding freeze method has been called; `.frozen?` returns true iff both axis predicates return true; reflect the CURRENT freeze state so block-form freezes return true DURING the block and false again after); all freeze methods are idempotent (freezing already-frozen axes is a no-op), `.destroy` (terminates the receiver: calls `.close` if defined, then clears the bucket AND drops every platter from the stack; result is a destroyed object whose only useful surface is `.obj.id` and `.obj.destroyed?`; every other dispatch raises; the engine special-cases those two on destroyed objects since there's no class stack left to dispatch through; `.close` failures do not stop the destroy; idempotent; holding-is-access), and `.destroyed?` (returns true iff `.destroy` has been called on the receiver; callable on destroyed objects; one of only two methods that remain usable after destroy). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
+	"role": "spec for the `obj` method namespace on every Caspian value — including how the namespace itself works (inherited automatically from Object, dispatched as normal methods on the receiver, not an isolation boundary, cannot be overridden — engine hardcodes the name; no user-facing final-method facility in V1) plus the full method catalog. Methods spec'd: `.pk` (returns the receiver's identity as a string — the receiver's object_pk, a UUID assigned by CVM at construction; immutable; survives serialization; opaque — the format is CVM's concern; was previously called `.id`), `.truthy?` (returns truthiness derived from the receiver's primitive field: false/null primitive → false; anything else or no primitive field → true; immutable per instance), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes in top-to-bottom order, with `.ensure($class)`, `.add_unconditionally($class)`, and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.add_unconditionally($class)` always pushes a new platter regardless of existing membership — verbose name deliberately since the always-push case is rare — and has the same bare/block form pair with the block form always adding and always removing at exit; both add methods place the new platter on TOP of the stack (just below the shadow if one exists), so its methods win at dispatch — same shape as Ruby's `obj.extend(Module)`; the stack is walked top-to-bottom / first-to-last for method lookup; `.shadow` accepts `ensure: true` to create the shadow if missing), `.methods` (returns a lazy methods object that behaves like a Hash for all non-mutating operations — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests; per-lookup walk of the class graph so single-method access doesn't materialize the whole set; `.keys` returns a fresh array on each call and can differ between calls if the class was mutated; nested namespaces surface as single entries — `.methods.keys` includes `'obj'` and other nested-namespace names but not the nested members underneath; mutating operations like `[:name] = value` and `.delete` raise; access-scoped so private methods surface when called from inside the class body via %self.obj.methods but not from outside; composes with the caller pattern), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's LIVE stack array — the returned reference IS the object's stack, not a snapshot, so pushing/splicing/reordering/deleting entries or editing platter fields mutates the object directly; `.classes.ensure` and `.classes.add_unconditionally` are convenience wrappers on top of this raw access; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg; framing: stack is mutable from outside but bucket has no external-mutation surface at all, an intentional asymmetry treating bucket as encapsulated state and stack as extendable-behavior surface, gated to user + owning role), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — two independent object-level immutability axes plus a shortcut that locks both; each with permanent and block-scoped forms; `.freeze_bucket` is top-level-only on the receiver's own bucket, does not cascade into nested structures; freezing primitive-value contents like Hash keys or Array elements is NOT covered here — that's a direct `.freeze` method on the primitive itself) and the companion frozen-predicate surface (`.bucket_frozen?`, `.stack_frozen?`, `.frozen?` — each returns true iff the corresponding freeze method has been called; `.frozen?` returns true iff both axis predicates return true; reflect the CURRENT freeze state so block-form freezes return true DURING the block and false again after); all freeze methods are idempotent (freezing already-frozen axes is a no-op), `.destroy` (terminates the receiver: calls `.close` if defined, then clears the bucket AND drops every platter from the stack; result is a destroyed object whose only useful surface is `.obj.pk` and `.obj.destroyed?`; every other dispatch raises; the engine special-cases those two on destroyed objects since there's no class stack left to dispatch through; `.close` failures do not stop the destroy; idempotent; holding-is-access), and `.destroyed?` (returns true iff `.destroy` has been called on the receiver; callable on destroyed objects; one of only two methods that remain usable after destroy). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
 	"status": "stub — starter methods spec'd (id, truthy?, isa?, null?, defined?, jail, tap, classes/ensure/shadow, methods, warn, freeze_bucket/freeze_stack/freeze, bucket_frozen?/stack_frozen?/frozen?, destroy, destroyed?); more to come",
 	"audience": "developers writing Caspian; engine implementers"
 }}
@@ -200,7 +200,7 @@ $widget.obj.classes.shadow      # the shadow class — implicitly created by the
 
 ### `.destroy`
 
-Terminates the receiver: calls its `.close` method if one exists, then clears every entry in its bucket AND drops every platter from its stack. The object holds no references to anything else once destroy returns. The result is a **destroyed** object — a shell whose only useful surface is `.obj.id` (still its original identity) and `.obj.destroyed?` (returns `true`). Every other dispatch on the destroyed object raises.
+Terminates the receiver: calls its `.close` method if one exists, then clears every entry in its bucket AND drops every platter from its stack. The object holds no references to anything else once destroy returns. The result is a **destroyed** object — a shell whose only useful surface is `.obj.pk` (still its original identity) and `.obj.destroyed?` (returns `true`). Every other dispatch on the destroyed object raises.
 
 Use when code needs to guarantee that an object doesn't survive past a certain point — a session that must not leak beyond its scope, a file handle that must not stay open, a credential that must not linger in memory. Destroy is stronger than letting the object go out of scope, which leaves the object alive until CVM's next GC pass; `.destroy` runs synchronously and leaves the observable behavior right there.
 
@@ -210,7 +210,7 @@ $session.execute($request)
 $session.obj.destroy         # .close is called (if it exists), then the bucket is cleared
 
 $session.obj.destroyed?      # true
-$session.obj.id              # still the original id — identity is preserved
+$session.obj.pk              # still the original id — identity is preserved
 $session.execute($other)     # raises — the session is destroyed
 ~~~
 
@@ -224,10 +224,10 @@ Nested objects that were reachable only through the destroyed receiver (via its 
 
 **Post-destroy behavior — only two methods remain usable:**
 
-- `.obj.id` — still returns the original identity. IDs are CVM-level state, kept separately from the object's stack, and don't disappear.
+- `.obj.pk` — still returns the original identity. IDs are CVM-level state, kept separately from the object's stack, and don't disappear.
 - `.obj.destroyed?` — returns `true`. Also CVM-level.
 
-Every other dispatch raises with a "destroyed object" error. This includes class-defined methods, other `.obj.X` methods, freeze operations, downloaded methods, and bucket reads. With the stack cleared there's no class to dispatch through; the engine special-cases `.obj.id` and `.obj.destroyed?` on destroyed objects.
+Every other dispatch raises with a "destroyed object" error. This includes class-defined methods, other `.obj.X` methods, freeze operations, downloaded methods, and bucket reads. With the stack cleared there's no class to dispatch through; the engine special-cases `.obj.pk` and `.obj.destroyed?` on destroyed objects.
 
 **`.close` failures do not stop the destroy.** If `.close` raises during step 1, `.destroy` catches the raise and proceeds to step 2. The point of `.destroy` is a guarantee — the object will be destroyed by the time this call returns. A `.close` that fails still leaves the object destroyed. Callers who need to know about a `.close` failure can invoke `.close` themselves first, handle the raise, then call `.destroy`.
 
@@ -249,7 +249,7 @@ $foo.obj.destroy
 $foo.obj.destroyed?          # true
 ~~~
 
-Along with `.obj.id`, one of the only two methods that remain callable after `.destroy`.
+Along with `.obj.pk`, one of the only two methods that remain callable after `.destroy`.
 
 **Access.** Callable from any role.
 
@@ -391,16 +391,16 @@ The frozen-predicate surface parallels the fine-grained `.frozen?` on variable-o
 
 **Access.** Callable from any role.
 
-### `.id`
+### `.pk`
 
 Returns the receiver's identity as a **string**. Assigned by CVM at construction; immutable for the object's lifetime; treat the value as opaque. The format is CVM's concern — a caller that wants to compare identities uses `==` on the agent or on the strings, and never parses or interprets the value.
 
 ~~~caspian
 $widget = Widget.new()
-$widget.obj.id                     # an opaque string
+$widget.obj.pk                     # an opaque string
 ~~~
 
-**Identity comparison.** The easiest way to check that two references point at the same object is `$foo.obj == $bar.obj` — two `.obj` agents compare equal iff they wrap the same target. Comparing `.obj.id` strings works too and is what the agent's `==` reduces to under the hood, but the agent-level form reads more naturally at the call site.
+**Identity comparison.** The easiest way to check that two references point at the same object is `$foo.obj == $bar.obj` — two `.obj` agents compare equal iff they wrap the same target. Comparing `.obj.pk` strings works too and is what the agent's `==` reduces to under the hood, but the agent-level form reads more naturally at the call site.
 
 ~~~caspian
 $w1 = Widget.new()
@@ -410,14 +410,14 @@ $w3 = $w1                          # same reference, same object
 $w1.obj == $w3.obj                 # true — one object
 $w1.obj == $w2.obj                 # false — two objects
 
-# The .id comparison works too:
-$w1.obj.id == $w3.obj.id           # true
-$w1.obj.id == $w2.obj.id           # false
+# The .pk comparison works too:
+$w1.obj.pk == $w3.obj.pk           # true
+$w1.obj.pk == $w2.obj.pk           # false
 ~~~
 
 **Survives serialization.** An object serialized to JSON (via a worldlet, Mikobase record, or Puck message) carries its ID along with its bucket and stack. A rehydrated instance reports the same ID it had before the round-trip — which is what makes cross-boundary object identity meaningful.
 
-**Unique for the process lifetime; never reused.** Every ID assigned during a Caspian process is unique for that process's whole run. An ID belonging to a destroyed or garbage-collected object is never handed out to a subsequently-constructed object. Two objects that existed at different times during the same process cannot collide on `.id`.
+**Unique for the process lifetime; never reused.** Every ID assigned during a Caspian process is unique for that process's whole run. An ID belonging to a destroyed or garbage-collected object is never handed out to a subsequently-constructed object. Two objects that existed at different times during the same process cannot collide on `.pk`.
 
 **Never null, never raises.** Every value in the language has an ID. Even a bare object (`%('puck.uno/object').new()`) gets one at construction.
 
@@ -769,20 +769,20 @@ Any code — engine, library, or application — can call `.warn`. The inspectio
 - **`obj.` dispatch is not a wrapper** — the receiver returned to a subsequent chain step is the original object; chaining `$foo.obj.tap { }.some_method` calls `some_method` on `$foo` itself.
 - **`obj` cannot be overridden** — defining `method obj() ... end`, `nested :obj ... end`, `field :obj`, or a singleton method named `obj` on any class raises at class-definition time.
 
-### `.id`
+### `.pk`
 
-- **Returns a string** — `Widget.new().obj.id.obj.isa?(String)` is `true`.
-- **Not coerced to a number** — `.obj.id` never returns a Number instance, even when the value happens to parse as one.
-- **Stable for the object's lifetime** — two `.obj.id` calls on the same reference return the same string.
-- **Same object → same ID** — after `$b = $a`, `$a.obj.id == $b.obj.id` is `true`.
-- **Different objects → different IDs** — two separate `Widget.new()` calls produce two different `.obj.id` values.
-- **Agent-level `==` matches ID equality** — for any `$a`, `$b`: `$a.obj == $b.obj` returns the same boolean as `$a.obj.id == $b.obj.id`.
-- **Bare object has an ID** — `%('puck.uno/object').new().obj.id` returns a string (not null).
-- **Every primitive has an ID** — each of `42`, `'hi'`, `true`, `[]`, `{}` reports a string from `.obj.id`. (Shared instances — like the singleton `true` — return the same ID from every reference to them.)
-- **ID survives serialization round-trip** — an object serialized to JSON and rehydrated reports the same `.obj.id` before and after.
-- **ID of a destroyed object is not reused** — after `$a.obj.destroy`, subsequently constructed objects in the same process never receive `$a.obj.id` as their ID.
+- **Returns a string** — `Widget.new().obj.pk.obj.isa?(String)` is `true`.
+- **Not coerced to a number** — `.obj.pk` never returns a Number instance, even when the value happens to parse as one.
+- **Stable for the object's lifetime** — two `.obj.pk` calls on the same reference return the same string.
+- **Same object → same ID** — after `$b = $a`, `$a.obj.pk == $b.obj.pk` is `true`.
+- **Different objects → different IDs** — two separate `Widget.new()` calls produce two different `.obj.pk` values.
+- **Agent-level `==` matches ID equality** — for any `$a`, `$b`: `$a.obj == $b.obj` returns the same boolean as `$a.obj.pk == $b.obj.pk`.
+- **Bare object has an ID** — `%('puck.uno/object').new().obj.pk` returns a string (not null).
+- **Every primitive has an ID** — each of `42`, `'hi'`, `true`, `[]`, `{}` reports a string from `.obj.pk`. (Shared instances — like the singleton `true` — return the same ID from every reference to them.)
+- **ID survives serialization round-trip** — an object serialized to JSON and rehydrated reports the same `.obj.pk` before and after.
+- **ID of a destroyed object is not reused** — after `$a.obj.destroy`, subsequently constructed objects in the same process never receive `$a.obj.pk` as their ID.
 - **ID of a garbage-collected object is not reused** — after an object goes out of scope and CVM reclaims it, no later-constructed object receives its former ID.
-- **Never raises** — `.obj.id` is always callable, on any value, without error.
+- **Never raises** — `.obj.pk` is always callable, on any value, without error.
 
 ### `.truthy?`
 
@@ -994,7 +994,7 @@ Any code — engine, library, or application — can call `.warn`. The inspectio
 - **Skips `.close` when not defined** — an object with no `.close` still destroys cleanly.
 - **Clears the bucket** — after `.destroy`, `%bucket` on the receiver is empty.
 - **Clears the stack** — after `.destroy`, every platter is gone from the receiver's stack (class platters, shadow, warning platters, nested-link platters).
-- **`.obj.id` still works post-destroy** — returns the same id the object had before destroy, even though the class stack is empty.
+- **`.obj.pk` still works post-destroy** — returns the same id the object had before destroy, even though the class stack is empty.
 - **`.obj.destroyed?` returns `true` post-destroy**.
 - **Other method calls raise post-destroy** — class-defined methods, other `.obj.X` methods, freeze operations, and downloaded methods all raise "destroyed object" on the destroyed receiver.
 - **Bucket reads raise post-destroy** — `$foo.@field` on a destroyed object raises.

@@ -219,7 +219,7 @@ Each subclass's page is (or will be) the authoritative spec for its specifics. T
 - **Loop and if branches are Modules** — inside `while $t; %module.type; end`, `%module.type` returns `"closure"` (branch/loop bodies are closures).
 - **Class body is a Module during the definition pass** — inside `class ... end`, `%module.type` returns `"class_body"`.
 - **Class object is NOT a Module** — after `class # widget ... end` finishes, the resulting widget class value does not satisfy `.obj.isa?(%('caspian.uno/module'))`; it's a class value, not a Module.
-- **Fresh Module per function invocation** — `function &outer() function &inner() end; return %module.methods['inner'] end; &outer().obj.id != &outer().obj.id`: two calls to outer produce two distinct inner function objects.
+- **Fresh Module per function invocation** — `function &outer() function &inner() end; return %module.methods['inner'] end; &outer().obj.pk != &outer().obj.pk`: two calls to outer produce two distinct inner function objects.
 - **No `.parent` accessor in V1** — Modules do not expose an enclosing-Module reference; nested code that needs to reach an outer Module's method receives the reference explicitly (or captures via `closure`).
 
 ## Related
