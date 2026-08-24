@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_foo_dot_obj",
-	"role": "End-to-end walk of `$foo = 'bar'` + obj.new against the resulting scalar. Runs the assignment through the production engine (transpiler + normalizer + VariableScalar handler), halts on %process.stop, finds $foo's pk from the scope chain, then calls obj.new(engine, foo_pk) and verifies the agent got wired to the halted process's actual scalar row. Temp triggers on objects + refs inserts mirror every write obj.new does into debug_log, so the process log at the end reads as a step-by-step trace of the agent construction.",
+	"role": "End-to-end walk of `$foo = 'bar'` then $foo.obj + $foo.obj.pk. Runs the assignment through the production engine (transpiler + normalizer + VariableScalar handler), halts on %process.stop, finds $foo's pk from the scope chain, then calls obj.new(engine, foo_pk) to materialize the agent, then calls obj.methods.pk(agent) to exercise the first catalog method and verifies it returns $foo's pk. Temp triggers on objects + refs inserts mirror every write obj.new does into debug_log; the process log at the end reads as a step-by-step trace of both the agent construction and the .pk call.",
 	"invoke": "lua5.4 sprints/object/src/test_foo_dot_obj.lua",
 	"status": "sprint tests"
 }
@@ -67,7 +67,7 @@ end
 -- Test
 -- ------------------------------------------------------------
 
-print("== $foo = 'bar'  →  obj.new against $foo ==")
+print("== $foo = 'bar'  →  $foo.obj  →  $foo.obj.pk ==")
 
 local e = engine_mod.new()
 
@@ -164,6 +164,23 @@ local target_pk = scalar(e.cvm,
 
 assert_eq(target_pk, foo_pk, "bucket → target points at $foo")
 
+-- ---- Step 7: call obj.methods.pk(agent) — the first catalog method ----
+-- Simulates what the dispatcher will do when it sees `$foo.obj.pk`:
+-- fast-path returns the agent, then the walker resolves `.pk` against
+-- the agent's engine-class layer, which lands in obj.methods.pk.
+
+e.cvm:exec("insert into debug_log (note) values ('---- calling .obj.pk ----');")
+
+local returned_pk = obj.methods.pk(agent)
+
+e.cvm:exec(
+	"insert into debug_log (note) values ("
+	.. "'.obj.pk returned: ' || substr('" .. tostring(returned_pk) .. "', 1, 8)"
+	.. ");"
+)
+
+assert_eq(returned_pk, foo_pk, "$foo.obj.pk returned $foo's pk")
+
 
 -- ------------------------------------------------------------
 -- Dump the process log for review
@@ -174,7 +191,9 @@ print("== process log ==")
 
 for r in e.cvm:nrows(
 	"select entry_pk, note from debug_log "
-	.. "where note like 'obj-new%' or note like '---- calling%' "
+	.. "where note like 'obj-new%' "
+	.. "or note like '.obj.pk%' "
+	.. "or note like '---- calling%' "
 	.. "order by entry_pk"
 ) do
 	print(string.format("  #%d  %s", r.entry_pk, r.note))

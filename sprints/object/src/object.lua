@@ -4,8 +4,7 @@
 	"role": "Lua-side implementation of Caspian's built-in Object class — the root of the Caspian class hierarchy. Wraps a Caspian object row as a lightweight Lua handle carrying the row's pk, the engine reference, and a raw-db shortcut. Method surfaces (regular methods, `.obj` cross-cutting namespace) live as placeholder tables that grow as the sprint spec's each method.",
 	"exports": {
 		"new":      "(engine, pk) -> object — constructor; stores pk + engine on a fresh instance and caches engine.cvm as `db` for hot-path use",
-		"methods":  "table of overridable per-instance methods (empty in this sketch) — populated over the sprint's method-implementation passes",
-		"obj":      "the non-overridable `.obj` cross-cutting namespace catalog (empty in this sketch); dispatched via the engine's `.obj` fast-path, not via the class chain"
+		"methods":  "table of Object's Caspian-level methods (empty in this sketch) — populated over the sprint's method-implementation passes. Same shape sibling classes use: `<class_module>.methods[<method_name>](receiver)` is how the dispatcher will call in."
 	},
 	"depends_on": [],
 	"status": "sketch — constructor + fields land; method bodies still to come"
@@ -51,9 +50,8 @@ and calls into this module to populate its method surface. TBD
 exactly what the registration hook looks like — sprint decides once
 the .new / platters machinery is real.
 
-**Sketch state.** Constructor + fields land here. `methods` and `obj`
-tables are empty placeholders. Real bodies land as the sprint
-progresses.
+**Sketch state.** Constructor + fields land here. `methods` is an
+empty placeholder. Real bodies land as the sprint progresses.
 ]]
 
 local object = {}
@@ -80,26 +78,17 @@ function object.new(engine, pk)
 end
 
 --[[
-## Instance methods
+## Method catalog
 
-The regular per-instance method surface. Callers reach these as
-`$obj.<name>` — dispatch walks the platters, and when the walk
-reaches Object it consults this table.
+Caspian-level method bodies for the Object class. The dispatcher
+resolves `$obj.<name>` by walking the receiver's dispatch chain; when
+the walk lands on Object, it looks up `object.methods[<name>]` and
+invokes it with the receiver as the first argument.
 
 Overridable — a class above Object in the platters can shadow any of
 these names.
 ]]
 object.methods = {}
-
---[[
-## `obj` namespace
-
-The cross-cutting namespace every instance carries — `$obj.obj.<name>`.
-Per the spec at [built-in-classes/object/methods](https://puck.uno/requirements/built-in-classes/object/methods/),
-these are non-overridable — no class in the platters can shadow
-them. Dispatched via a separate path from regular method resolution.
-]]
-object.obj = {}
 
 
 return object

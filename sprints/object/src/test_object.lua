@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_object",
-	"role": "Tests for the sprint's Lua-side Object class implementation. Exercises the constructor's field shape (pk, engine, db) and the placeholder method surfaces (methods, obj) being present as empty tables.",
+	"role": "Tests for the sprint's Lua-side Object class implementation. Exercises the constructor's field shape (pk, engine, db) and the placeholder method catalog (methods) being present as an empty table.",
 	"invoke": "lua5.4 sprints/object/src/test_object.lua",
 	"status": "sprint tests"
 }
@@ -84,9 +84,8 @@ do  -- The db field really IS a live sqlite handle
 	end
 end
 
-do  -- Method-surface placeholders present as tables
+do  -- Method-catalog placeholder present as a table
 	assert_eq(type(object.methods), 'table', 'object.methods is a table')
-	assert_eq(type(object.obj),     'table', 'object.obj is a table')
 end
 
 do  -- Constructor does no side effects

@@ -1,12 +1,14 @@
 --[[
 {
 	"module": "obj",
-	"role": "Lua-side implementation of the `.obj` agent — the sub-object every Caspian value returns when `.obj` is called on it. Inherits from `object`; provides the constructor that materializes the agent's row in the CVM (engine_class='obj') along with its bucket and a `target` ref back at the parent object. Method bodies for the `.obj.*` namespace catalog (truthy?, classes, id, jail, etc.) will attach to this module over subsequent passes.",
+	"role": "Lua-side implementation of the `.obj` agent — the sub-object every Caspian value returns when `.obj` is called on it. Inherits from `object`; provides the constructor that materializes the agent's row in the CVM (engine_class='obj') along with its bucket and a `target` ref back at the parent object. `obj.methods` holds Caspian-level catalog methods; the dispatcher calls `obj.methods[<name>](agent)` when the walk lands on the engine-class layer.",
 	"exports": {
-		"new": "(engine, target_pk) -> obj wrapper — inserts the agent row + bucket + target ref in one savepoint, returns a Lua handle carrying the agent's pk"
+		"new":         "(engine, target_pk) -> obj wrapper — inserts the agent row + bucket + target ref in one savepoint, returns a Lua handle carrying the agent's pk",
+		"methods":     "table of Caspian-level catalog methods on the agent",
+		"methods.pk":  "(self) -> string — returns the target object's pk (the UUID of the object being agented for). Reads the `target` ref out of the agent's bucket. Was previously called `.id` in the spec; renamed."
 	},
 	"depends_on": ["object"],
-	"status": "sketch — constructor + row materialization land; catalog methods still to come"
+	"status": "sketch — constructor + row materialization land; first catalog method (.pk) attached"
 }
 ]]
 
@@ -133,6 +135,51 @@ function obj.new(engine, target_pk)
 		engine = engine,
 		db     = db,
 	}, obj)
+end
+
+
+--[[
+## Caspian-level catalog
+
+Method bodies the dispatcher calls into when a method lookup on an
+agent lands on the engine-class layer. Convention: each entry is a
+Lua function whose first argument is the agent wrapper.
+
+The dispatcher will call these as `obj.methods[name](agent)`. Inside a
+method body, `self.pk` is the agent's own pk; `self.db` is the raw
+sqlite handle.
+]]
+obj.methods = {}
+
+--[[
+### `.pk` — the target's pk
+
+Returns the object_pk of the target — the object this agent is
+agenting for — as a string. Reads the `target` ref out of the
+agent's bucket.
+
+Was called `.id` in the earlier spec draft at
+[built-in-classes/object/methods](https://puck.uno/requirements/built-in-classes/object/methods/);
+renamed to `.pk` to name what it actually is (a database primary key,
+a UUID) rather than the abstract "identity" framing.
+
+Method body walks: agent → bucket (via key='b') → target (via
+key='target'). Returns whatever the child of the target ref is.
+]]
+function obj.methods.pk(self)
+	local target_pk
+
+	for row in self.db:nrows(
+		"select r2.child as pk from refs r1 "
+		.. "join refs r2 on r2.parent = r1.child "
+		.. "where r1.parent = '" .. self.pk .. "' "
+		.. "and r1.key = 'b' "
+		.. "and r2.key = 'target'"
+	) do
+		target_pk = row.pk
+	end
+
+	return target_pk
 end
 
 
