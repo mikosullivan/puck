@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_obj",
-	"role": "Tests for obj.new — the agent constructor. Loads the sprint schema into an in-memory SQLite, seeds a target object, then walks through the row shape obj.new must produce: agent row with engine_class='obj' and inherited owner_role, bucket with the b-ref linking it, target ref keyed 'target' inside the bucket. Also covers fresh-per-access (two obj.new calls produce distinct agents) and missing-target error.",
+	"role": "Tests for obj.new — the agent constructor. Loads production schema into an in-memory SQLite (production carries the b/p/s invariants since object-sprint Track 1 landed), seeds a target object, then walks through the row shape obj.new must produce: agent row with engine_class='obj' and inherited owner_role, bucket with the b-ref linking it, target ref keyed 'target' inside the bucket. Also covers fresh-per-access and missing-target error.",
 	"invoke": "lua5.4 sprints/object/src/test_obj.lua",
 	"status": "sprint tests"
 }
@@ -20,7 +20,7 @@ local sqlite             = require('lsqlite3')
 local current_process_pk = require('cvm.sqlite.udfs.current_process_pk')
 local obj                = require('obj')
 
-local SCHEMA_PATH    = 'sprints/object/src/schema.sql'
+local SCHEMA_PATH    = 'production/src/engine/cvm/sqlite/schema.sql'
 local PREFLIGHT_PATH = 'production/src/engine/cvm/sqlite/preflight.sql'
 
 

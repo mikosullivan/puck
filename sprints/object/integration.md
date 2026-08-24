@@ -1,7 +1,7 @@
 ~~~vibecode
 {"doc": "sprint-integration-plan", "sprint": "object",
 	"role": "Ordered plan for landing the object sprint into production. Two tracks: Track 1 is landable now — the b/p/s object-property shape (schema triggers + views + engine-code sweep from keyless bucket refs to key='b'/'p'/'s') and the dispatch design doc. Track 2 is deferred — the Lua-side object and obj class implementations, plus the `.obj` fast-path in the dispatcher, all of which need the (still-unwritten) method-call primitive to land first. Includes an outstanding-issues section for design gaps and cross-sprint dependencies.",
-	"status": "planned — Track 1 concrete; Track 2 waits on the method-call sprint"}
+	"status": "track 1 landed — commits 1-6 all in production as of the object-sprint assimilation. Track 2 waits on the method-call sprint."}
 ~~~
 
 # object-sprint integration plan
@@ -40,6 +40,8 @@ Two tracks, one landable now, one waiting on upstream:
 Track 1 can go first. Track 2 stages behind the method-call sprint.
 
 ## Track 1: schema + engine + docs
+
+**Landed** — commits 1-6 below all applied. Section retained for reference.
 
 ### Commit 1: schema b/p/s enforcement
 

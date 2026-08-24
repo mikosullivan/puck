@@ -1,7 +1,7 @@
 ~~~vibecode
 {"doc": "sprint-index", "sprint": "object",
 	"role": "Implement Caspian's Object class and enough of the primitive classes (Number, String, Boolean, Null) to be useful — as first-class classes with their own class platters and a `.new` method. The specs already exist under [requirements/built-in-classes](https://puck.uno/requirements/built-in-classes/); this sprint is where the engine grows real class-based dispatch instead of the walking-skeleton shortcut (direct `add_scalar`) that has stood in until now. Opens the door for `Number.new(1)`, `'foo'.upcase`, `$x.class`, and `%('puck.uno/object').new()` to actually dispatch through methods on the receiver's class chain.",
-	"status": "seed — problem captured, spec exists, not yet implemented. The expressions sprint deferred class-based scalar materialization to this sprint; the direct add_scalar shortcut in production covers the immediate need."}
+	"status": "track 1 landed — b/p/s object-property shape (schema triggers, view rewrites, engine-code sweep, .id→.pk spec rename, dispatch design doc promoted to production/requirements/objects/) all in production as of the object-sprint assimilation. Track 2 (Lua-side object + obj class implementations + real method-call dispatcher replacing the sprint's MethodCall stub) still resident in sprint pending the method-call sprint moving off seed-only."}
 ~~~
 
 # object
