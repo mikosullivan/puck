@@ -170,13 +170,14 @@ create table objects (
 	owner_role text references objects(object_pk),
 
 	-- Mask marker: names a Lua-side engine class whose behavior the row
-	-- surfaces as. Nullable — most rows carry null. Only `'o'` rows may
-	-- set it (a mask sits on an object; frames, roles, hashes, arrays
-	-- can't be masks). The meaning of a specific value (which Lua class
-	-- name, how it's looked up, how it surfaces as a Caspian class) is
-	-- deferred to a later sprint. [ghi]
+	-- surfaces as. Nullable — most rows carry null. Only `base='o'` rows
+	-- may set it (hashes and arrays can't be masks); frames CAN carry it
+	-- (`engine_class='stop'` identifies a %process.stop halt anchor).
+	-- The meaning of a specific value (which Lua class name, how it's
+	-- looked up, how it surfaces as a Caspian class) is deferred to a
+	-- later sprint. [ghi]
 	engine_class text
-		check (engine_class is null or (base = 'o' and control is null)),
+		check (engine_class is null or base = 'o'),
 
 	-- Human-readable label. Informational; no query path reads it. [ghi]
 	debug text,

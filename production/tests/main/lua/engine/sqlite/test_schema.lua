@@ -2081,17 +2081,6 @@ test('setting engine_class on an array row is rejected', function()
 	db:close()
 end)
 
-test('setting engine_class on a role row is rejected', function()
-	local db = fresh_db()
-	local engine_pk = first(db, "select object_pk from objects where role_core = 'e'").object_pk
-
-	assert_fails_with(
-		db:exec("insert into objects (base, control, engine_class, role_parent, owner_role) values ('o', 'r', 'puck.uno/color', '" .. engine_pk .. "', '" .. engine_pk .. "')"),
-		db, 'CHECK constraint',
-		"engine_class on 'r' row rejected")
-	db:close()
-end)
-
 test('engine_class is immutable — UPDATE from one value to another is rejected', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
