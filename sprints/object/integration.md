@@ -137,17 +137,49 @@ Track 2 commits (7-10) have staged dependencies — revert as a group.
 
 ### Design gaps
 
-**`.id` → `.pk` rename not swept across the spec.** The requirements at [built-in-classes/object/methods](https://puck.uno/production/requirements/built-in-classes/object/methods/) still uses `.id`. Miko renamed to `.pk` mid-sprint. Spec needs a sweep — every `.obj.id` mention becomes `.obj.pk`. Roughly a dozen mentions in that one file plus scattered references elsewhere.
+#### `.id` renamed to `.pk`, not swept across the spec
 
-**Agent design is in `ideas/`, not `requirements/`.** [ideas/helpers/agents](https://puck.uno/ideas/helpers/agents) is `status: active_design`. Under Miko's spec-before-implementation rule, the agent design should promote to `requirements/` before Track 2 lands. Same for [ideas/helpers/basic](https://puck.uno/ideas/helpers/basic).
+The requirements at [built-in-classes/object/methods](https://puck.uno/production/requirements/built-in-classes/object/methods/) still uses `.id` throughout. Miko renamed to `.pk` mid-sprint to name what the value actually is (a database primary key, a UUID) rather than the abstract "identity" framing. Spec needs a sweep — every `.obj.id` mention becomes `.obj.pk`. Roughly a dozen mentions in that one file plus scattered references elsewhere.
 
-**The `obj` catalog is sparse.** Sprint spec'd `.pk` only. The full spec at [built-in-classes/object/methods](https://puck.uno/production/requirements/built-in-classes/object/methods/) lists `.truthy?`, `.classes`, `.jail`, `.tap`, `.methods`, `.warn`, `.stack`, `.freeze_bucket` / `.freeze_stack` / `.freeze` / their frozen-predicates, `.destroy`, `.destroyed?`, `.isa?`, `.null?`, `.defined?`. Each of these is a separate implementation pass. Follow-on sprints, one method or a small cluster at a time.
+#### Agent design lives in `ideas/`, not `requirements/`
 
-**No user-defined-class machinery.** Sprint stopped at built-in Object + agent. The `class # widget ... end` syntax, the class body DSL, the class stack materialization from source, `.new` on an arbitrary class — all deferred. Follow-on sprint.
+[ideas/helpers/agents](https://puck.uno/ideas/helpers/agents) is `status: active_design`. Under the spec-before-implementation rule, the agent design should promote to `requirements/` before Track 2 lands. Same for its companion [ideas/helpers/basic](https://puck.uno/ideas/helpers/basic), which describes plain helpers (the non-`@internals` variant).
 
-**Method-call dispatch primitive.** Spec'd in [expressions/primitives/method-call](https://puck.uno/production/requirements/expressions/primitives/method-call); implementation belongs to the [method-call sprint](https://puck.uno/sprints/method-call/), currently seed-only.
+Once promoted, an outbound-references sweep of `requirements/` picks up any doc that currently links back into `ideas/` for the agent shape — a real audit hit today.
 
-**Primitive class objects don't exist yet.** No Number / String / Boolean / Null class rows are seeded. The dispatch chain says "primitive class if present" but the "class" side of the primitive class relationship is undefined. The next sprint (strings) presumably tackles this for `String` first.
+#### The `obj` catalog is sparse
+
+Sprint spec'd `.pk` only. The full spec at [built-in-classes/object/methods](https://puck.uno/production/requirements/built-in-classes/object/methods/) lists many more:
+
+- Identity + type queries: `.isa?($class)`, `.null?`, `.defined?`
+- Truthy check: `.truthy?`
+- Class-chain surface: `.classes` (with `.ensure`, `.add_unconditionally`, `.shadow` sub-methods), `.stack`
+- Method introspection: `.methods`
+- Warning: `.warn($message)`
+- Wrapping: `.jail(...)`
+- Chain preservation: `.tap`
+- Freeze surface: `.freeze_bucket` / `.freeze_stack` / `.freeze` + their `_frozen?` predicates
+- Lifetime: `.destroy`, `.destroyed?`
+
+Each is a separate implementation pass. Follow-on sprints, one method or a small cluster at a time — the freeze surface is probably a cluster, the class-chain surface another, the query predicates a third.
+
+#### No user-defined-class machinery
+
+Sprint stopped at built-in Object + the `obj` agent. The `class # widget ... end` syntax, the class-body DSL commands (`field`, `method`, `inherits`, `private`, `abstract`, `public_const`, `private_const`), the class-stack materialization from Caspian source, `.new` dispatch on an arbitrary user-defined class — all deferred.
+
+Sequencing: user-defined classes want to be after primitive classes are real (so `Number.new(1)` works before user code can subclass Number), which itself waits on the strings sprint to demonstrate the primitive-class shape.
+
+#### Method-call dispatch primitive is unimplemented
+
+Spec'd in [expressions/primitives/method-call](https://puck.uno/production/requirements/expressions/primitives/method-call); implementation belongs to the [method-call sprint](https://puck.uno/sprints/method-call/), currently seed-only. Nothing in production dispatches method calls today — every current test either uses the direct-handler path (`$x = 1`) or bypasses dispatch entirely (`test_foo_dot_obj.lua` calls `obj.methods.pk` from Lua).
+
+Once the primitive lands, the whole `$foo.obj.pk` expression parses and runs end-to-end without the manual materialization the sprint's test does.
+
+#### No primitive class objects seeded
+
+No Number / String / Boolean / Null class rows are seeded at bootstrap. The dispatch chain says "primitive class if present" but the "class" side of the primitive-class relationship is undefined — there's no actual class row for the dispatcher to reach when it hits the primitive-class layer. Method dispatch on a scalar today can't resolve anything past the empty platters + empty engine_class (scalars don't carry engine_class).
+
+The next sprint tackles this for `String` first, which will settle the pattern for the other primitives.
 
 ### Cross-sprint dependencies
 
