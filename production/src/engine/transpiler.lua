@@ -2480,7 +2480,11 @@ local function transpile_statement(stmt)
 	-- private, inherits, abstract) and any user-defined DSL BWC. Placed near
 	-- the end so specific patterns (return, sigiled assigns, method calls,
 	-- etc.) get first crack.
-	local bwc_paren_name, bwc_paren = stmt:match("^([%w_]+)%s*(%b())$")
+	-- Bareword name pattern requires letter/underscore start — a leading
+	-- digit means this isn't a bareword-command call. Numeric expressions
+	-- like `1(2)` fall through to the expression fallback at the end
+	-- of transpile_statement.
+	local bwc_paren_name, bwc_paren = stmt:match("^([%a_][%w_]*)%s*(%b())$")
 
 	if bwc_paren_name then
 		local inner = trim(bwc_paren:sub(2, -2))
@@ -2511,7 +2515,10 @@ local function transpile_statement(stmt)
 		return {attach_line({bwc = bwc_set_name .. "="}), rhs_atom}
 	end
 
-	local bwc_stmt_name, bwc_stmt_tail = stmt:match("^([%w_]+)%s+(.+)$")
+	-- Bareword name pattern requires letter/underscore start — same reason
+	-- as bwc_paren_name above. `1 + 2` would otherwise match with
+	-- name="1", tail="+ 2" and fail trying to parse "+ 2" as call args.
+	local bwc_stmt_name, bwc_stmt_tail = stmt:match("^([%a_][%w_]*)%s+(.+)$")
 
 	if bwc_stmt_name and bwc_stmt_tail and not bwc_stmt_tail:match("^=[^=]") then
 		local stmt_ast = {{bwc = bwc_stmt_name}}
@@ -2528,11 +2535,15 @@ local function transpile_statement(stmt)
 		return stmt_ast
 	end
 
-	local bwc_bare = stmt:match("^([%w_]+)$")
-
-	if bwc_bare then
-		return {{bwc = bwc_bare}}
-	end
+	-- Bare-identifier statements now fall through to the expression
+	-- fallback at the end. A previous `bwc_bare = stmt:match("^([%w_]+)$")`
+	-- pattern here matched a bare identifier or number and produced
+	-- `{bwc: name}` — but that pattern also matched pure-digit tokens
+	-- (`1`, `42`) and boolean-word tokens (`true`, `false`), classifying
+	-- them as bareword commands instead of value literals. Removing the
+	-- pattern lets parse_expression handle them uniformly via
+	-- parse_literal (value literals → `{value: X}`) or its own bare-ident
+	-- path (real bareword commands like `puts` → `{bwc: name}`).
 
 	-- Receiver-tail fallback: handles receivers that the earlier sigil+identifier
 	-- patterns don't match — chiefly the `%[url]` puck atom, subscript-then-
@@ -2792,6 +2803,29 @@ local function transpile_statement(stmt)
 				return current
 			end
 		end
+	end
+
+	-- Expression fallback. If no statement-shape pattern matched, try
+	-- parsing the whole thing as an expression. If it parses, wrap the
+	-- resulting atom as a one-atom statement row. Under the "every
+	-- command produces an rv" model, any parseable expression is a
+	-- legal command (its rv is the expression's value).
+	--
+	-- Covers `'foo'` (bare string literal), `1` / `true` / `false` (value
+	-- literals — previously misclassified as `{bwc: X}` by the removed
+	-- bwc_bare pattern), and anything else parse_expression can parse
+	-- that no earlier statement-shape pattern claimed.
+	local ok, atom = pcall(parse_expression, stmt)
+
+	if ok and atom ~= nil then
+		-- parse_expression may return a table shaped either as a value
+		-- atom (hash) or as a row (positional array). Wrap atoms in a
+		-- row; leave rows as-is.
+		if type(atom) == "table" and atom[1] ~= nil then
+			return atom
+		end
+
+		return {atom}
 	end
 
 	error("transpile: cannot parse: " .. stmt)
