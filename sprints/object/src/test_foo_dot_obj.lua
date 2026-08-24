@@ -109,11 +109,12 @@ e.cvm:exec([[
 	after insert on objects
 	begin
 		insert into debug_log (note) values (
-			'obj-new insert objects: pk='
+			'objects: pk='
 			|| substr(new.object_pk, 1, 8)
 			|| ' base=' || new.base
 			|| ' control=' || coalesce(new.control, 'null')
 			|| ' engine_class=' || coalesce(new.engine_class, 'null')
+			|| ' scalar_string=' || coalesce(quote(new.scalar_string), 'null')
 		);
 	end;
 
@@ -121,7 +122,7 @@ e.cvm:exec([[
 	after insert on refs
 	begin
 		insert into debug_log (note) values (
-			'obj-new insert refs: parent='
+			'refs: parent='
 			|| substr(new.parent, 1, 8)
 			|| ' child=' || substr(new.child, 1, 8)
 			|| ' key=' || coalesce(new.key, 'null')
@@ -182,6 +183,91 @@ e.cvm:exec(
 
 assert_eq(returned_pk, foo_pk, "$foo.obj.pk returned $foo's pk")
 
+-- ---- Step 8: propagate .obj.pk's return value to the cap's rv slot ----
+-- Under the full expressions-sprint pipeline the .obj.pk return would
+-- materialize as a scalar row and propagate up the frame chain via
+-- frames_child_delete_propagates_rv. The pipeline isn't wired here,
+-- so we do the materialization + rv wiring by hand. The point is to
+-- exercise the shape:
+--
+--   1. The UUID string is materialized as a NEW scalar row (base='o',
+--      scalar_string=<UUID text>). Distinct pk from $foo — the UUID
+--      is stored as a VALUE, not as a reference to the target row
+--      (which, under a full run, would already be reaped by this
+--      point).
+--   2. The cap gets a bucket (created on demand) with an rv ref
+--      pointing at the new scalar.
+
+e.cvm:exec("insert into debug_log (note) values ('---- materializing rv on cap ----');")
+
+local user_pk = scalar(e.cvm, "select object_pk from objects where role_core = 'u'")
+
+-- Materialize the UUID string as a fresh scalar row.
+local rv_scalar_pk
+
+for r in e.cvm:nrows(
+	"insert into objects (base, scalar_string, owner_role) "
+	.. "values ('o', '" .. returned_pk .. "', '" .. user_pk .. "') "
+	.. "returning object_pk"
+) do
+	rv_scalar_pk = r.object_pk
+end
+
+-- Ensure the cap has a bucket; create one if not.
+local cap_pk = result.cap_pk
+local cap_bucket_pk = scalar(e.cvm,
+	"select child from refs where parent = '" .. cap_pk .. "' and key = 'b'")
+
+if not cap_bucket_pk then
+	for r in e.cvm:nrows(
+		"insert into objects (base, owner_role) "
+		.. "values ('h', '" .. user_pk .. "') "
+		.. "returning object_pk"
+	) do
+		cap_bucket_pk = r.object_pk
+	end
+
+	e.cvm:exec(
+		"insert into refs (parent, child, key, idx) "
+		.. "values ('" .. cap_pk .. "', '" .. cap_bucket_pk .. "', 'b', 0)"
+	)
+end
+
+-- Wire the rv ref inside the cap's bucket.
+e.cvm:exec(
+	"insert into refs (parent, child, key, idx) "
+	.. "values ('" .. cap_bucket_pk .. "', '" .. rv_scalar_pk .. "', 'rv', 0)"
+)
+
+-- ---- Step 9: verify the cap's rv slot ---------------------------------
+
+-- Walk cap → bucket → rv → scalar.
+local cap_rv_pk = scalar(e.cvm,
+	"select r2.child from refs r1 "
+	.. "join refs r2 on r2.parent = r1.child "
+	.. "where r1.parent = '" .. cap_pk .. "' "
+	.. "and r1.key = 'b' "
+	.. "and r2.key = 'rv'")
+
+assert_eq(cap_rv_pk, rv_scalar_pk, "cap's rv ref points at the materialized scalar")
+
+local rv_row = first(e.cvm,
+	"select base, scalar_string from objects "
+	.. "where object_pk = '" .. cap_rv_pk .. "'")
+
+assert_eq(rv_row and rv_row.base,          'o',         "rv object base='o'")
+assert_eq(rv_row and rv_row.scalar_string, returned_pk, "rv scalar_string holds the UUID as text")
+
+-- The rv scalar is a fresh row — its own object_pk is DIFFERENT from
+-- $foo's object_pk. What the rv carries is the UUID as string content,
+-- not a database reference to $foo.
+if cap_rv_pk ~= foo_pk then
+	pass("rv is a fresh scalar row, not a reference to $foo (values carry UUIDs; refs don't)")
+else
+	fail("rv is a fresh scalar row, not a reference to $foo",
+		'cap_rv_pk equals foo_pk (means we stored a ref instead of a value)')
+end
+
 
 -- ------------------------------------------------------------
 -- Dump the process log for review
@@ -192,9 +278,10 @@ print("== process log ==")
 
 for r in e.cvm:nrows(
 	"select entry_pk, note from debug_log "
-	.. "where note like 'obj-new%' "
+	.. "where note like 'objects:%' "
+	.. "or note like 'refs:%' "
 	.. "or note like '.obj.pk%' "
-	.. "or note like '---- calling%' "
+	.. "or note like '---- %' "
 	.. "order by entry_pk"
 ) do
 	print(string.format("  #%d  %s", r.entry_pk, r.note))
