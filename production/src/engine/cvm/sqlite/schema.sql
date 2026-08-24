@@ -904,26 +904,30 @@ when old.control = 'f'
 	and old.frame_parent is not null
 begin
 	-- Statement 1a: materialize parent's bucket on demand.
+	-- Under the b/p/s shape, "does the parent have a bucket" is
+	-- "does a ref with key='b' exist from the parent." Same shape
+	-- for looking up child's bucket via key='b'.
 	insert into objects (base, owner_role)
 	select 'h', (select owner_role from objects where object_pk = old.frame_parent)
 	where exists (
 		select 1 from refs r1
-		join objects hc on hc.object_pk = r1.child and hc.base = 'h'
 		join refs r2 on r2.parent = r1.child and r2.key = 'rv'
 		where r1.parent = old.object_pk
+		  and r1.key = 'b'
 	)
 	  and not exists (
 		select 1 from refs r
-		join objects h on h.object_pk = r.child and h.base = 'h'
 		where r.parent = old.frame_parent
+		  and r.key = 'b'
 	);
 
 	-- Statement 1b: link the new bucket to parent (only if 1a inserted).
+	-- Bucket ref is keyed 'b' under the object-property shape.
 	insert into refs (parent, child, key, idx)
 	select
 		old.frame_parent,
 		(select object_pk from objects where rowid = last_insert_rowid()),
-		null,
+		'b',
 		coalesce(
 			(select max(idx) from refs where parent = old.frame_parent),
 			-1
@@ -931,6 +935,8 @@ begin
 	where changes() > 0;
 
 	-- Statement 2: UPSERT — update in place, or insert if parent had no rv.
+	-- Bucket lookups now filter by key='b' rather than by target's base;
+	-- the type-check trigger guarantees key='b' targets are hashes.
 	insert into refs (parent, child, key, idx)
 	select
 		pb,
@@ -941,14 +947,12 @@ begin
 		select
 			(
 				select r.child from refs r
-				join objects h on h.object_pk = r.child and h.base = 'h'
-				where r.parent = old.frame_parent
+				where r.parent = old.frame_parent and r.key = 'b'
 			) as pb,
 			(
 				select r2.child from refs r1
-				join objects hc on hc.object_pk = r1.child and hc.base = 'h'
 				join refs r2 on r2.parent = r1.child and r2.key = 'rv'
-				where r1.parent = old.object_pk
+				where r1.parent = old.object_pk and r1.key = 'b'
 			) as crv
 	)
 	where pb is not null and crv is not null
@@ -959,14 +963,12 @@ begin
 	where key = 'rv'
 	  and parent in (
 		select r.child from refs r
-		join objects h on h.object_pk = r.child and h.base = 'h'
-		where r.parent = old.frame_parent
+		where r.parent = old.frame_parent and r.key = 'b'
 	)
 	  and not exists (
 		select 1 from refs r1
-		join objects hc on hc.object_pk = r1.child and hc.base = 'h'
 		join refs r2 on r2.parent = r1.child and r2.key = 'rv'
-		where r1.parent = old.object_pk
+		where r1.parent = old.object_pk and r1.key = 'b'
 	);
 end;
 
@@ -1450,11 +1452,9 @@ select
 from objects f
 	join refs bucket_ref
 		on bucket_ref.parent = f.object_pk
-	join objects bucket
-		on bucket.object_pk = bucket_ref.child
-		and bucket.base = 'h'
+		and bucket_ref.key = 'b'
 	join refs scopes_ref
-		on scopes_ref.parent = bucket.object_pk
+		on scopes_ref.parent = bucket_ref.child
 		and scopes_ref.key = 'scopes'
 	join refs scope_ref
 		on scope_ref.parent = scopes_ref.child
@@ -1467,13 +1467,14 @@ where f.control = 'f';
 -- object_bucket — every non-container object with its bucket_pk
 -- (or null if it hasn't been given one). "Non-container" = base = 'o'
 -- (covers plain objects, frames, and roles alike — control layers on
--- top of 'o'). Those are the ones the one-hash-one-array trigger caps,
--- so the correlated subquery returns at most one row and lands safely
--- as a scalar value.
+-- top of 'o'). The bucket is the ref keyed 'b' from the object; the
+-- type-check trigger `refs_key_b_target_must_be_hash` guarantees the
+-- target is a hash. Unique(parent, key) guarantees at most one, so
+-- the correlated subquery returns at most one row.
 --
 -- **No caller yet.** Kept in the schema as a convenience for whoever
 -- eventually needs "give me this object's bucket" without hand-writing
--- the refs + objects + base-filter join. Usage:
+-- the refs lookup. Usage:
 -- `SELECT bucket_pk FROM object_bucket WHERE object_pk = ?`. [ghi]
 -- ------------------------------------------------------------
 create view object_bucket as
@@ -1482,27 +1483,43 @@ select
 	(
 		select r.child
 		from refs r
-			join objects h on h.object_pk = r.child and h.base = 'h'
-		where r.parent = o.object_pk
+		where r.parent = o.object_pk and r.key = 'b'
 	) as bucket_pk
 from objects o
 where o.base = 'o';
 
 
 -- ------------------------------------------------------------
--- object_stack — every non-container object with its stack_pk
--- (or null if it hasn't been given one). Same shape as object_bucket
--- but filtered to array-children. Same "no caller yet, kept as a
--- convenience" note applies. [ghi]
+-- object_platters — every non-container object with its platters_pk
+-- (or null if it hasn't been given one). Filter is `refs.key = 'p'`;
+-- the type-check trigger guarantees any such target is an array. [ghi]
 -- ------------------------------------------------------------
-create view object_stack as
+create view object_platters as
 select
 	o.object_pk as object_pk,
 	(
 		select r.child
 		from refs r
-			join objects a on a.object_pk = r.child and a.base = 'a'
-		where r.parent = o.object_pk
-	) as stack_pk
+		where r.parent = o.object_pk and r.key = 'p'
+	) as platters_pk
+from objects o
+where o.base = 'o';
+
+
+-- ------------------------------------------------------------
+-- object_shadow — every non-container object with its shadow_pk
+-- (or null if it hasn't been given one). Filter is `refs.key = 's'`;
+-- the type-check trigger guarantees any such target is a hash.
+-- Symmetric with object_bucket (both target hashes) — the axis
+-- that distinguishes them is the key, not the target's shape. [ghi]
+-- ------------------------------------------------------------
+create view object_shadow as
+select
+	o.object_pk as object_pk,
+	(
+		select r.child
+		from refs r
+		where r.parent = o.object_pk and r.key = 's'
+	) as shadow_pk
 from objects o
 where o.base = 'o';

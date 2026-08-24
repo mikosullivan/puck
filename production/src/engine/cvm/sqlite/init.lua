@@ -135,16 +135,17 @@ function cvm.new(db)
 	-- already has a hash-child (its bucket) or an array-child (its stack)
 	-- we return that rather than inserting a duplicate (which the
 	-- refs_owner_at_most_one_hash_and_one_array trigger would reject).
+	-- Under the b/p/s object-property shape, the bucket is the ref keyed
+	-- 'b' (target is guaranteed base='h' by refs_key_b_target_must_be_hash)
+	-- and the platters is the ref keyed 'p' (target guaranteed base='a').
+	-- Filter by key rather than target base — one indexed lookup, no join
+	-- through objects.
 	self.stmt_find_hash_child = db:prepare(
-		"select r.child from refs r " ..
-		"join objects c on c.object_pk = r.child " ..
-		"where r.parent = ? and c.base = 'h'"
+		"select child from refs where parent = ? and key = 'b'"
 	)
 
 	self.stmt_find_array_child = db:prepare(
-		"select r.child from refs r " ..
-		"join objects c on c.object_pk = r.child " ..
-		"where r.parent = ? and c.base = 'a'"
+		"select child from refs where parent = ? and key = 'p'"
 	)
 
 	-- add_scalar: four prepared statements, one per scalar type.
@@ -352,7 +353,8 @@ function cvm:add_bucket(for_object_pk)
 	local bucket_pk = insert:get_value(0)
 	insert:reset()
 
-	self:add_ref(for_object_pk, nil, bucket_pk)
+	-- Under the b/p/s shape, the owner-to-bucket ref is keyed 'b'.
+	self:add_ref(for_object_pk, 'b', bucket_pk)
 
 	return bucket_pk
 end
@@ -384,7 +386,8 @@ function cvm:add_stack(for_object_pk)
 	local stack_pk = insert:get_value(0)
 	insert:reset()
 
-	self:add_ref(for_object_pk, nil, stack_pk)
+	-- Under the b/p/s shape, the owner-to-platters ref is keyed 'p'.
+	self:add_ref(for_object_pk, 'p', stack_pk)
 
 	return stack_pk
 end
