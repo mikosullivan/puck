@@ -138,12 +138,6 @@ Track 2 commits (7-10) have staged dependencies — revert as a group.
 
 ### Design gaps
 
-#### No user-defined-class machinery
-
-Sprint stopped at built-in Object + the `obj` agent. The `class # widget ... end` syntax, the class-body DSL commands (`field`, `method`, `inherits`, `private`, `abstract`, `public_const`, `private_const`), the class-stack materialization from Caspian source, `.new` dispatch on an arbitrary user-defined class — all deferred.
-
-Sequencing: user-defined classes want to be after primitive classes are real (so `Number.new(1)` works before user code can subclass Number), which itself waits on the strings sprint to demonstrate the primitive-class shape.
-
 #### Method-call dispatch primitive is unimplemented
 
 Spec'd in [expressions/primitives/method-call](https://puck.uno/production/requirements/expressions/primitives/method-call); implementation belongs to the [method-call sprint](https://puck.uno/sprints/method-call/), currently seed-only. Nothing in production dispatches method calls today — every current test either uses the direct-handler path (`$x = 1`) or bypasses dispatch entirely (`test_foo_dot_obj.lua` calls `obj.methods.pk` from Lua).
