@@ -15,6 +15,7 @@ The sprint delivered, in decreasing readiness:
 - **Dispatch design** — [sprints/object/dispatch.md](./dispatch) documents the walk order (shadow → platters → primitive class → engine class → miss raises), the `.obj` name-check fast-path, and the platter-participation rule (a platter must carry a `class` element to be considered during method search).
 - **Concept: engine_class is implicit-at-bottom of the dispatch chain.** Same-shape argument as primitive-class-at-bottom. Zero enforcement work; the rule is how the dispatcher orders its lookups.
 - **Lua-side Object + obj classes** (sprint-only for now) — [object.lua](./src/object.lua) provides the wrapper skeleton (pk + engine + db), [obj.lua](./src/obj.lua) provides the agent constructor + `.pk` catalog method. Not integrated with production — depend on the dispatcher and method-call primitive that don't exist yet.
+- **MethodCall stub handler** (sprint-only) — [method_call.lua](./src/method_call.lua) recognizes fc-shape rows and dispatches via the `.obj` fast-path + the `engine_class='obj'` layer. Minimum needed to run `$foo = 'bar'; $foo.obj.pk` end-to-end for the sprint's proof. Gets superseded by the real method-call primitive when the [method-call sprint](https://puck.uno/sprints/method-call/) lands.
 
 Not everything lands in a single integration pass. The schema + docs are ready; the Lua modules stage behind the method-call sprint moving off seed-only.
 
@@ -94,9 +95,9 @@ Update the tests that check the keyless pattern to use the new keyed pattern. `p
   - `src/object.lua`, `src/obj.lua`, `src/test_object.lua`, `src/test_obj.lua`, `src/test_foo_dot_obj.lua` — Track 2 depends on these.
   - `index.md`, `integration.md` — sprint-internal.
 
-## Track 2: Lua-side class implementations
+## Track 2: Lua-side class implementations + real method-call
 
-**Prereq:** Track 1 landed; [method-call sprint](https://puck.uno/sprints/method-call/) has landed enough of the dispatcher + method-call primitive to actually call `.obj` and dispatch to an engine_class-registered Lua module.
+**Prereq:** Track 1 landed; [method-call sprint](https://puck.uno/sprints/method-call/) has landed the real dispatcher + method-call primitive. The sprint's [MethodCall stub](./src/method_call.lua) covers the object sprint's needs but isn't a general primitive — Track 2 replaces it with the real thing and inherits the sprint's Lua modules alongside.
 
 ### Commit 7: `.obj` fast-path in the dispatcher
 
@@ -114,7 +115,7 @@ Naming resolution: production's existing `production/src/engine/cvm/sqlite/objec
 
 ### Commit 9: end-to-end integration test
 
-Port `test_foo_dot_obj.lua` into production tests, dropping the manual "materialize rv on cap" step because the real pipeline now does it. The test verifies `$foo = 'bar'; $foo.obj.pk` sets the cap's rv to a fresh scalar_string carrying `$foo`'s UUID.
+Port `test_foo_dot_obj.lua` into production tests. The sprint's version already runs end-to-end (Larry + the `MethodCall` stub + real transpile+normalize); the production port swaps in the real method-call primitive from the method-call sprint. The test's assertions stay the same — `$foo = 'bar'; $foo.obj.pk` sets the cap's rv to a fresh scalar_string carrying `$foo`'s UUID.
 
 ### Commit 10: teardown of Track 2 sprint content
 
@@ -137,12 +138,6 @@ Track 2 commits (7-10) have staged dependencies — revert as a group.
 ## Outstanding issues
 
 ### Design gaps
-
-#### Method-call dispatch primitive is unimplemented
-
-Spec'd in [expressions/primitives/method-call](https://puck.uno/production/requirements/expressions/primitives/method-call); implementation belongs to the [method-call sprint](https://puck.uno/sprints/method-call/), currently seed-only. Nothing in production dispatches method calls today — every current test either uses the direct-handler path (`$x = 1`) or bypasses dispatch entirely (`test_foo_dot_obj.lua` calls `obj.methods.pk` from Lua).
-
-Once the primitive lands, the whole `$foo.obj.pk` expression parses and runs end-to-end without the manual materialization the sprint's test does.
 
 #### No primitive class objects seeded
 
