@@ -132,14 +132,14 @@ function cvm.new(db)
 	)
 
 	-- Existing-child lookups for add_bucket / add_stack — if the owner
-	-- already has a hash-child (its bucket) or an array-child (its stack)
+	-- already has a bucket (ref keyed 'b') or a platters (ref keyed 'p')
 	-- we return that rather than inserting a duplicate (which the
-	-- refs_owner_at_most_one_hash_and_one_array trigger would reject).
-	-- Under the b/p/s object-property shape, the bucket is the ref keyed
-	-- 'b' (target is guaranteed base='h' by refs_key_b_target_must_be_hash)
-	-- and the platters is the ref keyed 'p' (target guaranteed base='a').
-	-- Filter by key rather than target base — one indexed lookup, no join
-	-- through objects.
+	-- unique(parent, key) constraint on refs would reject anyway).
+	-- Under the b/p/s object-property shape, the bucket target is
+	-- guaranteed base='h' by refs_key_b_target_must_be_hash and the
+	-- platters target is guaranteed base='a' by
+	-- refs_key_p_target_must_be_array. Filter by key rather than target
+	-- base — one indexed lookup, no join through objects.
 	self.stmt_find_hash_child = db:prepare(
 		"select child from refs where parent = ? and key = 'b'"
 	)
@@ -324,10 +324,10 @@ Otherwise: INSERT a plain HashPrimitive with the owner's `owner_role`,
 add a `refs` row linking owner → bucket (key null; the child's
 base disambiguates bucket from stack), return the new pk.
 
-Ownership under the current schema is a normal refs row from owner to
-collection — no dedicated `bucket_pk` / `bucket_for` columns. The
-`refs_owner_at_most_one_hash_and_one_array` trigger caps a
-non-container parent at one hash-child. See
+Ownership under the b/p/s object-property shape is a keyed refs row
+from owner to collection — the bucket ref uses `key='b'`, the platters
+ref uses `key='p'`. No dedicated columns; unique(parent, key) caps
+each slot at one per owner. See
 [ownership](https://puck.uno/requirements/cvm/sqlite/ownership).
 
 Used by `object:bucket` as the lazy-create branch of the accessor.

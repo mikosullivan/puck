@@ -6,12 +6,12 @@
 
 -- vibecode
 /*
-{"doc": "cvm-schema-sqlite", "version": "12.1",
-	"role": "SQLite DDL for the CVM — Caspian's runtime state store. Every runtime state read or write flows through this schema. Design intent: only valid programmatic states can be stored; the DB itself refuses invalid states at write time via CHECK constraints and triggers, each raising a grep-able error id (e.g. `objects_frame_ast_immutable`, `refs_owner_at_most_one_hash_and_one_array`). Engine bugs that would produce a bad state raise at the exact write site instead of silently corrupting the DB.",
+{"doc": "cvm-schema-sqlite", "version": "13.0",
+	"role": "SQLite DDL for the CVM — Caspian's runtime state store. Every runtime state read or write flows through this schema. Design intent: only valid programmatic states can be stored; the DB itself refuses invalid states at write time via CHECK constraints and triggers, each raising a grep-able error id (e.g. `objects_frame_ast_immutable`, `refs_object_parent_key_must_be_bps`). Engine bugs that would produce a bad state raise at the exact write site instead of silently corrupting the DB.",
 	"tables": {
 		"cvm":                "single-row marker; presence signals 'this DB is a CVM'. Append-only.",
 		"objects":            "load-bearing table. Every CVM entity — plain objects, hashes, arrays, frames, roles — is a row here, discriminated by the (base, control) pair. See `axes`.",
-		"refs":               "parent-to-child object edges. Any row can be a parent. Container children (base='h'/'a') hold refs by their own semantics; non-container parents are capped at one hash-child (bucket) + one array-child (stack).",
+		"refs":               "parent-to-child object edges. Refs from a non-container parent (base='o') carry the parent's b/p/s properties by key: 'b' → bucket (hash), 'p' → platters (array of classes), 's' → shadow (hash). Each is optional; at most one of each per parent (unique(parent, key)). Container children (base='h'/'a') hold refs by their own semantics — key-per-entry for hashes, idx-per-entry for arrays.",
 		"instance_listeners": "per-instance event dispatch registrations. Weak-ref lifetime via ON DELETE CASCADE on either party.",
 		"class_listeners":    "per-class event dispatch registrations. Same shape.",
 		"needs_trace":        "per-process GC worklist. Persistent — marks must survive engine restart. PK (process_pk, object_pk); repeated marks coalesce via ON CONFLICT DO NOTHING.",
@@ -29,10 +29,12 @@
 		"uspace":            "GC anchor set — roles + persistent=1 rows + process caps. Anything transitively reachable from uspace via refs is alive.",
 		"frame_scoped_vars": "(frame_pk, scope_idx, var_name, value_pk) — every variable visible from a frame's scope chain, ordered by scope depth. scope_idx=0 is the frame's own scope; higher indexes are captured scopes.",
 		"object_bucket":     "(object_pk, bucket_pk) — every base='o' row with its bucket pk (or null if not yet materialized).",
-		"object_stack":      "(object_pk, stack_pk) — same shape for stacks."},
+		"object_platters":   "(object_pk, platters_pk) — same shape for the platters (the object's ordered class array). Platters is the ref keyed 'p'.",
+		"object_shadow":     "(object_pk, shadow_pk) — same shape for the shadow. Shadow is the ref keyed 's'; targets a hash, same as bucket."},
 	"gc_cycle_state_machine": "A frame's (frame_stmt_idx, frame_gc) pair moves through a strict state machine enforced by triggers on `objects`. The walker's per-statement operation is `UPDATE frame SET frame_stmt_idx = frame_stmt_idx + 1` — the trigger stack takes care of frame_gc auto-null, child-delete cascades, and the parent's frame_gc auto-set. Names to grep: frames_advance_requires_gc, frames_advance_sets_gc_null, frames_advance_rejects_non_null_gc, frames_gc_change_requires_no_child, frames_gc_set_rejects_at_terminal, frames_gc_reset_requires_empty_needs_trace, frames_delete_requires_no_child, frames_child_delete_sets_parent_gc, frames_child_delete_propagates_rv, frames_no_child_under_terminal_parent, frames_stmt_idx_starts_at_zero, frames_stmt_idx_advances_by_one, frames_gc_starts_null. Each raises with its trigger name as the error id — grep to see what invariant fired.",
 	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:drain_needs_trace` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
-	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. The only columns that permit updates are `frame_gc`, `frame_stmt_idx`, and `debug`; every other column is set once at INSERT and never changes (scalar columns included — the objects_scalar_*_immutable triggers use `is not` null-safe distinctness, so even null→populated raises). Bucket and stack ownership is now a `refs` row rather than dedicated bucket_pk / stack_pk columns, so those don't appear in the mutable-column set anymore.",
+	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. The only columns that permit updates are `frame_gc`, `frame_stmt_idx`, and `debug`; every other column is set once at INSERT and never changes (scalar columns included — the objects_scalar_*_immutable triggers use `is not` null-safe distinctness, so even null→populated raises). Bucket, platters, and shadow ownership are `refs` rows (keyed 'b', 'p', 's') rather than dedicated columns.",
+	"object_properties_shape": "Under the b/p/s design, an object's structural properties live as three well-known keyed refs from the objects row. Enforcement triggers: refs_object_parent_key_must_be_bps (no other keys allowed from an 'o'-parent), refs_key_b_target_must_be_hash, refs_key_p_target_must_be_array, refs_key_s_target_must_be_hash. Uniqueness (parent, key) already caps each slot at one.",
 	"companions": {
 		"preflight.sql":       "per-connection temp tables (traces, in_trace) + temp triggers that reproduce cascade semantics across the temp/persistent boundary (SQLite disallows cross-schema FKs). Runs on every connection open.",
 		"current_process_pk":  "engine-supplied UDF returning the currently-dispatching process cap's pk. Called by needs_trace.process_pk's DEFAULT, by debug_log.object_pk's DEFAULT, and by frames_gc_reset_requires_empty_needs_trace's per-process scoping. Every connection must register this UDF before applying the schema, or the schema apply fails."}}
@@ -67,7 +69,7 @@ begin
 	select raise(abort, 'cvm_append_only: cvm is append-only; no deletes allowed');
 end;
 
-insert into cvm (key, value) values ('schema', '12.1');
+insert into cvm (key, value) values ('schema', '13.0');
 
 
 -- ------------------------------------------------------------
