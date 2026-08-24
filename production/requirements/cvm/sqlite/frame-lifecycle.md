@@ -1,7 +1,7 @@
 ~~~vibecode
 {"doc": "requirements_cvm_frame_lifecycle",
-	"role": "The lifecycle of a process from seed to terminal. A process is a cap frame (`control = 'f'`, `frame_process_cap = 1`, empty `frame_ast`) at the top of a call stack; frame 0 sits under the cap as a nested frame. The walker dispatches each frame's statement, then advances frame_stmt_idx. Advancing requires frame_gc = 1 to consume and auto-sets frame_gc back to null. When a frame reaches its terminal position it auto-deletes; the cap is excluded and stays alive as the terminal signal.",
-	"key_concepts": ["cap_as_frame", "gc_ready_to_advance", "auto_delete_at_terminal", "rule_3_child_delete_cascade", "resume_safety"]}
+	"role": "The lifecycle of a process from seed to terminal. A process is a cap frame (`control = 'f'`, `frame_process_cap = 1`, empty `frame_ast`) at the top of a call stack; frame 0 sits under the cap as a nested frame. The walker dispatches each frame's statement, then advances frame_stmt_idx. Advancing requires frame_gc = 1 to consume and auto-sets frame_gc back to null. When a frame reaches its terminal position it auto-deletes; the cap is excluded and stays alive as the terminal signal. Every frame carries an implicit return-value slot (rv) that a child-delete trigger propagates up the parent chain.",
+	"key_concepts": ["cap_as_frame", "gc_ready_to_advance", "auto_delete_at_terminal", "rule_3_child_delete_cascade", "rv_slot_propagates_on_reap", "resume_safety"]}
 ~~~
 
 # Frame lifecycle
@@ -44,6 +44,24 @@ The state machine is enforced by nine rules (all triggers or CHECKs on `objects`
 9. **Frame cannot be deleted while it has a child** (`frames_delete_requires_no_child`). Backed by the frame_parent FK; specific error id.
 
 Plus `frames_no_child_under_terminal_parent` — reject inserting a child under a terminal parent.
+
+## Return-value slot
+
+Every frame carries an implicit return-value slot — a ref from the frame's bucket with `key='rv'` pointing at any object. Fresh frames have no rv (implicitly null). Handlers and primitives set rv while the frame is executing; child-delete propagates it up on reap.
+
+**Storage.** rv is not a dedicated column — it's an entry in `refs` under the frame's bucket, alongside whatever else lives there (scopes, locals, etc.). The bucket itself is a `base='h'` object linked from the frame via a keyless ref. Materialize-on-demand: fresh frames don't have a bucket until something needs one; a set_rv call creates the bucket if it doesn't exist yet.
+
+**Reap-time propagation.** `frames_child_delete_propagates_rv` (BEFORE DELETE trigger) copies the reaping child's rv to the parent's rv slot. Three cases the trigger handles:
+
+- **Child has rv → parent gets it.** UPSERT on `(parent_bucket, 'rv')` — updates in place if parent had one, inserts if not. Parent's bucket is materialized on demand if it didn't exist.
+- **Child has bucket but no rv → parent's rv cleared.** DELETE fires on parent's existing rv ref (if any). Semantically, the child completed with no return value, and that null shadows whatever parent's rv was.
+- **Child has no bucket at all → same as above.** Same as "no rv" — no distinction observable from outside.
+
+**BEFORE, not AFTER.** The trigger has to read from the child's outgoing refs, which cascade away when the child's `objects` row is deleted (`refs.parent` is `on delete cascade`). By the time an AFTER trigger fires, the child's subtree is gone. BEFORE runs while the child's refs are still resolvable. Contrast with `frames_child_delete_sets_parent_gc`, which only writes to the parent's own `frame_gc` column and fires AFTER — no child-side data to preserve.
+
+**Cap participation.** The propagate trigger's guard is `old.frame_parent is not null` — it fires whenever a nested frame reaps, INCLUDING when that frame's parent is the cap. When frame 0 reaps at the end of a program, the trigger sets the cap's rv to frame 0's rv. The cap's rv is the process's terminal return value — the host's `%engine.run` reads it back after the process completes. (Cap deletion itself doesn't fire the trigger — the cap has no parent, so the guard excludes it.)
+
+**One trigger, both signals.** A nested-frame delete fires both this trigger and `frames_child_delete_sets_parent_gc` — first BEFORE (propagate-rv), then AFTER (set parent gc=1). The rv is settled before the parent's walker sees `gc=1` and picks up the trail.
 
 ## The canonical cycle
 
@@ -105,9 +123,14 @@ Walker's advance on frame 0: `UPDATE frame SET frame_stmt_idx = 1`. The auto-set
 
 ### After the engine reaps frame 0
 
-`run_frame` finishes its loop and issues `DELETE FROM objects WHERE object_pk = <frame 0>`. That delete fires rule 3 on the parent — the cap — but the cap is exempt from the cascade, so cap.frame_gc stays null. Cap is now at `(frame_stmt_idx=0, frame_gc=null, no children)` — the "program is done" state.
+`run_frame` finishes its loop and issues `DELETE FROM objects WHERE object_pk = <frame 0>`. That delete fires two triggers on the cap:
 
-**This is the "program is done" state.** The cap itself still sits — no `complete` flag anywhere, because "cap at its birth position with no children" IS the completion signal.
+- **`frames_child_delete_propagates_rv`** (BEFORE) — reads frame 0's rv and writes it to the cap's rv slot. `$x = 1` is an assignment; the handler didn't set frame 0's rv (assignment produces no return value), so the trigger's DELETE branch fires and the cap's rv stays unset. In a program whose top-level expression DID produce a value (e.g., `'foo'` as the whole body), this is where that value would land on the cap.
+- **`frames_child_delete_sets_parent_gc`** (AFTER) — cap-exempt, so cap.frame_gc stays null.
+
+Cap is now at `(frame_stmt_idx=0, frame_gc=null, no children)` — the "program is done" state, with whatever rv the program produced sitting in the cap's bucket for the host to read.
+
+**This is the "program is done" state.** The cap itself still sits — no `complete` flag anywhere, because "cap at its birth position with no children" IS the completion signal. The cap's rv (if any) is the process's return value.
 
 ### After the engine reaps the cap
 

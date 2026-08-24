@@ -27,7 +27,7 @@ Numbered by their schema trigger names for grep.
 
 1. **Fresh frames born at `stmt_idx=0`, `gc=null`.** `frames_stmt_idx_starts_at_zero`; `frames_gc_starts_null`.
 2. **`gc` cannot change while has-child.** Bidirectional. `frames_gc_change_requires_no_child`.
-3. **Child DELETE flips parent's `gc` to 1** — the ONLY way parent's gc changes while it's "waiting for child." `frames_child_delete_sets_parent_gc`. Cap-exempt.
+3. **Child DELETE flips parent's `gc` to 1** — the ONLY way parent's gc changes while it's "waiting for child." `frames_child_delete_sets_parent_gc`. Cap-exempt. The same DELETE also fires `frames_child_delete_propagates_rv` (BEFORE) — the child's return-value slot copies up to the parent's; see [rv slot](#rv-slot) below.
 4. **Advance requires `gc=1`** — if gc is null, the advance UPDATE fails. `frames_advance_requires_gc`.
 5. **Advance auto-nulls `gc`** — walker's UPDATE just changes stmt_idx; the trigger nulls gc atomically. `frames_advance_sets_gc_null` + `frames_advance_rejects_non_null_gc`.
 6. **`stmt_idx` advances by +1 only** — no backward jumps, no skips. `frames_stmt_idx_advances_by_one`.
@@ -42,6 +42,16 @@ Numbered by their schema trigger names for grep.
 - **Handlers running inline** (no child spawn) must set `gc=1` explicitly before returning — via `engine.data:mark_frame_gc(frame_pk)`. The walker's advance needs gc=1 (rule 4); if the handler didn't spawn a child, nothing else will flip it.
 - **Loops don't rewind `stmt_idx`** (forbidden by rule 6). Loop constructs (`engine.while`, etc.) live in the primitive that runs the body — it invokes the body-closure as many times as it wants; each of those invocations is its own frame with its own stmt_idx that only ever goes forward.
 - **The walker's "what to do next" is a lookup, not a decision.** Read the frame's (stmt_idx, gc, has-child, terminal?) tuple; the four at-rest states map to exactly four next actions. No branching to reason about.
+
+## rv slot
+
+Distinct from the advancement state machine, but landing on the same child-delete event: every frame carries a return-value slot (`rv`) stored as a ref from the frame's bucket with `key='rv'`. Fresh frames have no rv (implicitly null). Handlers set rv during dispatch; the `frames_child_delete_propagates_rv` trigger copies rv up on reap.
+
+- **Same fire event as rule 3.** A nested-frame delete fires both triggers. Order matters: `propagate_rv` is BEFORE (reads the reaping child's refs), `sets_parent_gc` is AFTER (writes to the parent's own column). rv is settled before the parent's walker sees `gc=1`.
+- **UPSERT hot path.** Update in place if the parent had an rv; insert if not.
+- **Cap gets the process's return value.** The trigger's guard is `old.frame_parent is not null` — it fires when frame 0 reaps too, propagating the top-level rv onto the cap.
+
+Full mechanics and edge cases live at [frame-lifecycle § Return-value slot](https://puck.uno/requirements/cvm/sqlite/frame-lifecycle#return-value-slot).
 
 ## Related
 
