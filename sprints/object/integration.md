@@ -138,12 +138,6 @@ Track 2 commits (7-10) have staged dependencies — revert as a group.
 
 ### Design gaps
 
-#### Agent design lives in `ideas/`, not `requirements/`
-
-[ideas/helpers/agents](https://puck.uno/ideas/helpers/agents) is `status: active_design`. Under the spec-before-implementation rule, the agent design should promote to `requirements/` before Track 2 lands. Same for its companion [ideas/helpers/basic](https://puck.uno/ideas/helpers/basic), which describes plain helpers (the non-`@internals` variant).
-
-Once promoted, an outbound-references sweep of `requirements/` picks up any doc that currently links back into `ideas/` for the agent shape — a real audit hit today.
-
 #### The `obj` catalog is sparse
 
 Sprint spec'd `.pk` only. The full spec at [built-in-classes/object/methods](https://puck.uno/production/requirements/built-in-classes/object/methods/) lists many more:
