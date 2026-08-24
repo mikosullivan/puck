@@ -21,7 +21,11 @@ fi
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
-nohup lua orlando/lua/serve.lua "$PORT" \
+# serve.lua adds ~/.luarocks/lib/lua/5.1/ and ~/.luarocks/share/lua/5.1/
+# to package.{c,}path — those rocks (cjson, lunamark, luasocket) were
+# installed for 5.1 and its cjson.so has undefined `lua_pcall` under 5.4.
+# Invoke lua5.1 explicitly so the interpreter matches those rocks.
+nohup lua5.1 orlando/lua/serve.lua "$PORT" \
     > /dev/null 2>&1 < /dev/null &
 echo $! > "$PID_FILE"
 
