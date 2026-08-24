@@ -78,11 +78,12 @@ Update the tests that check the keyless pattern to use the new keyed pattern. `p
 - Bump schema version from `12.1` → `13.0-object-sprint`.
 - Update the top-of-file vibecode: `refs` role paragraph rewritten around b/p/s; new `object_properties_shape` field naming the four enforcement triggers; `immutability` paragraph updated (bucket, platters, shadow ownership are refs rows); views section mentions `object_platters` and `object_shadow`.
 
-### Commit 5: promote dispatch design docs
+### Commit 5: promote dispatch design docs + spec sweeps
 
 - Promote [sprints/object/dispatch.md](./dispatch) to `production/requirements/objects/dispatch.md` (or similar — pick the right home under existing requirements/ layout).
 - Promote the "four object properties" section from [sprints/object/index.md](./) — either inline into an existing objects doc or new `production/requirements/objects/anatomy.md`.
 - Update `production/requirements/cvm/sqlite/frame-lifecycle.md` and `production/requirements/expressions/frame-advancement.md` to reference the new `b/p/s` refs shape (they currently name buckets by base-filter).
+- **`.id` → `.pk` sweep.** Rename every `.obj.id` mention to `.obj.pk` across `production/requirements/`. The bulk lives in [built-in-classes/object/methods/index.md](https://puck.uno/production/requirements/built-in-classes/object/methods/) (~10 mentions); the section header for `.id` becomes `.pk`; scattered references (the vibecode role paragraph, the destroy/destroyed docs' "callable after destroy" note, the identity-comparison example) all follow. Spec-only change; no code touched here since `.pk`'s implementation is Track 2.
 
 ### Commit 6: teardown of the sprint's now-promoted content
 
@@ -136,10 +137,6 @@ Track 2 commits (7-10) have staged dependencies — revert as a group.
 ## Outstanding issues
 
 ### Design gaps
-
-#### `.id` renamed to `.pk`, not swept across the spec
-
-The requirements at [built-in-classes/object/methods](https://puck.uno/production/requirements/built-in-classes/object/methods/) still uses `.id` throughout. Miko renamed to `.pk` mid-sprint to name what the value actually is (a database primary key, a UUID) rather than the abstract "identity" framing. Spec needs a sweep — every `.obj.id` mention becomes `.obj.pk`. Roughly a dozen mentions in that one file plus scattered references elsewhere.
 
 #### Agent design lives in `ideas/`, not `requirements/`
 
