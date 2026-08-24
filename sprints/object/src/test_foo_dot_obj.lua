@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_foo_dot_obj",
-	"role": "End-to-end walk of `$foo = 'bar'` then $foo.obj + $foo.obj.pk. Runs the assignment through the production engine (transpiler + normalizer + VariableScalar handler), halts on %process.stop, finds $foo's pk from the scope chain, then calls obj.new(engine, foo_pk) to materialize the agent, then calls obj.methods.pk(agent) to exercise the first catalog method and verifies it returns $foo's pk. Temp triggers on objects + refs inserts mirror every write obj.new does into debug_log; the process log at the end reads as a step-by-step trace of both the agent construction and the .pk call.",
+	"role": "End-to-end walk of `$foo = 'bar'` then $foo.obj + $foo.obj.pk. Runs the assignment through Larry (production/tests/main/lua/engine/larry.lua — the test-scoped Engine subclass) so we get the transpiler + normalizer + VariableScalar handler for free, halts on %process.stop, finds $foo's pk from the scope chain, then calls obj.new(engine, foo_pk) to materialize the agent, then calls obj.methods.pk(agent) to exercise the first catalog method and verifies it returns $foo's pk. Temp triggers on objects + refs inserts mirror every write obj.new does into debug_log; the process log at the end reads as a step-by-step trace of both the agent construction and the .pk call.",
 	"invoke": "lua5.4 sprints/object/src/test_foo_dot_obj.lua",
 	"status": "sprint tests"
 }
@@ -14,12 +14,13 @@ package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 package.path  = 'sprints/object/src/?.lua;'
 	.. 'production/src/engine/?.lua;'
 	.. 'production/src/engine/?/init.lua;'
+	.. 'production/tests/main/lua/engine/?.lua;'
 	.. home .. '/.luarocks/share/lua/5.4/?.lua;'
 	.. home .. '/.luarocks/share/lua/5.4/?/init.lua;'
 	.. package.path
 
-local engine_mod = require('engine')
-local obj        = require('obj')
+local Larry = require('larry')
+local obj   = require('obj')
 
 
 -- ------------------------------------------------------------
@@ -69,7 +70,7 @@ end
 
 print("== $foo = 'bar'  →  $foo.obj  →  $foo.obj.pk ==")
 
-local e = engine_mod.new()
+local e = Larry.new()
 
 -- ---- Step 1: run the assignment, halt after ------------------
 e:load("$foo = 'bar'\n%process.stop")

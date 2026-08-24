@@ -165,19 +165,48 @@ a UUID) rather than the abstract "identity" framing.
 
 Method body walks: agent → bucket (via key='b') → target (via
 key='target'). Returns whatever the child of the target ref is.
+
+**Prepared statement.** The join gets compiled once per engine and
+cached in a weak-keyed module-level table, so successive `.pk` calls
+against the same engine reuse the compiled plan. When the engine
+gets collected, the weak table drops its entry and the statement
+goes with it. Matches production's per-engine prepared-statement
+policy without needing to bolt the statement into engine.new()'s
+setup path.
 ]]
+local PK_SQL = "select r2.child as pk from refs r1 "
+	.. "join refs r2 on r2.parent = r1.child "
+	.. "where r1.parent = ? "
+	.. "and r1.key = 'b' "
+	.. "and r2.key = 'target'"
+
+-- Weak-keyed cache: engine → prepared `.pk` statement. Weak so the
+-- cache doesn't hold engines alive.
+local _pk_stmts = setmetatable({}, {__mode = 'k'})
+
+local function get_pk_stmt(engine)
+	local stmt = _pk_stmts[engine]
+
+	if not stmt then
+		stmt = engine.cvm:prepare(PK_SQL)
+		_pk_stmts[engine] = stmt
+	end
+
+	return stmt
+end
+
 function obj.methods.pk(self)
+	local stmt = get_pk_stmt(self.engine)
+
+	stmt:bind_values(self.pk)
+
 	local target_pk
 
-	for row in self.db:nrows(
-		"select r2.child as pk from refs r1 "
-		.. "join refs r2 on r2.parent = r1.child "
-		.. "where r1.parent = '" .. self.pk .. "' "
-		.. "and r1.key = 'b' "
-		.. "and r2.key = 'target'"
-	) do
+	for row in stmt:nrows() do
 		target_pk = row.pk
 	end
+
+	stmt:reset()
 
 	return target_pk
 end
