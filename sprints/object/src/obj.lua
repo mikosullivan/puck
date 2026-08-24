@@ -19,10 +19,14 @@ Every `.obj` access constructs a fresh agent (per the spec at
 "Fresh per access, no caching"), so this constructor runs often.
 
 **Row shape.** The agent is an ordinary `objects` row with
-`engine_class = 'obj'`. The dispatcher, when it sees a method call
-on a row with engine_class set, consults the Lua module registered
-under that name — this module — for method resolution. No platters,
-no shadow.
+`engine_class = 'obj'`. `engine_class` sits at the very bottom of the
+dispatch chain (below the primitive class if one exists); the
+dispatcher consults the Lua module registered under that name — this
+module — after the shadow / platters / primitive-class walk fails to
+resolve. Agents don't carry platters or a shadow today, so the walk
+starts at the engine-class layer and ends there. Nothing schema-side
+forbids adding platters or a shadow later — the rule is purely how
+the dispatcher orders its lookups.
 
 **Bucket.** Small, one entry:
 
