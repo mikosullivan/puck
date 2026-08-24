@@ -7,11 +7,11 @@
 -- vibecode
 /*
 {"doc": "cvm-schema-sqlite", "version": "13.0-object-sprint",
-	"role": "SQLite DDL for the CVM — Caspian's runtime state store. Every runtime state read or write flows through this schema. Design intent: only valid programmatic states can be stored; the DB itself refuses invalid states at write time via CHECK constraints and triggers, each raising a grep-able error id (e.g. `objects_frame_ast_immutable`, `refs_object_parent_key_must_be_bsh`). Engine bugs that would produce a bad state raise at the exact write site instead of silently corrupting the DB.",
+	"role": "SQLite DDL for the CVM — Caspian's runtime state store. Every runtime state read or write flows through this schema. Design intent: only valid programmatic states can be stored; the DB itself refuses invalid states at write time via CHECK constraints and triggers, each raising a grep-able error id (e.g. `objects_frame_ast_immutable`, `refs_object_parent_key_must_be_bps`). Engine bugs that would produce a bad state raise at the exact write site instead of silently corrupting the DB.",
 	"tables": {
 		"cvm":                "single-row marker; presence signals 'this DB is a CVM'. Append-only.",
 		"objects":            "load-bearing table. Every CVM entity — plain objects, hashes, arrays, frames, roles — is a row here, discriminated by the (base, control) pair. See `axes`.",
-		"refs":               "parent-to-child object edges. Refs from a non-container parent (base='o') carry the parent's b/s/h properties by key: 'b' → bucket (hash), 's' → stack (array), 'h' → shadow (hash). Each is optional; at most one of each per parent (unique(parent, key)). Container children (base='h'/'a') hold refs by their own semantics — key-per-entry for hashes, idx-per-entry for arrays.",
+		"refs":               "parent-to-child object edges. Refs from a non-container parent (base='o') carry the parent's b/p/s properties by key: 'b' → bucket (hash), 'p' → platters (array of classes), 's' → shadow (hash). Each is optional; at most one of each per parent (unique(parent, key)). Container children (base='h'/'a') hold refs by their own semantics — key-per-entry for hashes, idx-per-entry for arrays.",
 		"instance_listeners": "per-instance event dispatch registrations. Weak-ref lifetime via ON DELETE CASCADE on either party.",
 		"class_listeners":    "per-class event dispatch registrations. Same shape.",
 		"needs_trace":        "per-process GC worklist. Persistent — marks must survive engine restart. PK (process_pk, object_pk); repeated marks coalesce via ON CONFLICT DO NOTHING.",
@@ -29,12 +29,12 @@
 		"uspace":            "GC anchor set — roles + persistent=1 rows + process caps. Anything transitively reachable from uspace via refs is alive.",
 		"frame_scoped_vars": "(frame_pk, scope_idx, var_name, value_pk) — every variable visible from a frame's scope chain, ordered by scope depth. scope_idx=0 is the frame's own scope; higher indexes are captured scopes.",
 		"object_bucket":     "(object_pk, bucket_pk) — every base='o' row with its bucket pk (or null if not yet materialized). Bucket is the ref keyed 'b'.",
-		"object_stack":      "(object_pk, stack_pk) — same shape for stacks. Stack is the ref keyed 's'.",
-		"object_shadow":     "(object_pk, shadow_pk) — same shape for shadow platters. Shadow is the ref keyed 'h'; targets a hash, same as bucket."},
+		"object_platters":   "(object_pk, platters_pk) — same shape for the platters (the object's ordered class array). Platters is the ref keyed 'p'.",
+		"object_shadow":     "(object_pk, shadow_pk) — same shape for the shadow. Shadow is the ref keyed 's'; targets a hash, same as bucket."},
 	"gc_cycle_state_machine": "A frame's (frame_stmt_idx, frame_gc) pair moves through a strict state machine enforced by triggers on `objects`. The walker's per-statement operation is `UPDATE frame SET frame_stmt_idx = frame_stmt_idx + 1` — the trigger stack takes care of frame_gc auto-null, child-delete cascades, and the parent's frame_gc auto-set. Names to grep: frames_advance_requires_gc, frames_advance_sets_gc_null, frames_advance_rejects_non_null_gc, frames_gc_change_requires_no_child, frames_gc_set_rejects_at_terminal, frames_gc_reset_requires_empty_needs_trace, frames_delete_requires_no_child, frames_child_delete_sets_parent_gc, frames_child_delete_propagates_rv, frames_no_child_under_terminal_parent, frames_stmt_idx_starts_at_zero, frames_stmt_idx_advances_by_one, frames_gc_starts_null. Each raises with its trigger name as the error id — grep to see what invariant fired.",
 	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:drain_needs_trace` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
-	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. The only columns that permit updates are `frame_gc`, `frame_stmt_idx`, and `debug`; every other column is set once at INSERT and never changes (scalar columns included — the objects_scalar_*_immutable triggers use `is not` null-safe distinctness, so even null→populated raises). Bucket, stack, and shadow ownership are `refs` rows (keyed 'b', 's', 'h') rather than dedicated columns.",
-	"object_properties_shape": "Under the object-sprint b/s/h design, an object's structural properties live as three well-known keyed refs from the objects row. Enforcement triggers: refs_object_parent_key_must_be_bsh (no other keys allowed from an 'o'-parent), refs_key_b_target_must_be_hash, refs_key_s_target_must_be_array, refs_key_h_target_must_be_hash. Uniqueness (parent, key) already caps each slot at one.",
+	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. The only columns that permit updates are `frame_gc`, `frame_stmt_idx`, and `debug`; every other column is set once at INSERT and never changes (scalar columns included — the objects_scalar_*_immutable triggers use `is not` null-safe distinctness, so even null→populated raises). Bucket, platters, and shadow ownership are `refs` rows (keyed 'b', 'p', 's') rather than dedicated columns.",
+	"object_properties_shape": "Under the object-sprint b/p/s design, an object's structural properties live as three well-known keyed refs from the objects row. Enforcement triggers: refs_object_parent_key_must_be_bps (no other keys allowed from an 'o'-parent), refs_key_b_target_must_be_hash, refs_key_p_target_must_be_array, refs_key_s_target_must_be_hash. Uniqueness (parent, key) already caps each slot at one.",
 	"companions": {
 		"preflight.sql":       "per-connection temp tables (traces, in_trace) + temp triggers that reproduce cascade semantics across the temp/persistent boundary (SQLite disallows cross-schema FKs). Runs on every connection open.",
 		"current_process_pk":  "engine-supplied UDF returning the currently-dispatching process cap's pk. Called by needs_trace.process_pk's DEFAULT, by debug_log.object_pk's DEFAULT, and by frames_gc_reset_requires_empty_needs_trace's per-process scoping. Every connection must register this UDF before applying the schema, or the schema apply fails."}}
@@ -496,8 +496,8 @@ create index refs_child  on refs(child);
 -- Non-container parents (base = 'o', which covers plain objects,
 -- frames, and roles alike — control layers on top of 'o') carry their
 -- top-level properties as keyed refs under a strict shape: at most one
--- bucket (`key = 'b'`), one stack (`key = 's'`), and one shadow
--- (`key = 'h'`). Every ref out of an 'o'-parent MUST use one of those
+-- bucket (`key = 'b'`), one platters (`key = 'p'`), and one shadow
+-- (`key = 's'`). Every ref out of an 'o'-parent MUST use one of those
 -- three keys; any other key or a null key is rejected.
 --
 -- Storage-shape reasoning: modelling the object's structural
@@ -507,42 +507,35 @@ create index refs_child  on refs(child);
 -- enforced by its own type-check trigger below.
 --
 -- Property → key → target-base:
---   bucket → 'b' → 'h' (a hash of state entries)
---   stack  → 's' → 'a' (an array of classes, innermost-first)
---   shadow → 'h' → 'h' (a hash serving as the top-of-dispatch platter)
+--   bucket   → 'b' → 'h' (a hash of state entries)
+--   platters → 'p' → 'a' (an ordered array of classes, innermost-first)
+--   shadow   → 's' → 'h' (a hash consulted first at dispatch)
 --
 -- The three properties are optional — an object with none of them is
 -- a bare stub. Materialize on demand.
 --
 -- Roles (control = 'r') are regular objects for this purpose — same
--- b/s/h shape as any other 'o'-based row.
+-- b/p/s shape as any other 'o'-based row.
 --
--- Buckets/stacks/shadows CAN be shared across multiple owners — the
+-- Buckets/platters/shadows CAN be shared across multiple owners — the
 -- triggers cap a parent's outgoing edges by key but place no cap on a
 -- child's incoming refs. Two 'o' rows can both point at the same
 -- hash; the graph reads exactly like the refs table shows.
 --
--- Two of the three (b and h) both target base='h' rows. They're
+-- Two of the three (b and s) both target base='h' rows. They're
 -- distinguished by the KEY on the ref, not by the target's shape.
--- Consult the key to know which slot you're looking at.
---
--- NAMING GOTCHA: `key='h'` (shadow) and `base='h'` (hash) both use
--- the letter h. Different columns, different tables, different
--- meanings; they happen to align because the shadow IS a hash.
--- A `key='h'` ref targeting a `base='h'` row is normal — it's a
--- shadow platter attached to its owner. Same letter, different
--- axes. [ghi]
-create trigger refs_object_parent_key_must_be_bsh
+-- Consult the key to know which slot you're looking at. [ghi]
+create trigger refs_object_parent_key_must_be_bps
 before insert on refs
 when (select base from objects where object_pk = new.parent) = 'o'
-	and (new.key is null or new.key not in ('b', 's', 'h'))
+	and (new.key is null or new.key not in ('b', 'p', 's'))
 begin
-	select raise(abort, 'refs_object_parent_key_must_be_bsh: refs from a non-container object (base=''o'') must have key in (''b'', ''s'', ''h'')');
+	select raise(abort, 'refs_object_parent_key_must_be_bps: refs from a non-container object (base=''o'') must have key in (''b'', ''p'', ''s'')');
 end;
 
 -- key='b' → target must be a hash (base='h'). The bucket is the
--- object's state platter. Fires on any INSERT where the parent is
--- an 'o'-row and the key is 'b'; verifies the child's base. [ghi]
+-- object's state hash. Fires on any INSERT where the parent is an
+-- 'o'-row and the key is 'b'; verifies the child's base. [ghi]
 create trigger refs_key_b_target_must_be_hash
 before insert on refs
 when new.key = 'b'
@@ -552,27 +545,27 @@ begin
 	select raise(abort, 'refs_key_b_target_must_be_hash: a ref with key=''b'' (bucket) must point at a hash (base=''h'')');
 end;
 
--- key='s' → target must be an array (base='a'). The stack is the
--- object's class chain, innermost-first. [ghi]
-create trigger refs_key_s_target_must_be_array
+-- key='p' → target must be an array (base='a'). The platters are the
+-- object's ordered class array, innermost-first. [ghi]
+create trigger refs_key_p_target_must_be_array
 before insert on refs
-when new.key = 's'
+when new.key = 'p'
 	and (select base from objects where object_pk = new.parent) = 'o'
 	and (select base from objects where object_pk = new.child) is not 'a'
 begin
-	select raise(abort, 'refs_key_s_target_must_be_array: a ref with key=''s'' (stack) must point at an array (base=''a'')');
+	select raise(abort, 'refs_key_p_target_must_be_array: a ref with key=''p'' (platters) must point at an array (base=''a'')');
 end;
 
--- key='h' → target must be a hash (base='h'). The shadow is the
--- top-of-dispatch platter — always consulted first, before the
--- stack. Same target-shape as bucket; distinguished by the key. [ghi]
-create trigger refs_key_h_target_must_be_hash
+-- key='s' → target must be a hash (base='h'). The shadow is the
+-- top-of-dispatch hash — always consulted first, before the
+-- platters. Same target-shape as bucket; distinguished by the key. [ghi]
+create trigger refs_key_s_target_must_be_hash
 before insert on refs
-when new.key = 'h'
+when new.key = 's'
 	and (select base from objects where object_pk = new.parent) = 'o'
 	and (select base from objects where object_pk = new.child) is not 'h'
 begin
-	select raise(abort, 'refs_key_h_target_must_be_hash: a ref with key=''h'' (shadow) must point at a hash (base=''h'')');
+	select raise(abort, 'refs_key_s_target_must_be_hash: a ref with key=''s'' (shadow) must point at a hash (base=''h'')');
 end;
 
 -- refs rows are mostly immutable — `debug` is freely editable (it's
@@ -1498,25 +1491,25 @@ where o.base = 'o';
 
 
 -- ------------------------------------------------------------
--- object_stack — every non-container object with its stack_pk
--- (or null if it hasn't been given one). Filter is `refs.key = 's'`;
+-- object_platters — every non-container object with its platters_pk
+-- (or null if it hasn't been given one). Filter is `refs.key = 'p'`;
 -- the type-check trigger guarantees any such target is an array. [ghi]
 -- ------------------------------------------------------------
-create view object_stack as
+create view object_platters as
 select
 	o.object_pk as object_pk,
 	(
 		select r.child
 		from refs r
-		where r.parent = o.object_pk and r.key = 's'
-	) as stack_pk
+		where r.parent = o.object_pk and r.key = 'p'
+	) as platters_pk
 from objects o
 where o.base = 'o';
 
 
 -- ------------------------------------------------------------
 -- object_shadow — every non-container object with its shadow_pk
--- (or null if it hasn't been given one). Filter is `refs.key = 'h'`;
+-- (or null if it hasn't been given one). Filter is `refs.key = 's'`;
 -- the type-check trigger guarantees any such target is a hash.
 -- Symmetric with object_bucket (both target hashes) — the axis
 -- that distinguishes them is the key, not the target's shape. [ghi]
@@ -1527,7 +1520,7 @@ select
 	(
 		select r.child
 		from refs r
-		where r.parent = o.object_pk and r.key = 'h'
+		where r.parent = o.object_pk and r.key = 's'
 	) as shadow_pk
 from objects o
 where o.base = 'o';

@@ -2,19 +2,19 @@
 
 --[[
 {
-	"module": "test_bsh",
-	"role": "Schema tests for the sprint's b/s/h object-property shape. Loads the sprint schema (and production preflight) into a fresh in-memory SQLite, then walks through each invariant with a positive case (accept) and a negative case (raise, with the expected trigger name in the error string).",
+	"module": "test_bps",
+	"role": "Schema tests for the sprint's b/p/s object-property shape. Loads the sprint schema (and production preflight) into a fresh in-memory SQLite, then walks through each invariant with a positive case (accept) and a negative case (raise, with the expected trigger name in the error string).",
 	"invariants_covered": [
 		"key='b' from 'o'-parent → target must be base='h' (bucket is a hash)",
-		"key='s' from 'o'-parent → target must be base='a' (stack is an array)",
-		"key='h' from 'o'-parent → target must be base='h' (shadow is a hash)",
-		"refs from 'o'-parent — key must be in {b, s, h} (no null, no other value)",
-		"unique(parent, key) caps each of b/s/h at one per parent",
+		"key='p' from 'o'-parent → target must be base='a' (platters is an array)",
+		"key='s' from 'o'-parent → target must be base='h' (shadow is a hash)",
+		"refs from 'o'-parent — key must be in {b, p, s} (no null, no other value)",
+		"unique(parent, key) caps each of b/p/s at one per parent",
 		"bucket and shadow can coexist on the same parent (two 'h'-based targets, distinguished by key)",
 		"container-parent rules survive: 'h'-parent still requires non-null key; 'a'-parent still forbids key",
-		"object_bucket / object_stack / object_shadow views return the right slots"
+		"object_bucket / object_platters / object_shadow views return the right slots"
 	],
-	"invoke": "lua5.4 sprints/object/src/test_bsh.lua",
+	"invoke": "lua5.4 sprints/object/src/test_bps.lua",
 	"status": "sprint tests"
 }
 ]]
@@ -171,7 +171,7 @@ end
 -- Test cases
 -- ------------------------------------------------------------
 
-print('== b/s/h object-property invariants ==')
+print('== b/p/s object-property invariants ==')
 
 do  -- key='b' → target must be base='h'
 	local db      = fresh_db()
@@ -188,53 +188,53 @@ do  -- key='b' → target must be base='h'
 		'refs_key_b_target_must_be_hash', "key='b' → array target rejected")
 end
 
-do  -- key='s' → target must be base='a'
+do  -- key='p' → target must be base='a'
 	local db      = fresh_db()
 	local user_pk = seed_user_pk(db)
 	local owner   = insert_object(db, 'o', user_pk)
 	local hash    = insert_object(db, 'h', user_pk)
 	local array   = insert_object(db, 'a', user_pk)
 
-	assert_insert_ok(db, owner, array, 's', "key='s' → array target accepted")
+	assert_insert_ok(db, owner, array, 'p', "key='p' → array target accepted")
 
 	local owner2 = insert_object(db, 'o', user_pk)
-	assert_insert_raises(db, owner2, hash, 's',
-		'refs_key_s_target_must_be_array', "key='s' → hash target rejected")
+	assert_insert_raises(db, owner2, hash, 'p',
+		'refs_key_p_target_must_be_array', "key='p' → hash target rejected")
 end
 
-do  -- key='h' → target must be base='h'
+do  -- key='s' → target must be base='h'
 	local db      = fresh_db()
 	local user_pk = seed_user_pk(db)
 	local owner   = insert_object(db, 'o', user_pk)
 	local hash    = insert_object(db, 'h', user_pk)
 	local array   = insert_object(db, 'a', user_pk)
 
-	assert_insert_ok(db, owner, hash, 'h', "key='h' → hash target accepted")
+	assert_insert_ok(db, owner, hash, 's', "key='s' → hash target accepted")
 
 	local owner2 = insert_object(db, 'o', user_pk)
-	assert_insert_raises(db, owner2, array, 'h',
-		'refs_key_h_target_must_be_hash', "key='h' → array target rejected")
+	assert_insert_raises(db, owner2, array, 's',
+		'refs_key_s_target_must_be_hash', "key='s' → array target rejected")
 end
 
-do  -- 'o'-parent refs must use key in {b, s, h}
+do  -- 'o'-parent refs must use key in {b, p, s}
 	local db      = fresh_db()
 	local user_pk = seed_user_pk(db)
 	local owner   = insert_object(db, 'o', user_pk)
 	local hash    = insert_object(db, 'h', user_pk)
 
 	assert_insert_raises(db, owner, hash, 'z',
-		'refs_object_parent_key_must_be_bsh', "key='z' from 'o'-parent rejected")
+		'refs_object_parent_key_must_be_bps', "key='z' from 'o'-parent rejected")
 
 	local owner2 = insert_object(db, 'o', user_pk)
 	assert_insert_raises(db, owner2, hash, nil,
-		'refs_object_parent_key_must_be_bsh', "key=null from 'o'-parent rejected")
+		'refs_object_parent_key_must_be_bps', "key=null from 'o'-parent rejected")
 
 	local owner3 = insert_object(db, 'o', user_pk)
 	assert_insert_raises(db, owner3, hash, '',
-		'refs_object_parent_key_must_be_bsh', "key='' from 'o'-parent rejected")
+		'refs_object_parent_key_must_be_bps', "key='' from 'o'-parent rejected")
 end
 
-do  -- b and h coexist on the same parent (both hashes, different keys)
+do  -- b and s coexist on the same parent (both hashes, different keys)
 	local db      = fresh_db()
 	local user_pk = seed_user_pk(db)
 	local owner   = insert_object(db, 'o', user_pk)
@@ -248,11 +248,11 @@ do  -- b and h coexist on the same parent (both hashes, different keys)
 	end
 
 	ok_at(bucket, 'b', 0, "bucket (key='b') accepted first")
-	ok_at(shadow, 'h', 1, "shadow (key='h') accepted alongside bucket")
+	ok_at(shadow, 's', 1, "shadow (key='s') accepted alongside bucket")
 
-	-- Full house: add a stack too
-	local stack = insert_object(db, 'a', user_pk)
-	ok_at(stack, 's', 2, "stack (key='s') accepted alongside b + h")
+	-- Full house: add platters too
+	local platters = insert_object(db, 'a', user_pk)
+	ok_at(platters, 'p', 2, "platters (key='p') accepted alongside b + s")
 end
 
 do  -- unique(parent, key) caps each slot at one
@@ -307,12 +307,12 @@ do  -- Container-parent rules survive
 end
 
 do  -- Views return the right slots
-	local db      = fresh_db()
-	local user_pk = seed_user_pk(db)
-	local owner   = insert_object(db, 'o', user_pk)
-	local bucket  = insert_object(db, 'h', user_pk)
-	local stack   = insert_object(db, 'a', user_pk)
-	local shadow  = insert_object(db, 'h', user_pk)
+	local db       = fresh_db()
+	local user_pk  = seed_user_pk(db)
+	local owner    = insert_object(db, 'o', user_pk)
+	local bucket   = insert_object(db, 'h', user_pk)
+	local platters = insert_object(db, 'a', user_pk)
+	local shadow   = insert_object(db, 'h', user_pk)
 
 	local function slot(view_name, col)
 		for row in db:nrows(
@@ -333,9 +333,9 @@ do  -- Views return the right slots
 	end
 
 	-- Wire up all three refs
-	assert(try_insert_ref(db, owner, bucket, 'b', 0))
-	assert(try_insert_ref(db, owner, stack,  's', 1))
-	assert(try_insert_ref(db, owner, shadow, 'h', 2))
+	assert(try_insert_ref(db, owner, bucket,   'b', 0))
+	assert(try_insert_ref(db, owner, platters, 'p', 1))
+	assert(try_insert_ref(db, owner, shadow,   's', 2))
 
 	if slot('object_bucket', 'bucket_pk') == bucket then
 		pass("object_bucket returns bucket after ref added")
@@ -344,11 +344,11 @@ do  -- Views return the right slots
 			'got: ' .. tostring(slot('object_bucket', 'bucket_pk')))
 	end
 
-	if slot('object_stack', 'stack_pk') == stack then
-		pass("object_stack returns stack after ref added")
+	if slot('object_platters', 'platters_pk') == platters then
+		pass("object_platters returns platters after ref added")
 	else
-		fail("object_stack returns stack after ref added",
-			'got: ' .. tostring(slot('object_stack', 'stack_pk')))
+		fail("object_platters returns platters after ref added",
+			'got: ' .. tostring(slot('object_platters', 'platters_pk')))
 	end
 
 	if slot('object_shadow', 'shadow_pk') == shadow then
