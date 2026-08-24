@@ -27,7 +27,7 @@ The three ref-based properties (bucket, platters, shadow) live as keyed refs fro
 
 The immutability of primitive is what gives Caspian's scalars their value-type feel. A Number that IS `1` cannot BECOME `2` — you make a fresh Number for `2`. Two Numbers with the same primitive but different platters or buckets are still distinct objects (different rows), but they're indistinguishable at the primitive level. That asymmetry is deliberate.
 
-**Dispatch order.** Method lookup walks `shadow → platters (innermost-first) → primitive class (if present) → engine class (if present) → miss raises`. Two implicit-at-bottom slots — primitive class from the row's `scalar_*` columns, engine class from the row's `engine_class` column. Both are dispatched by the engine, not stored in refs; nothing forbids adding a shadow or platters alongside them (an engine-class object with user-added platters would dispatch `shadow → user platters → engine class → miss`). The `b/p/s` keys on refs match the three ref-based properties; the primitive and engine class live on the row itself.
+**Dispatch order.** Method lookup walks `shadow → platters (innermost-first) → primitive class (if present) → engine class (if present) → miss raises`. Two implicit-at-bottom slots — primitive class from the row's `scalar_*` columns, engine class from the row's `engine_class` column. Both are dispatched by the engine, not stored in refs. Full write-up including the `.obj` name-check fast-path and the platter-participation rule (a platter must carry a `class` element to be considered during search) at [dispatch](./dispatch).
 
 ## What already exists in spec
 
