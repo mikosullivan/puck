@@ -138,22 +138,6 @@ Track 2 commits (7-10) have staged dependencies — revert as a group.
 
 ### Design gaps
 
-#### The `obj` catalog is sparse
-
-Sprint spec'd `.pk` only. The full spec at [built-in-classes/object/methods](https://puck.uno/production/requirements/built-in-classes/object/methods/) lists many more:
-
-- Identity + type queries: `.isa?($class)`, `.null?`, `.defined?`
-- Truthy check: `.truthy?`
-- Class-chain surface: `.classes` (with `.ensure`, `.add_unconditionally`, `.shadow` sub-methods), `.stack`
-- Method introspection: `.methods`
-- Warning: `.warn($message)`
-- Wrapping: `.jail(...)`
-- Chain preservation: `.tap`
-- Freeze surface: `.freeze_bucket` / `.freeze_stack` / `.freeze` + their `_frozen?` predicates
-- Lifetime: `.destroy`, `.destroyed?`
-
-Each is a separate implementation pass. Follow-on sprints, one method or a small cluster at a time — the freeze surface is probably a cluster, the class-chain surface another, the query predicates a third.
-
 #### No user-defined-class machinery
 
 Sprint stopped at built-in Object + the `obj` agent. The `class # widget ... end` syntax, the class-body DSL commands (`field`, `method`, `inherits`, `private`, `abstract`, `public_const`, `private_const`), the class-stack materialization from Caspian source, `.new` dispatch on an arbitrary user-defined class — all deferred.
