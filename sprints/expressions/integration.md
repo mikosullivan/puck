@@ -1,7 +1,7 @@
 ~~~vibecode
 {"doc": "sprint-integration-plan", "sprint": "expressions",
 	"role": "Step-by-step plan for landing the expressions sprint into production. Sequenced so intermediate states never break the production test suite. Broader in scope than the numbers-sprint integration — this sprint touches the transpiler, the schema, adds primitives that don't exist in production yet, and depends on design decisions in three related sprints. Some pieces of the sprint (BareLiteralHandler, IfHandler-shortcut) are prototypes that land as reference, not as production code.",
-	"status": "planned — most pieces have concrete integration steps; a handful of open issues (listed at the bottom) must be resolved before or during the corresponding commit."}
+	"status": "track 1 landed 2026-08-24 (commits 1-4: transpiler fallback, schema trigger, docs promotion, teardown). Track 2 remains planned; stages behind method-call and lazy-params sprints."}
 ~~~
 
 # expressions-sprint integration plan
@@ -37,6 +37,8 @@ Two independent tracks that don't need to happen together:
 Track 1 can go first. Track 2 stages behind it (and behind the related sprints).
 
 ## Track 1: transpiler + trigger + docs
+
+**Landed 2026-08-24** — commits 1-4 below all applied. Section retained for reference; commit hashes are on `master`.
 
 ### Commit 1: transpiler fixes
 
