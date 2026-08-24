@@ -5,7 +5,7 @@
 	"exports": {
 		"new":         "(engine, target_pk) -> obj wrapper — inserts the agent row + bucket + target ref in one savepoint, returns a Lua handle carrying the agent's pk",
 		"methods":     "table of Caspian-level catalog methods on the agent",
-		"methods.pk":  "(self) -> string — returns the target object's pk (the UUID of the object being agented for). Reads the `target` ref out of the agent's bucket. Was previously called `.id` in the spec; renamed."
+		"methods.pk":  "(self) -> object_pk of a fresh scalar_string row whose value is the target's pk (a UUID). Reads the target via the agent's bucket, then INSERTs a scalar row whose scalar_string column carries the UUID and whose owner_role inherits from the target. Was previously called `.id` in the spec; renamed."
 	},
 	"depends_on": ["object"],
 	"status": "sketch — constructor + row materialization land; first catalog method (.pk) attached"
@@ -152,63 +152,100 @@ sqlite handle.
 obj.methods = {}
 
 --[[
-### `.pk` — the target's pk
+### `.pk` — the target's pk (as a scalar_string)
 
-Returns the object_pk of the target — the object this agent is
-agenting for — as a string. Reads the `target` ref out of the
-agent's bucket.
+Returns a fresh scalar row whose `scalar_string` column carries the
+target's `object_pk` (a UUID). Every Caspian value IS a row, so the
+UUID that .pk semantically produces has to be materialized as a row
+rather than returned as a raw Lua string — the return value threads
+through the frame's rv and eventually up to the cap's rv slot, both
+of which want an object_pk.
 
 Was called `.id` in the earlier spec draft at
 [built-in-classes/object/methods](https://puck.uno/requirements/built-in-classes/object/methods/);
 renamed to `.pk` to name what it actually is (a database primary key,
 a UUID) rather than the abstract "identity" framing.
 
-Method body walks: agent → bucket (via key='b') → target (via
-key='target'). Returns whatever the child of the target ref is.
+Two SQL statements per call, both cached as prepared statements per
+engine:
 
-**Prepared statement.** The join gets compiled once per engine and
-cached in a weak-keyed module-level table, so successive `.pk` calls
-against the same engine reuse the compiled plan. When the engine
-gets collected, the weak table drops its entry and the statement
-goes with it. Matches production's per-engine prepared-statement
-policy without needing to bolt the statement into engine.new()'s
-setup path.
+1. Read the target's pk. Walk agent → bucket (key='b') → target
+   (key='target').
+2. Materialize a fresh scalar_string row whose `scalar_string`
+   column carries the target's pk. Owner_role inherits from the
+   target so the value belongs to whoever the receiver belongs to.
+
+The returned row's own `object_pk` is DIFFERENT from the target's
+pk — the UUID is stored as a value, not as a database reference.
 ]]
-local PK_SQL = "select r2.child as pk from refs r1 "
+local READ_PK_SQL = "select r2.child as pk from refs r1 "
 	.. "join refs r2 on r2.parent = r1.child "
 	.. "where r1.parent = ? "
 	.. "and r1.key = 'b' "
 	.. "and r2.key = 'target'"
 
--- Weak-keyed cache: engine → prepared `.pk` statement. Weak so the
--- cache doesn't hold engines alive.
-local _pk_stmts = setmetatable({}, {__mode = 'k'})
+local MATERIALIZE_SQL = "insert into objects (base, scalar_string, owner_role) "
+	.. "select 'o', ?1, owner_role "
+	.. "from objects where object_pk = ?1 "
+	.. "returning object_pk"
 
-local function get_pk_stmt(engine)
-	local stmt = _pk_stmts[engine]
+-- Weak-keyed caches for the two statements. One cache per SQL so
+-- they can evolve independently.
+local _read_stmts        = setmetatable({}, {__mode = 'k'})
+local _materialize_stmts = setmetatable({}, {__mode = 'k'})
+
+local function get_read_stmt(engine)
+	local stmt = _read_stmts[engine]
 
 	if not stmt then
-		stmt = engine.cvm:prepare(PK_SQL)
-		_pk_stmts[engine] = stmt
+		stmt = engine.cvm:prepare(READ_PK_SQL)
+		_read_stmts[engine] = stmt
+	end
+
+	return stmt
+end
+
+local function get_materialize_stmt(engine)
+	local stmt = _materialize_stmts[engine]
+
+	if not stmt then
+		stmt = engine.cvm:prepare(MATERIALIZE_SQL)
+		_materialize_stmts[engine] = stmt
 	end
 
 	return stmt
 end
 
 function obj.methods.pk(self)
-	local stmt = get_pk_stmt(self.engine)
-
-	stmt:bind_values(self.pk)
+	-- Step 1: read the target's pk.
+	local read_stmt = get_read_stmt(self.engine)
+	read_stmt:bind_values(self.pk)
 
 	local target_pk
 
-	for row in stmt:nrows() do
+	for row in read_stmt:nrows() do
 		target_pk = row.pk
 	end
 
-	stmt:reset()
+	read_stmt:reset()
 
-	return target_pk
+	if not target_pk then
+		error("obj_pk_no_target: agent " .. tostring(self.pk) .. " has no target ref")
+	end
+
+	-- Step 2: materialize the target_pk as a scalar_string row.
+	local scalar_stmt = get_materialize_stmt(self.engine)
+	scalar_stmt:bind_values(target_pk)
+
+	local scalar_pk
+
+	for row in scalar_stmt:nrows() do
+		scalar_pk = row.object_pk
+	end
+
+	scalar_stmt:reset()
+
+	return scalar_pk
 end
 
 

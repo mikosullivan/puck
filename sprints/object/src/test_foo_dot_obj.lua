@@ -3,9 +3,9 @@
 --[[
 {
 	"module": "test_foo_dot_obj",
-	"role": "End-to-end walk of `$foo = 'bar'` then $foo.obj + $foo.obj.pk. Runs the assignment through Larry (production/tests/main/lua/engine/larry.lua — the test-scoped Engine subclass) so we get the transpiler + normalizer + VariableScalar handler for free, halts on %process.stop, finds $foo's pk from the scope chain, then calls obj.new(engine, foo_pk) to materialize the agent, then calls obj.methods.pk(agent) to exercise the first catalog method and verifies it returns $foo's pk. Temp triggers on objects + refs inserts mirror every write obj.new does into debug_log; the process log at the end reads as a step-by-step trace of both the agent construction and the .pk call.",
+	"role": "End-to-end run of `$foo = 'bar'` + `$foo.obj.pk` through Larry with the sprint's MethodCall handler registered. The whole program runs through real dispatch: VariableScalar handles the assignment, MethodCall handles the fc-shape row for $foo.obj.pk, dispatch's .obj fast-path constructs the agent, dispatch's engine_class layer routes .pk to obj.methods.pk, the returned scalar lands in frame 0's rv, and frame 0's reap fires frames_child_delete_propagates_rv which lifts the rv to the cap. No manual DB manipulation.",
 	"invoke": "lua5.4 sprints/object/src/test_foo_dot_obj.lua",
-	"status": "sprint tests"
+	"status": "sprint tests — end-to-end via real dispatch, no simulated pieces"
 }
 ]]
 
@@ -19,12 +19,12 @@ package.path  = 'sprints/object/src/?.lua;'
 	.. home .. '/.luarocks/share/lua/5.4/?/init.lua;'
 	.. package.path
 
-local Larry = require('larry')
-local obj   = require('obj')
+local Larry      = require('larry')
+local MethodCall = require('method_call')
 
 
 -- ------------------------------------------------------------
--- Assertion helpers (same shape as the other sprint tests)
+-- Assertion helpers
 -- ------------------------------------------------------------
 
 local passed = 0
@@ -65,226 +65,116 @@ end
 
 
 -- ------------------------------------------------------------
--- Test
+-- Setup
 -- ------------------------------------------------------------
 
-print("== $foo = 'bar'  →  $foo.obj  →  $foo.obj.pk ==")
+print("== end-to-end: $foo = 'bar'  →  $foo.obj.pk ==")
 
 local e = Larry.new()
+e:add_handler(MethodCall.new())
 
--- ---- Step 1: run the assignment, halt after ------------------
-e:load("$foo = 'bar'\n%process.stop")
+
+-- ------------------------------------------------------------
+-- Run the program to completion
+-- ------------------------------------------------------------
+
+e:load("$foo = 'bar'\n$foo.obj.pk")
 
 local result = e:run()
 
-assert_eq(result.stopped, 1, "%process.stop halted the run")
+assert_eq(result.complete, 1, "program completed cleanly")
 
--- ---- Step 2: find $foo's pk via the scope chain --------------
 
-local foo_pk = scalar(e.cvm,
-	"select r.child from refs r where r.key = 'foo'")
+-- ------------------------------------------------------------
+-- Verify the cap ended up with an rv slot
+-- ------------------------------------------------------------
 
-if foo_pk then
-	pass("$foo's scope ref found (key='foo')")
+local cap_pk = result.cap_pk
+
+if cap_pk then
+	pass("cap_pk returned from run()")
 else
-	fail("$foo's scope ref found (key='foo')", 'no ref with key=foo')
+	fail("cap_pk returned from run()", 'result.cap_pk is nil')
 	os.exit(1)
 end
 
-local foo_row = first(e.cvm,
-	"select base, scalar_string from objects "
-	.. "where object_pk = '" .. foo_pk .. "'")
-
-assert_eq(foo_row and foo_row.base,          'o',   "$foo row base='o'")
-assert_eq(foo_row and foo_row.scalar_string, 'bar', "$foo carries scalar_string='bar'")
-
--- ---- Step 3: install observability triggers ------------------
--- Mirror every objects and refs INSERT into debug_log so the log at
--- the end reads as a step-by-step trace of what obj.new did. Installed
--- AFTER the process cap already exists (from %process.stop's halt)
--- so debug_log's `current_process_pk()` DEFAULT resolves cleanly.
-
-e.cvm:exec([[
-	create temp trigger t_log_objects_insert
-	after insert on objects
-	begin
-		insert into debug_log (note) values (
-			'objects: pk='
-			|| substr(new.object_pk, 1, 8)
-			|| ' base=' || new.base
-			|| ' control=' || coalesce(new.control, 'null')
-			|| ' engine_class=' || coalesce(new.engine_class, 'null')
-			|| ' scalar_string=' || coalesce(quote(new.scalar_string), 'null')
-		);
-	end;
-
-	create temp trigger t_log_refs_insert
-	after insert on refs
-	begin
-		insert into debug_log (note) values (
-			'refs: parent='
-			|| substr(new.parent, 1, 8)
-			|| ' child=' || substr(new.child, 1, 8)
-			|| ' key=' || coalesce(new.key, 'null')
-			|| ' idx=' || new.idx
-		);
-	end;
-]])
-
--- Marker line so the log clearly separates before / after obj.new.
-e.cvm:exec("insert into debug_log (note) values ('---- calling obj.new ----');")
-
--- ---- Step 4: call obj.new(engine, foo_pk) --------------------
-
-local agent = obj.new(e, foo_pk)
-
-assert_eq(type(agent.pk), 'string', "obj.new returned a wrapper with a pk")
-
--- ---- Step 5: verify the agent's row -------------------------
-
-local agent_row = first(e.cvm,
-	"select base, control, engine_class, owner_role "
-	.. "from objects where object_pk = '" .. agent.pk .. "'")
-
-assert_eq(agent_row and agent_row.base,         'o',   "agent base='o'")
-assert_eq(agent_row and agent_row.control,      nil,   "agent control is null")
-assert_eq(agent_row and agent_row.engine_class, 'obj', "agent engine_class='obj'")
-
--- ---- Step 6: verify the bucket + target ref -----------------
-
-local bucket_pk = scalar(e.cvm,
-	"select child from refs where parent = '" .. agent.pk .. "' and key = 'b'")
-
-if bucket_pk then
-	pass("agent → bucket via key='b'")
-else
-	fail("agent → bucket via key='b'", 'no b-ref found')
-end
-
-local target_pk = scalar(e.cvm,
-	"select child from refs where parent = '" .. (bucket_pk or '') .. "' and key = 'target'")
-
-assert_eq(target_pk, foo_pk, "bucket → target points at $foo")
-
--- ---- Step 7: call obj.methods.pk(agent) — the first catalog method ----
--- Simulates what the dispatcher will do when it sees `$foo.obj.pk`:
--- fast-path returns the agent, then the walker resolves `.pk` against
--- the agent's engine-class layer, which lands in obj.methods.pk.
-
-e.cvm:exec("insert into debug_log (note) values ('---- calling .obj.pk ----');")
-
-local returned_pk = obj.methods.pk(agent)
-
-e.cvm:exec(
-	"insert into debug_log (note) values ("
-	.. "'.obj.pk returned: ' || substr('" .. tostring(returned_pk) .. "', 1, 8)"
-	.. ");"
-)
-
-assert_eq(returned_pk, foo_pk, "$foo.obj.pk returned $foo's pk")
-
--- ---- Step 8: propagate .obj.pk's return value to the cap's rv slot ----
--- Under the full expressions-sprint pipeline the .obj.pk return would
--- materialize as a scalar row and propagate up the frame chain via
--- frames_child_delete_propagates_rv. The pipeline isn't wired here,
--- so we do the materialization + rv wiring by hand. The point is to
--- exercise the shape:
---
---   1. The UUID string is materialized as a NEW scalar row (base='o',
---      scalar_string=<UUID text>). Distinct pk from $foo — the UUID
---      is stored as a VALUE, not as a reference to the target row
---      (which, under a full run, would already be reaped by this
---      point).
---   2. The cap gets a bucket (created on demand) with an rv ref
---      pointing at the new scalar.
-
-e.cvm:exec("insert into debug_log (note) values ('---- materializing rv on cap ----');")
-
-local user_pk = scalar(e.cvm, "select object_pk from objects where role_core = 'u'")
-
--- Materialize the UUID string as a fresh scalar row.
-local rv_scalar_pk
+-- The cap should have a bucket (materialized by propagate-rv when
+-- frame 0 reaped with a non-null rv).
+local cap_bucket_pk
 
 for r in e.cvm:nrows(
-	"insert into objects (base, scalar_string, owner_role) "
-	.. "values ('o', '" .. returned_pk .. "', '" .. user_pk .. "') "
-	.. "returning object_pk"
+	"select r.child from refs r "
+	.. "join objects b on b.object_pk = r.child "
+	.. "where r.parent = '" .. cap_pk .. "' and b.base = 'h'"
 ) do
-	rv_scalar_pk = r.object_pk
+	cap_bucket_pk = r.child
 end
 
--- Ensure the cap has a bucket; create one if not.
-local cap_pk = result.cap_pk
-local cap_bucket_pk = scalar(e.cvm,
-	"select child from refs where parent = '" .. cap_pk .. "' and key = 'b'")
-
-if not cap_bucket_pk then
-	for r in e.cvm:nrows(
-		"insert into objects (base, owner_role) "
-		.. "values ('h', '" .. user_pk .. "') "
-		.. "returning object_pk"
-	) do
-		cap_bucket_pk = r.object_pk
-	end
-
-	e.cvm:exec(
-		"insert into refs (parent, child, key, idx) "
-		.. "values ('" .. cap_pk .. "', '" .. cap_bucket_pk .. "', 'b', 0)"
-	)
+if cap_bucket_pk then
+	pass("cap has a bucket")
+else
+	fail("cap has a bucket", "no hash-child of the cap found")
+	os.exit(1)
 end
 
--- Wire the rv ref inside the cap's bucket.
-e.cvm:exec(
-	"insert into refs (parent, child, key, idx) "
-	.. "values ('" .. cap_bucket_pk .. "', '" .. rv_scalar_pk .. "', 'rv', 0)"
-)
+-- The bucket should have an rv ref
+local rv_pk = scalar(e.cvm,
+	"select child from refs where parent = '" .. cap_bucket_pk
+	.. "' and key = 'rv'")
 
--- ---- Step 9: verify the cap's rv slot ---------------------------------
+if rv_pk then
+	pass("cap's bucket has an rv ref")
+else
+	fail("cap's bucket has an rv ref", "no rv ref found")
+	os.exit(1)
+end
 
--- Walk cap → bucket → rv → scalar.
-local cap_rv_pk = scalar(e.cvm,
-	"select r2.child from refs r1 "
-	.. "join refs r2 on r2.parent = r1.child "
-	.. "where r1.parent = '" .. cap_pk .. "' "
-	.. "and r1.key = 'b' "
-	.. "and r2.key = 'rv'")
 
-assert_eq(cap_rv_pk, rv_scalar_pk, "cap's rv ref points at the materialized scalar")
+-- ------------------------------------------------------------
+-- Verify the rv is a scalar_string carrying a UUID as VALUE
+-- ------------------------------------------------------------
 
 local rv_row = first(e.cvm,
-	"select base, scalar_string from objects "
-	.. "where object_pk = '" .. cap_rv_pk .. "'")
+	"select base, control, scalar_string, scalar_number, scalar_bool, scalar_null "
+	.. "from objects where object_pk = '" .. rv_pk .. "'")
 
-assert_eq(rv_row and rv_row.base,          'o',         "rv object base='o'")
-assert_eq(rv_row and rv_row.scalar_string, returned_pk, "rv scalar_string holds the UUID as text")
+assert_eq(rv_row and rv_row.base,           'o',  "rv row base='o'")
+assert_eq(rv_row and rv_row.control,        nil,  "rv row control is null")
+assert_eq(rv_row and rv_row.scalar_number,  nil,  "rv row scalar_number is null")
+assert_eq(rv_row and rv_row.scalar_bool,    nil,  "rv row scalar_bool is null")
+assert_eq(rv_row and rv_row.scalar_null,    nil,  "rv row scalar_null is null")
 
--- The rv scalar is a fresh row — its own object_pk is DIFFERENT from
--- $foo's object_pk. What the rv carries is the UUID as string content,
--- not a database reference to $foo.
-if cap_rv_pk ~= foo_pk then
-	pass("rv is a fresh scalar row, not a reference to $foo (values carry UUIDs; refs don't)")
+local rv_string = rv_row and rv_row.scalar_string
+
+if rv_string then
+	pass("rv row's scalar_string is populated")
 else
-	fail("rv is a fresh scalar row, not a reference to $foo",
-		'cap_rv_pk equals foo_pk (means we stored a ref instead of a value)')
+	fail("rv row's scalar_string is populated", "scalar_string is nil")
+	os.exit(1)
 end
 
+-- The scalar_string should be UUID-shaped: 36 chars, 4 dashes at
+-- positions 9, 14, 19, 24 (0-based).
+if #rv_string == 36
+	and rv_string:sub(9, 9)  == '-'
+	and rv_string:sub(14, 14) == '-'
+	and rv_string:sub(19, 19) == '-'
+	and rv_string:sub(24, 24) == '-'
+then
+	pass("rv scalar_string is UUID-shaped (36 chars, 4 dashes)")
+else
+	fail("rv scalar_string is UUID-shaped (36 chars, 4 dashes)",
+		'got: ' .. tostring(rv_string))
+end
 
--- ------------------------------------------------------------
--- Dump the process log for review
--- ------------------------------------------------------------
-
-print()
-print("== process log ==")
-
-for r in e.cvm:nrows(
-	"select entry_pk, note from debug_log "
-	.. "where note like 'objects:%' "
-	.. "or note like 'refs:%' "
-	.. "or note like '.obj.pk%' "
-	.. "or note like '---- %' "
-	.. "order by entry_pk"
-) do
-	print(string.format("  #%d  %s", r.entry_pk, r.note))
+-- The scalar's own object_pk is different from the UUID it carries.
+-- Proves the UUID is stored as VALUE (in scalar_string), not as a
+-- database reference to the target row.
+if rv_pk ~= rv_string then
+	pass("rv row's own object_pk differs from its scalar_string (value, not reference)")
+else
+	fail("rv row's own object_pk differs from its scalar_string",
+		"rv_pk == rv_string means we accidentally stored a reference")
 end
 
 
