@@ -816,6 +816,18 @@ end;
 -- schema once nested-frame dispatch is common. Body is optimized for
 -- the update-in-place hot path via ON CONFLICT DO UPDATE.
 --
+-- BEFORE delete, not AFTER, because the body READS from the child.
+-- Every lookup here walks `refs where parent = old.object_pk` (the
+-- child's outgoing refs) to find the child's bucket and rv-ref chain.
+-- `refs.parent` is `on delete cascade` (see the refs table
+-- definition), so once the child's `objects` row is gone, its
+-- outgoing refs cascade away with it — an AFTER trigger would see
+-- an empty subtree and copy nothing. BEFORE runs while the child's
+-- refs are still resolvable. Contrast with the sibling trigger
+-- `frames_child_delete_sets_parent_gc` above, which only writes to
+-- the parent's own column and needs no data from the child — that
+-- one is AFTER because there's nothing time-sensitive to preserve.
+--
 -- Body statements:
 --
 -- 1a. Materialize parent's bucket on demand — fires only if the
