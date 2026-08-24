@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_object",
-	"role": "Tests for the sprint's Lua-side Object class implementation. Exercises the constructor's field shape (pk, engine, db), the equality metamethod (same pk + same engine → equal), and the placeholder method surfaces (methods, obj) being present as empty tables.",
+	"role": "Tests for the sprint's Lua-side Object class implementation. Exercises the constructor's field shape (pk, engine, db) and the placeholder method surfaces (methods, obj) being present as empty tables.",
 	"invoke": "lua5.4 sprints/object/src/test_object.lua",
 	"status": "sprint tests"
 }
@@ -81,45 +81,6 @@ do  -- The db field really IS a live sqlite handle
 		pass('wrapper.db can execute SQL')
 	else
 		fail('wrapper.db can execute SQL', 'exec raised')
-	end
-end
-
-do  -- Equality: same pk + same engine → ==
-	local engine = fake_engine()
-	local a      = object.new(engine, 'same-pk')
-	local b      = object.new(engine, 'same-pk')
-
-	if a == b then
-		pass('two wrappers with same pk + engine compare equal')
-	else
-		fail('two wrappers with same pk + engine compare equal',
-			'a == b returned false')
-	end
-end
-
-do  -- Different pk → not equal
-	local engine = fake_engine()
-	local a      = object.new(engine, 'pk-1')
-	local b      = object.new(engine, 'pk-2')
-
-	if a == b then
-		fail('different-pk wrappers not equal', 'a == b returned true')
-	else
-		pass('different-pk wrappers not equal')
-	end
-end
-
-do  -- Same pk, different engine → not equal
-	local engine_a = fake_engine()
-	local engine_b = fake_engine()
-	local a        = object.new(engine_a, 'same-pk')
-	local b        = object.new(engine_b, 'same-pk')
-
-	if a == b then
-		fail('same pk on different engines not equal',
-			'a == b returned true (should be different worlds)')
-	else
-		pass('same pk on different engines not equal')
 	end
 end
 

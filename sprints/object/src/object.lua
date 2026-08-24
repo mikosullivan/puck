@@ -44,8 +44,7 @@ sense. Keep them mentally apart.
   reaching through `engine` on every call.
 
 All three fields are set at construction and treated as stable for the
-wrapper's lifetime. Two wrappers compare `==` iff they hold the same pk
-under the same engine — same object in the same world.
+wrapper's lifetime.
 
 **Registration.** At bootstrap the engine seeds the Object class-row
 and calls into this module to populate its method surface. TBD
@@ -78,18 +77,6 @@ function object.new(engine, pk)
 		engine = engine,
 		db     = engine.cvm,
 	}, object)
-end
-
---[[
-## Equality
-
-`a == b` is true iff both wrappers hold the same pk under the same
-engine. Same pk across different engines is a different Caspian
-object (different db, different world), so both fields participate
-in the comparison.
-]]
-function object.__eq(a, b)
-	return a.pk == b.pk and a.engine == b.engine
 end
 
 --[[
