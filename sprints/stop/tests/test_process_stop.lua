@@ -217,31 +217,31 @@ end
 
 
 -- ============================================================
--- Resume — halted process continues via StopLarry:resume(value?)
+-- Restart — halted process continues via StopLarry:restart(value?)
 -- ============================================================
 
 print()
-print("== resume ==")
+print("== restart ==")
 
-do  -- Bare resume (no value) completes a program that only had %process.stop
+do  -- Bare restart (no value) completes a program that only had %process.stop
 	local e = StopLarry.new()
 	e:load("%process.stop")
 
 	local halted = e:run()
 	assert_eq(halted.stopped, 1, "program halted first")
 
-	local finished = e:resume()
+	local finished = e:restart()
 
-	assert_eq(finished.complete, 1, "resume() returns complete=1")
-	assert_eq(finished.stopped,  nil, "resume() doesn't set stopped")
+	assert_eq(finished.complete, 1, "restart() returns complete=1")
+	assert_eq(finished.stopped,  nil, "restart() doesn't set stopped")
 
 	-- Stop frame is gone.
 	local stop_still_there = scalar(e.cvm,
 		"select count(*) from objects where engine_class = 'stop'")
-	assert_eq(tonumber(stop_still_there), 0, "stop frame reaped on resume")
+	assert_eq(tonumber(stop_still_there), 0, "stop frame reaped on restart")
 end
 
-do  -- Resume runs subsequent statements after the halt. Second halt
+do  -- Restart runs subsequent statements after the halt. Second halt
 	-- afterwards keeps the DB frozen so we can observe $bar's binding
 	-- (a bare run to completion would reap frame 0 and sweep the scope
 	-- chain, hiding the evidence).
@@ -251,7 +251,7 @@ do  -- Resume runs subsequent statements after the halt. Second halt
 	local halted = e:run()
 	assert_eq(halted.stopped, 1, "halted mid-program (first stop)")
 
-	-- Before resume: $foo bound, $bar NOT yet bound.
+	-- Before restart: $foo bound, $bar NOT yet bound.
 	local foo = scalar(e.cvm, "select child from refs where key = 'foo'")
 	local bar = scalar(e.cvm, "select child from refs where key = 'bar'")
 
@@ -262,7 +262,7 @@ do  -- Resume runs subsequent statements after the halt. Second halt
 	end
 	assert_eq(bar, nil, "$bar NOT bound at first halt")
 
-	local halted2 = e:resume()
+	local halted2 = e:restart()
 	assert_eq(halted2.stopped, 1, "halted again after $bar (second stop)")
 
 	-- Now $bar should be bound.
@@ -270,15 +270,15 @@ do  -- Resume runs subsequent statements after the halt. Second halt
 		"select scalar_string from objects where object_pk = "
 		.. "(select r.child from refs r where r.key = 'bar')")
 
-	assert_eq(bar_after, 'after', "$bar bound to 'after' after resume")
+	assert_eq(bar_after, 'after', "$bar bound to 'after' after restart")
 end
 
-do  -- Resume with an injected value: cap's rv reflects the value.
+do  -- Restart with an injected value: cap's rv reflects the value.
 	local e = StopLarry.new()
 	e:load("%process.stop")
 
 	e:run()
-	e:resume("hello from the host")
+	e:restart("hello from the host")
 
 	-- Walk cap → bucket → rv → scalar
 	local rv_string = scalar(e.cvm,
@@ -288,15 +288,15 @@ do  -- Resume with an injected value: cap's rv reflects the value.
 		.. "where b_ref.parent = '" .. e.cap_pk .. "'")
 
 	assert_eq(rv_string, "hello from the host",
-		"cap's rv holds the injected string after resume")
+		"cap's rv holds the injected string after restart")
 end
 
-do  -- Resume with a numeric value: scalar_number
+do  -- Restart with a numeric value: scalar_number
 	local e = StopLarry.new()
 	e:load("%process.stop")
 
 	e:run()
-	e:resume(42)
+	e:restart(42)
 
 	local rv_number = scalar(e.cvm,
 		"select o.scalar_number from objects o "
@@ -305,21 +305,21 @@ do  -- Resume with a numeric value: scalar_number
 		.. "where b_ref.parent = '" .. e.cap_pk .. "'")
 
 	assert_eq(tonumber(rv_number), 42,
-		"cap's rv holds the injected number after resume")
+		"cap's rv holds the injected number after restart")
 end
 
-do  -- Resume when not halted raises stop_larry_resume_no_stop
+do  -- Restart when not halted raises stop_larry_restart_no_stop
 	local e = StopLarry.new()
 	e:load("$foo = 'plain'")
 	e:run()  -- Completes normally; no stop frame.
 
-	local ok, err = pcall(function() return e:resume() end)
+	local ok, err = pcall(function() return e:restart() end)
 
-	assert_eq(ok, false, "resume() raised on a non-halted process")
-	if err and tostring(err):find('stop_larry_resume_no_stop', 1, true) then
-		pass("error message identifies stop_larry_resume_no_stop")
+	assert_eq(ok, false, "restart() raised on a non-halted process")
+	if err and tostring(err):find('stop_larry_restart_process_complete', 1, true) then
+		pass("error message identifies stop_larry_restart_process_complete")
 	else
-		fail("error message identifies stop_larry_resume_no_stop",
+		fail("error message identifies stop_larry_restart_process_complete",
 			'got: ' .. tostring(err))
 	end
 end

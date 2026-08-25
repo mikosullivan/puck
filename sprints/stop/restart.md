@@ -1,11 +1,11 @@
 ~~~vibecode
 {"doc": "sprint-stop-restart", "sprint": "stop",
-	"role": "Step-by-step walkthrough of what happens when a halted process resumes. Traces the DB state at each phase: halt-time, resume() call, the reap of the stop frame, the propagate-rv trigger firing, the parent's advance, and re-entry into the walker. Two variants: bare resume (no value injected) and resume-with-value (a Lua value materialized as a scalar becomes the stop frame's rv, propagates up to the parent's rv, eventually to the cap)."}
+	"role": "Step-by-step walkthrough of what happens when a halted process restarts. Traces the DB state at each phase: halt-time, restart() call, the reap of the stop frame, the propagate-rv trigger firing, the parent's advance, and re-entry into the walker. Two variants: bare restart (no value injected) and restart-with-value (a Lua value materialized as a scalar becomes the stop frame's rv, propagates up to the parent's rv, eventually to the cap)."}
 ~~~
 
 # Restart walkthrough
 
-What actually happens under `StopLarry:resume(value?)`.
+What actually happens under `StopLarry:restart(value?)`.
 
 Two programs — bare and value-carrying:
 
@@ -13,7 +13,7 @@ Two programs — bare and value-carrying:
 %process.stop
 ~~~
 
-Halt state, then plain resume, then the process completes. Cap ends up terminal with no rv.
+Halt state, then plain restart, then the process completes. Cap ends up terminal with no rv.
 
 Or:
 
@@ -21,7 +21,7 @@ Or:
 %process.stop
 ~~~
 
-Same source, but `resume('hello')` injects a string on the way in. Cap ends up terminal with `rv = scalar_string 'hello'`.
+Same source, but `restart('hello')` injects a string on the way in. Cap ends up terminal with `rv = scalar_string 'hello'`.
 
 The mechanism is the same either way; only step 3 (value injection) differs.
 
@@ -41,20 +41,29 @@ refs: (empty — no scopes were built)
 
 Three frames stacked. `frame_0` is at `stmt_idx=0` (paused mid-dispatch of `%process.stop`). `stop_frame` is terminal-at-birth (empty ast, stmt_idx=0). `frame_gc` is null on every frame.
 
-## resume() — the six steps
+## restart() — the six steps
 
-### 1. Find the stop frame
+### 1. Walk cap → leaf frame
 
-~~~sql
-select object_pk from objects where engine_class = 'stop'
+The engine already has the process cap's pk (from `run()`'s earlier return). It traces from the cap down the `frame_parent` chain to the leaf — the frame at the bottom, where the process was paused. The chain is linear (schema's unique constraint on `frame_parent` allows at most one child per frame), so a plain loop suffices:
+
+~~~lua
+local leaf_pk = cap_pk
+while true do
+    local next_pk = <select object_pk from objects where frame_parent = leaf_pk>
+    if not next_pk then break end
+    leaf_pk = next_pk
+end
 ~~~
 
-One row. If none, raise `stop_larry_resume_no_stop`.
+If the walk never moves (cap has no children), the process is already complete — raise `stop_larry_restart_process_complete`.
+
+Under the current design the leaf frame is always the stop frame (only `%process.stop` halts a process), but the walk doesn't assume that — any leaf frame is a valid restart anchor.
 
 ### 2. Look up parent + owner_role
 
 ~~~sql
-select frame_parent, owner_role from objects where object_pk = <stop_pk>
+select frame_parent, owner_role from objects where object_pk = <leaf_pk>
 ~~~
 
 `frame_parent` is `frame_0`'s pk (the frame that called `%process.stop`). `owner_role` is inherited from `frame_0`, which inherited from `cap`, which inherited from user. Used for materializing the injected scalar (if any).
@@ -67,7 +76,7 @@ Otherwise, three writes:
 
 ~~~lua
 scalar_pk = data:add_scalar(value, owner_role)  -- polymorphic: string/number/bool/nil
-bucket_pk = data:add_bucket(stop_pk)             -- materializes stop frame's bucket
+bucket_pk = data:add_bucket(leaf_pk)             -- materializes stop frame's bucket
 data:upsert_ref(bucket_pk, 'rv', scalar_pk)     -- rv ref inside the bucket
 ~~~
 
@@ -88,16 +97,16 @@ The scalar carries the value. The stop frame's rv slot is now populated.
 ### 4. Reap the stop frame
 
 ~~~sql
-delete from objects where object_pk = <stop_pk>
+delete from objects where object_pk = <leaf_pk>
 ~~~
 
 This is where the magic happens. Two triggers fire on the parent (`frame_0`) BEFORE the row actually goes:
 
-**`frames_child_delete_propagates_rv`** (BEFORE) — reads the stop frame's outgoing refs to find its bucket → rv, then writes to the parent's bucket → rv. If the parent had no bucket, materializes one first. Under value-injected resume, `frame_0` didn't have a bucket; the trigger creates it, links it via `key='b'`, and inserts the `rv` ref pointing at the same scalar the stop frame's rv pointed at.
+**`frames_child_delete_propagates_rv`** (BEFORE) — reads the stop frame's outgoing refs to find its bucket → rv, then writes to the parent's bucket → rv. If the parent had no bucket, materializes one first. Under value-injected restart, `frame_0` didn't have a bucket; the trigger creates it, links it via `key='b'`, and inserts the `rv` ref pointing at the same scalar the stop frame's rv pointed at.
 
 **`frames_child_delete_sets_parent_gc`** (AFTER) — sets `frame_0.frame_gc = 1`. Cap-exempt guard applies but not triggered here since `frame_0` isn't a cap.
 
-Then the DELETE proceeds. Stop frame's outgoing refs cascade (`refs.parent = stop_pk` ON DELETE CASCADE): the `key='b'` ref to stop_bucket is dropped. Cascade fires `refs_mark_needs_trace_after_delete`, marking `stop_bucket` in `needs_trace`.
+Then the DELETE proceeds. Stop frame's outgoing refs cascade (`refs.parent = leaf_pk` ON DELETE CASCADE): the `key='b'` ref to stop_bucket is dropped. Cascade fires `refs_mark_needs_trace_after_delete`, marking `stop_bucket` in `needs_trace`.
 
 After step 4:
 
@@ -178,7 +187,7 @@ xpcall(function() self:run_frame(parent_pk) end, ...)
 
 The reap of `frame_0` fires the same two triggers:
 
-- `propagate-rv` writes `frame_0.bucket.rv` up to `cap.bucket.rv`. Under value-injected resume, `frame_0` has an rv (the scalar); cap has no bucket. Trigger materializes `cap_bucket`, links via `key='b'`, inserts the rv ref pointing at the same scalar.
+- `propagate-rv` writes `frame_0.bucket.rv` up to `cap.bucket.rv`. Under value-injected restart, `frame_0` has an rv (the scalar); cap has no bucket. Trigger materializes `cap_bucket`, links via `key='b'`, inserts the rv ref pointing at the same scalar.
 - `sets_parent_gc` on the cap — cap-exempt guard fires. Cap.gc stays null.
 
 Then cascade: `frame_0`'s outgoing `key='b'` ref cascades. Mark trigger marks `frame_0_bucket` in needs_trace.
@@ -204,11 +213,11 @@ refs:
 needs_trace: empty
 ~~~
 
-Cap is at born-terminal, no children — the "program done" state. Its rv holds the value the host injected (or nothing under bare resume, in which case `cap_bucket` was never materialized because `propagate-rv` skips materialization when the child has no rv).
+Cap is at born-terminal, no children — the "program done" state. Its rv holds the value the host injected (or nothing under bare restart, in which case `cap_bucket` was never materialized because `propagate-rv` skips materialization when the child has no rv).
 
-`resume()` returns `{complete = 1, cap_pk = <cap_pk>}`.
+`restart()` returns `{complete = 1, cap_pk = <cap_pk>}`.
 
-## What bare resume does differently
+## What bare restart does differently
 
 Skip step 3. Everything else is the same, except:
 
@@ -216,23 +225,23 @@ Skip step 3. Everything else is the same, except:
 - In step 4, `propagate-rv` statement 1a's `where exists (... child has rv ...)` guard fails — the stop frame has no rv-carrying bucket. So statement 1a doesn't materialize `frame_0`'s bucket. Statements 1b and 2 also skip (nothing to insert). Statement 3 fires if parent had a rv (deletes it), but parent has no bucket either — no-op.
 - Frame_0.gc still gets set to 1 by `sets_parent_gc`.
 - After drain + advance, run_frame reaps frame_0. Same propagate-rv skips again (frame_0 has no rv → skip materialize on cap). Cap ends terminal with no bucket, no rv.
-- `resume()` returns `{complete = 1, cap_pk = <cap_pk>}` — same shape, cap just has no rv.
+- `restart()` returns `{complete = 1, cap_pk = <cap_pk>}` — same shape, cap just has no rv.
 
-## What a resume-into-another-halt looks like
+## What a restart-into-another-halt looks like
 
 Program: `%process.stop; %process.stop`.
 
 - `run()` halts at the first stop.
-- `resume()` reaps stop_frame_1, drains, advances frame_0 to stmt_idx=1.
+- `restart()` reaps stop_frame_1, drains, advances frame_0 to stmt_idx=1.
 - run_frame(frame_0): loops, dispatches statement at idx=1 (the second `%process.stop`). Handler inserts stop_frame_2, raises HALT.
-- Halt unwinds through `run_frame` → `resume()`'s xpcall catches → returns `{stopped=1, cap_pk=...}`.
+- Halt unwinds through `run_frame` → `restart()`'s xpcall catches → returns `{stopped=1, cap_pk=...}`.
 
-The host can call `resume()` again to keep going. Halt-and-resume is idempotent — each halt leaves a fresh stop frame at the bottom; each resume reaps it and continues.
+The host can call `restart()` again to keep going. Halt-and-restart is idempotent — each halt leaves a fresh stop frame at the bottom; each restart reaps it and continues.
 
 ## Related
 
 - [sprints/stop/index.md](./) — sprint index; the informal design walk.
-- [sprints/stop/src/stop_larry.lua](./src/stop_larry.lua) — `resume()` implementation.
+- [sprints/stop/src/stop_larry.lua](./src/stop_larry.lua) — `restart()` implementation.
 - [sprints/stop/src/process_stop.lua](./src/process_stop.lua) — handler that inserts the stop frame + raises HALT.
 - [production/src/engine/cvm/sqlite/frame-lifecycle](https://puck.uno/production/requirements/cvm/sqlite/frame-lifecycle) — the frame state machine + rv slot mechanics.
 - [production/src/engine/cvm/sqlite/schema.sql](https://puck.uno/production/src/engine/cvm/sqlite/schema.sql) — `frames_child_delete_propagates_rv`, `frames_child_delete_sets_parent_gc`, `frames_advance_requires_gc`, `frames_gc_reset_requires_empty_needs_trace`.

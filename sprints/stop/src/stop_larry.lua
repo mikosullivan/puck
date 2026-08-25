@@ -5,7 +5,7 @@
 	"exports": {
 		"new":    "(opts?) -> StopLarry — same signature as Larry.new; also swaps the stock ProcessStop handler for the sprint's version",
 		"run":    "() -> result table — overrides Engine:run to catch the HALT sentinel; returns {stopped=1, cap_pk=...} on halt, {complete=1, cap_pk=...} on normal completion",
-		"resume": "(value?) -> result table — resumes a halted process. If `value` is given, materializes a scalar of that Lua value on the stop frame's rv so it propagates up on reap; otherwise the stop frame reaps with a null rv. Then advances the calling frame past the %process.stop statement and continues walking. Returns the same result-hash shape as run(). Raises `stop_larry_resume_no_stop` if called when no stop frame exists."
+		"restart": "(value?) -> result table — restarts a halted process. Walks the frame chain from the process cap down to the leaf frame; if only the cap remains, raises `stop_larry_restart_process_complete`. If `value` is given, materializes a scalar of that Lua value on the leaf frame's rv so it propagates up on reap; otherwise the leaf frame reaps with a null rv. Then advances the parent past whatever it was doing when it halted, and continues walking. Returns the same result-hash shape as run()."
 	},
 	"depends_on": ["larry (production)", "engine (production)", "halt", "process_stop"]
 }
@@ -27,7 +27,7 @@ Sprint-scoped Larry subclass for the stop sprint.
    `xpcall`. If the caught error is our HALT sentinel, returns a
    stopped-result hash. Anything else re-raises via `error(err, 0)`.
 
-3. `StopLarry:resume(value?)` — resumes a halted process. Optionally
+3. `StopLarry:restart(value?)` — restarts a halted process. Optionally
    injects a rv onto the stop frame first, then reaps the stop frame
    (triggers propagate-rv + sets_parent_gc), advances the parent
    past the %process.stop statement, and re-enters the walker to
@@ -100,17 +100,17 @@ end
 
 
 --[[
-## `StopLarry:resume`
+## `StopLarry:restart`
 
-Resumes a halted process. Optionally injects a value onto the stop
+Restarts a halted process. Optionally injects a value onto the stop
 frame's rv slot; then reaps the stop frame and continues walking
 the parent frame from just past the %process.stop statement.
 
 Steps:
 
 1. **Find the stop frame** — the single row with
-   `engine_class='stop'`. Raises `stop_larry_resume_no_stop` if
-   absent (nothing to resume).
+   `engine_class='stop'`. Raises `stop_larry_restart_no_stop` if
+   absent (nothing to restart).
 2. **Optional rv injection** — if `value` is given, materialize a
    scalar via `engine.data:add_scalar`, ensure the stop frame has a
    bucket, and upsert the `rv` ref pointing at the scalar.
@@ -132,59 +132,67 @@ Steps:
    naturally at completion, and returns.
 
 Returns `{complete = 1, cap_pk = ...}` on normal completion of the
-resumed program, `{stopped = 1, cap_pk = ...}` if the resumed
+restarted program, `{stopped = 1, cap_pk = ...}` if the restarted
 program hits another %process.stop.
 
 Value injection uses `engine.data:add_scalar(value, owner_role)`
 which is polymorphic on Lua's `type(value)` — string, number,
 boolean, and nil all route to the right scalar_* column.
 ]]
-function StopLarry:resume(value)
+function StopLarry:restart(value)
 	local db = self.cvm
 
-	-- 1. Find the stop frame.
-	local stop_pk
+	-- 1. Walk the frame chain from the cap down to the leaf frame.
+	-- Under the current design the bottom is always a stop frame
+	-- (the only thing that halts a process), but this walk doesn't
+	-- assume that — any leaf frame is a valid restart anchor. The
+	-- chain is linear (unique(frame_parent) constraint), so a plain
+	-- loop suffices.
+	local leaf_pk = self.cap_pk
 
-	for row in db:nrows(
-		"select object_pk from objects where engine_class = 'stop'"
-	) do
-		stop_pk = row.object_pk
+	while true do
+		local next_pk
+
+		for row in db:nrows(
+			"select object_pk from objects where frame_parent = '" .. leaf_pk .. "'"
+		) do
+			next_pk = row.object_pk
+		end
+
+		if not next_pk then break end
+
+		leaf_pk = next_pk
 	end
 
-	if not stop_pk then
-		error("stop_larry_resume_no_stop: no stop frame present; process is not halted")
+	if leaf_pk == self.cap_pk then
+		error("stop_larry_restart_process_complete: no non-cap frames present; nothing to restart")
 	end
 
-	-- Look up the parent (the frame that called %process.stop) and its owner_role.
+	-- Look up the parent (the frame the leaf frame's under) and its owner_role.
 	local parent_pk
 	local owner_role
 
 	for row in db:nrows(
-		"select frame_parent from objects where object_pk = '" .. stop_pk .. "'"
+		"select frame_parent, owner_role from objects where object_pk = '" .. leaf_pk .. "'"
 	) do
 		parent_pk = row.frame_parent
-	end
-
-	for row in db:nrows(
-		"select owner_role from objects where object_pk = '" .. stop_pk .. "'"
-	) do
 		owner_role = row.owner_role
 	end
 
-	-- 2. Optional rv injection.
+	-- 2. Optional rv injection onto the leaf frame.
 	if value ~= nil then
 		local scalar_pk = self.data:add_scalar(value, owner_role)
-		local bucket_pk = self.data:add_bucket(stop_pk)
+		local bucket_pk = self.data:add_bucket(leaf_pk)
 		self.data:upsert_ref(bucket_pk, 'rv', scalar_pk)
 	end
 
-	-- 3. Reap the stop frame. Triggers fire against the parent.
+	-- 3. Reap the leaf frame. Triggers fire against the parent.
 	local rc = db:exec(
-		"delete from objects where object_pk = '" .. stop_pk .. "'"
+		"delete from objects where object_pk = '" .. leaf_pk .. "'"
 	)
 
 	if rc ~= 0 then
-		error("stop_larry_resume_reap_failed: " .. tostring(db:errmsg()))
+		error("stop_larry_restart_reap_failed: " .. tostring(db:errmsg()))
 	end
 
 	-- 4. Drain the needs_trace worklist the reap populated. Must happen
