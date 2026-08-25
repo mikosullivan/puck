@@ -52,9 +52,7 @@ coordinates (`process`, `idx`, `frame_stmt_idx`) are set — a runtime
 question the class answers with its methods, not class dispatch.
 
 The internal `_wrap` helper does the actual metatable set + engine
-lift, reusing the row table itself as the instance. `frame.new`
-reuses it to avoid re-entering `object.new` (which would loop forever
-on any frame row).
+lift, reusing the row table itself as the instance.
 
 **Row-as-instance.** `_wrap` stamps the metatable directly onto `row`
 rather than allocating a fresh table and copying columns across.
@@ -69,18 +67,19 @@ local function _wrap(mt, engine, row)
 	return setmetatable(row, mt)
 end
 
+-- Every row wraps as a plain `object`. There used to be a
+-- control-based dispatch branch that wrapped `control='f'` rows as a
+-- `frame` subclass, but the frame class ended up carrying no
+-- frame-specific behavior (its methods moved to CVM as plain
+-- functions taking pks). A frame subclass gets re-introduced when
+-- frame-specific wrapper behavior actually earns it — memoization
+-- keyed on frame identity, say. Until then, one wrapper class.
 function object.new(engine, row)
-	if row.control == 'f' then
-		local frame = require("cvm.sqlite.frame")
-		return frame.new(engine, row)
-	end
-
 	return _wrap(object, engine, row)
 end
 
--- Expose the internal helper so `frame.new` (and any future subclass)
--- can build the wrapped object without re-entering `object.new`'s
--- dispatch branch.
+-- Expose the internal helper so any future subclass can build the
+-- wrapped object without re-entering `object.new`.
 object._wrap = _wrap
 
 --[[

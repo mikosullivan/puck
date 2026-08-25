@@ -1,11 +1,11 @@
 --[[
 {
 	"module": "cvm",
-	"role": "Data-access layer for a CVM connection. Owns the SQLite handle, preps every statement upfront, and exposes cached-statement methods (object_by_pk, frame_by_pk, plus the add_* / get_* family) so callers work in objects/pks rather than raw SQL. Sits above `object` and `frame` — the CVM constructs them today; whether it will also call into them, and how, is still open (see the 'Open questions' block in the docstring). Not to be confused with the top-level Caspian runtime at `src/engine/engine.lua`; this file is the CVM's internal object-store, required as `require('cvm.sqlite')`.",
+	"role": "Data-access layer for a CVM connection. Owns the SQLite handle, preps every statement upfront, and exposes cached-statement methods (object_by_pk, frame_by_pk, plus the add_* / get_* family) so callers work in objects/pks rather than raw SQL. Sits above `object` — the CVM constructs them today; whether it will also call into them, and how, is still open (see the 'Open questions' block in the docstring). Not to be confused with the top-level Caspian runtime at `src/engine/engine.lua`; this file is the CVM's internal object-store, required as `require('cvm.sqlite')`.",
 	"exports": {
 		"new":           "(db) -> cvm — constructor; binds an lsqlite3 handle and preps every statement upfront",
 		"object_by_pk":  "(pk) -> object — canonical pk-to-object load; nil if no row",
-		"frame_by_pk":   "(pk) -> frame — retrieves the row and asserts control='f'; raises frame_by_pk_not_found if no such row, frame_by_pk_not_a_frame if the row isn't a frame",
+		"frame_by_pk":   "(pk) -> object (with control='f' verified) — retrieves the row via object_by_pk and asserts control='f'; raises frame_by_pk_not_found if no such row, frame_by_pk_not_a_frame if the row isn't a frame",
 		"add_bucket":    "(for_object_pk) -> new bucket's object_pk — INSERTs a HashPrimitive owned by the target's owner_role",
 		"add_stack":     "(for_object_pk) -> new stack's object_pk — INSERTs an ArrayPrimitive owned by the target's owner_role",
 		"add_scalar":    "(value, owner_role_pk) -> new scalar's object_pk — dispatches on Lua type(value): string → scalar_string, number → scalar_number (REAL affinity coerces integer to float), boolean → scalar_bool (true/false → 1/0), nil → scalar_null (marker for the u type). Any other Lua type raises `add_scalar_unsupported_value_type`.",
@@ -320,16 +320,13 @@ Retrieval-with-check for callers that expect a frame. Composes on
 returning. Raises specific errors if the row doesn't exist or isn't
 a frame.
 
-**Why an assertion, not just a call.** During the walking-skeleton
-phase, "the engine has a pk it believes is a frame" is a load-bearing
-assumption that isn't yet backed by a type system. Any code path that
-retrieves what it expects to be a frame should call `frame_by_pk`
-rather than `object_by_pk` — the extra CPU cycles (one comparison + a
-branch) are cheap insurance against a mis-typed pk silently wrapping
-as a plain object and then failing cryptically on a `:locals()` call.
-
-Once the design settles and the callers are all provably-correct,
-this can be relaxed. Not yet.
+**What comes back is a plain `object` wrapper.** There's no `frame`
+subclass anymore — every row wraps as `object`; frame-specific
+behavior lives on CVM (`ensure_own_scope`, etc.) as plain functions
+taking pks. What `frame_by_pk` still buys the caller is the
+"control='f' actually verified" guarantee, so a mis-typed pk raises
+here rather than failing cryptically later. A frame subclass gets
+re-introduced when frame-specific wrapper behavior actually earns it.
 ]]
 function cvm:frame_by_pk(pk)
 	local obj = self:object_by_pk(pk)
