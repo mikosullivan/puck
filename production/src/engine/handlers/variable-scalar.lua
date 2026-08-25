@@ -22,12 +22,12 @@ Handler for the CaspM shape produced by `$x = 1` — a three-element row whose h
 
 1. Unpack the target name (`row[2]`) and value atom (`row[3]`).
 2. Recognize the value atom. Currently only `{v = <literal>}` — one value-atom shape. Other shapes (refs, calls, hash/array literals) raise `variable_scalar_unsupported_value_atom` and land in later work.
-3. Read the current frame from `engine.current_frame` (set by `engine:run_frame` before each dispatch).
-4. Wrap the writes in `savepoint variable_scalar_assign;`. Inside: `data:add_scalar(value, owner_role)` → scalar_pk; `frame:ensure_own_scope()` → own-scope hash; `data:upsert_ref(own_scope.object_pk, name, scalar_pk)`; `data:mark_frame_gc(frame.object_pk)`. On error, rollback + release + re-raise. On success, release.
+3. Read `engine.current_frame_pk` and `engine.current_role_pk` (set by `engine:run_frame` before each dispatch).
+4. Wrap the writes in `savepoint variable_scalar_assign;`. Inside: `data:add_scalar(value, role_pk)` → scalar_pk; `data:ensure_own_scope(frame_pk, role_pk)` → own-scope pk; `data:upsert_ref(own_scope_pk, name, scalar_pk)`; `data:mark_frame_gc(frame_pk)`. On error, rollback + release + re-raise. On success, release.
 
 The savepoint keeps the four writes atomic — a failure partway through can't leave a scope hash with a dangling scalar or a frame that's been marked without a binding to justify it.
 
-**Direct-to-CVM.** No wrapper method involved. `add_scalar` / `upsert_ref` / `mark_frame_gc` are CVM methods called through `engine.data`. `ensure_own_scope` is the one wrapper-shaped operation left — it walks/creates the frame's b/p/s ref chain and legitimately reads the frame wrapper's memoized `_own_scope` field, so it stays a frame method for now.
+**Direct-to-CVM.** No wrapper methods involved anywhere in this handler. Every operation is a plain CVM function taking pks — `add_scalar`, `ensure_own_scope`, `upsert_ref`, `mark_frame_gc` all called through `engine.data`. The handler works entirely in pks; there's no wrapper instance in this codepath.
 
 Returns `true` on successful execute. Any raise inside the savepoint block re-raises after rollback.
 ]]

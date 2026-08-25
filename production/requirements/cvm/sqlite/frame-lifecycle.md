@@ -16,7 +16,7 @@ A process is not a separate table row — a process is a **cap frame**: an `obje
 
 Frame 0 — the top of the user's call stack — sits directly under the cap as a nested frame (`frame_parent = cap_pk`, `frame_process_cap = null`). Sub-frames chain further down from frame 0 via `frame_parent`.
 
-The cap participates in the same lifecycle machinery as any frame — same `frame_stmt_idx` field, same `frame_gc` state, same advance rules. Its ast is empty (`'[]'`) so it has no statements to dispatch; it's the terminal-alive anchor that lets the walker cascade cleanup uniformly.
+The cap participates in the same lifecycle machinery as any frame — same `frame_stmt_idx` field, same `frame_gc` state, same advance rules. Its ast is `'[null]'` — a single dummy slot the walker never dispatches; the recursion sidesteps the dispatch step by finding the cap in gc state (from frame 0's reap) and moving stmt_idx 0 → 1 via advance. Cap ends at terminal (`stmt_idx = 1, gc = null`), surviving as the process anchor because `reap_frame`'s cap-skip clause (`and frame_process_cap is null`) filters it out of the delete.
 
 **Why a cap.** A process needs a top-of-stack anchor so the walker can cascade-signal up from frame 0 with the same trigger machinery it uses everywhere else. Rather than special-case "sweep frame 0" logic, the cap gives frame 0 a parent that participates in the same lifecycle.
 
@@ -108,14 +108,14 @@ Cap seeded, frame 0 seeded under it. Nothing has run yet.
 </thead>
 <tbody>
 <tr class="tbl-row-role"><td><code>eae0b9fb-…</code></td><td><code>o</code></td><td><code>r</code></td><td><code>u</code></td><td><code>eae0b9fb-…</code></td><td>null</td><td>null</td><td>null</td><td class="col-comment">user role</td></tr>
-<tr class="tbl-row-frame"><td><code>0c72f81a-…</code></td><td><code>o</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[]</code></td><td><code>0</code></td><td>null</td><td class="col-comment">cap — <code>frame_process_cap = 1</code>, process root</td></tr>
+<tr class="tbl-row-frame"><td><code>0c72f81a-…</code></td><td><code>o</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[null]</code></td><td><code>0</code></td><td>null</td><td class="col-comment">cap — <code>frame_process_cap = 1</code>, process root</td></tr>
 <tr class="tbl-row-frame"><td><code>2dc612e0-…</code></td><td><code>o</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[[{"in":"as"},"x",{"v":1}]]</code></td><td><code>0</code></td><td><code>0c72f81a-…</code></td><td class="col-comment">frame 0 — under the cap</td></tr>
 </tbody>
 </table>
 
 ### After frame 0's statement dispatches
 
-The handler for `{in='as'}` ran `frame:set_local_to_scalar('x', 1)` in a single savepoint: materialize the scalar (polymorphic dispatch on the Lua-type of the value), ensure the bucket → scopes → scopes[0] chain, bind `x`, then `UPDATE frame SET frame_gc = 1`. Frame 0 is now at `(frame_stmt_idx=0, frame_gc=1, no children)` — ready to advance. See [scopes](./scopes) for the bucket/scopes chain shape.
+The handler for `{in='as'}` did its four writes inline inside `savepoint variable_scalar_assign`: `cvm:add_scalar` materializes the scalar (polymorphic dispatch on the Lua-type of the value), `cvm:ensure_own_scope` ensures the bucket → scopes → scopes[0] chain, `cvm:upsert_ref` binds `x` in scopes[0], then `cvm:mark_frame_gc` does `UPDATE frame SET frame_gc = 1`. Frame 0 is now at `(frame_stmt_idx=0, frame_gc=1, no children)` — ready to advance. See [scopes](./scopes) for the bucket/scopes chain shape.
 
 ### After frame 0's advance
 

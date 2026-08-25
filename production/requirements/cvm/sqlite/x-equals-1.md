@@ -20,15 +20,15 @@ $x = 1
 ## What happens
 
 - **Boot.** `engine.new()` opens the CVM. The schema seeds three role rows (engine, cache, user).
-- **Cap + frame 0.** `run()` inserts the process cap (`control = 'f'`, `frame_process_cap = 1`, empty frame_ast, `frame_stmt_idx = 0`) and frame 0 under it (also `'f'`, `frame_parent = cap`, `frame_ast = <caspm>`, `frame_stmt_idx = 0`).
-- **Statement 0 dispatches.** The `{in: 'as'}` handler routes to `frame:set_local_to_scalar('x', 1)` which:
+- **Cap + frame 0.** `run()` inserts the process cap (`control = 'f'`, `frame_process_cap = 1`, `frame_ast = '[null]'`, `frame_stmt_idx = 0`) and frame 0 under it (also `'f'`, `frame_parent = cap`, `frame_ast = <caspm>`, `frame_stmt_idx = 0`). The cap's single-slot ast lets it participate in the frame_gc cycle: cap starts non-terminal, advances to `stmt_idx = 1` for terminal.
+- **Statement 0 dispatches.** The `{in: 'as'}` handler does its four writes inline inside a savepoint:
 	- calls `cvm:add_scalar(1, user)` — Lua's `type(1) == 'number'` picks the `scalar_number` column; REAL affinity coerces the integer to `1.0` at insert time.
-	- calls `frame:ensure_own_scope()` — materializes the bucket → scopes → scopes[0] chain.
+	- calls `cvm:ensure_own_scope(frame_pk, role_pk)` — materializes the bucket → scopes → scopes[0] chain, returns the own-scope pk.
 	- calls `cvm:upsert_ref(scopes[0], 'x', scalar_pk)` — binds `x` in the frame's own scope.
-	- marks frame 0 `frame_gc = 1`.
+	- calls `cvm:mark_frame_gc(frame_pk)` — marks frame 0 `frame_gc = 1`.
 - **Walker advances.** `frame_stmt_idx` 0 → 1, `frame_gc` auto-nulls.
-- **Statement 1 dispatches.** `%process.stop` sets `engine.stopped = true`.
-- **Walker halts.** Breaks before advancing again. `run_frame` skips its reap. `run()` returns `{complete = 0, stopped = 1, cap_pk}`.
+- **Statement 1 dispatches.** `%process.stop` — recognized by `run_row` and dispatched to `Engine:process_stop`, which inserts a stop frame under frame 0 and raises the HALT sentinel via `halt.raise()`.
+- **HALT unwinds.** The sentinel travels through `run_row` + `run_frame` + `restart_frame` back to `run`'s xpcall, which catches it and returns `{stopped = 1, cap_pk}`.
 
 At this point every row created above is still present in the DB. No drain has run.
 

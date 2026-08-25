@@ -446,7 +446,7 @@ Dispatch:
 - Anything else raises `add_scalar_unsupported_value_type` with the
   Lua type name in the error text.
 
-Used by `frame:set_local_to_scalar` and any other write path that
+Used by the variable-scalar handler and any other write path that
 materializes a primitive value inside the object graph.
 ]]
 function cvm:add_scalar(value, owner_role_pk)
@@ -641,10 +641,6 @@ for this call — materializing the chain on first call:
 Not idempotent-optimized — every call re-fetches. Handlers that
 need multiple accesses within one dispatch can cache the returned
 pk locally.
-
-Ported from the frame wrapper's `ensure_own_scope` method; assignment
-handlers now call this directly on the CVM instead of going through
-a frame wrapper.
 ]]
 function cvm:ensure_own_scope(frame_pk, owner_role_pk)
 	-- Get-or-create the frame's bucket.
