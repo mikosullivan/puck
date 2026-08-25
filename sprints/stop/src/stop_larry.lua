@@ -179,11 +179,27 @@ function StopLarry:restart(value)
 		owner_role = row.owner_role
 	end
 
-	-- 2. Optional rv injection onto the leaf frame.
+	-- 2. Optional rv injection onto the leaf frame. The three writes
+	-- (scalar row, bucket row, rv ref) land inside one savepoint so
+	-- either all three commit or none of them do — a partial injection
+	-- would leave a bucket without an rv (or a bucket ref to nothing)
+	-- and the halt state would go inconsistent.
 	if value ~= nil then
-		local scalar_pk = self.data:add_scalar(value, owner_role)
-		local bucket_pk = self.data:add_bucket(leaf_pk)
-		self.data:upsert_ref(bucket_pk, 'rv', scalar_pk)
+		assert(db:exec('savepoint restart_inject_rv;') == 0, db:errmsg())
+
+		local ok, err = pcall(function()
+			local scalar_pk = self.data:add_scalar(value, owner_role)
+			local bucket_pk = self.data:add_bucket(leaf_pk)
+			self.data:upsert_ref(bucket_pk, 'rv', scalar_pk)
+		end)
+
+		if not ok then
+			db:exec('rollback to savepoint restart_inject_rv;')
+			db:exec('release savepoint restart_inject_rv;')
+			error(err, 0)
+		end
+
+		assert(db:exec('release savepoint restart_inject_rv;') == 0, db:errmsg())
 	end
 
 	-- 3. Reap the leaf frame. Triggers fire against the parent.

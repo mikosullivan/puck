@@ -72,13 +72,24 @@ select frame_parent, owner_role from objects where object_pk = <leaf_pk>
 
 Skipped when `value` is nil.
 
-Otherwise, three writes:
+Otherwise, three writes — wrapped in a **savepoint** so they land atomically or roll back together. A partial injection (e.g., the scalar and bucket land but the rv ref fails) would leave the halt state inconsistent, so all-or-nothing is the rule:
 
 ~~~lua
-scalar_pk = data:add_scalar(value, owner_role)  -- polymorphic: string/number/bool/nil
-bucket_pk = data:add_bucket(leaf_pk)             -- materializes stop frame's bucket
-data:upsert_ref(bucket_pk, 'rv', scalar_pk)     -- rv ref inside the bucket
+db:exec('savepoint restart_inject_rv;')
+local ok, err = pcall(function()
+    scalar_pk = data:add_scalar(value, owner_role)  -- polymorphic: string/number/bool/nil
+    bucket_pk = data:add_bucket(leaf_pk)             -- materializes stop frame's bucket
+    data:upsert_ref(bucket_pk, 'rv', scalar_pk)     -- rv ref inside the bucket
+end)
+if not ok then
+    db:exec('rollback to savepoint restart_inject_rv;')
+    db:exec('release savepoint restart_inject_rv;')
+    error(err, 0)
+end
+db:exec('release savepoint restart_inject_rv;')
 ~~~
+
+The pcall re-raises anything it caught after cleaning up the savepoint — per the sprint's error-propagation discipline.
 
 After these writes:
 
