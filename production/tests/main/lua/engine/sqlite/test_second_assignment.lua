@@ -112,7 +112,7 @@ h.test('$x = 1 ; $x = 2: run() returns complete = 1', function()
 	h.assert_not_nil(result.cap_pk, 'result.cap_pk should be set')
 end)
 
-h.test('$x = 1 ; $x = 2: cap sits at its born-terminal state', function()
+h.test('$x = 1 ; $x = 2: cap sits at its post-cycle terminal state', function()
 	local e = new_engine()
 	e:load(SOURCE)
 	local result = e:run()
@@ -120,12 +120,12 @@ h.test('$x = 1 ; $x = 2: cap sits at its born-terminal state', function()
 	local frame_stmt_idx = scalar(e.cvm,
 		"select frame_stmt_idx from objects where object_pk = ?",
 		result.cap_pk)
-	h.assert_eq(tonumber(frame_stmt_idx), 0, 'cap frame_stmt_idx should be 0')
+	h.assert_eq(tonumber(frame_stmt_idx), 1, 'cap frame_stmt_idx should be 1 (advanced through its cycle)')
 
 	local frame_gc = scalar(e.cvm,
 		"select frame_gc from objects where object_pk = ?",
 		result.cap_pk)
-	h.assert_true(frame_gc == nil, 'cap frame_gc should be null')
+	h.assert_true(frame_gc == nil, 'cap frame_gc should be null (auto-nulled by advance)')
 
 	local kids = scalar(e.cvm,
 		"select count(*) from objects where frame_parent = ?",

@@ -103,7 +103,7 @@ a nested frame.
 ]]
 local function insert_process(db, user_pk)
 	local pk
-	local sql = "insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk"
+	local sql = "insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk"
 	for row in db:nrows(sql) do
 		pk = row.object_pk
 	end
@@ -1308,12 +1308,12 @@ end)
 -- Process completion
 -- ============================================================
 
-test('cap reaches its at-rest state (frame_stmt_idx=0, frame_gc=null, no children) after frame 0 completes', function()
-	-- Under the current design, caps are static process anchors — they
-	-- don't advance frame_stmt_idx and don't participate in the frame_gc cycle
-	-- (cap-exempt from `frames_child_delete_sets_parent_gc`). Frame 0
-	-- runs its frame_ast to terminal, the engine's reap step deletes it, and
-	-- the cap's state is unchanged except the child is now gone.
+test('cap reaches its at-rest state (frame_stmt_idx=1, frame_gc=null, no children) after frame 0 completes and cap advances', function()
+	-- Under the current design, caps participate in the frame_gc cycle
+	-- like any other frame. Frame 0 reaps → cap.gc=1 (via
+	-- `frames_child_delete_sets_parent_gc`, no cap-exempt); cap's own
+	-- walker step advances stmt_idx 0→1 and the advance auto-nulls gc.
+	-- Cap ends at terminal (stmt_idx=1, gc=null) as the process anchor.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
@@ -1328,10 +1328,18 @@ test('cap reaches its at-rest state (frame_stmt_idx=0, frame_gc=null, no childre
 	assert_ok(db:exec("delete from objects where object_pk = '" .. frame_pk .. "';"),
 		db, 'frame 0 reap')
 
-	-- Cap unchanged.
+	-- Cap.gc = 1 now (sets_parent_gc fired).
+	local mid = first(db, "select frame_stmt_idx, frame_gc from objects where object_pk = '" .. cap_pk .. "'")
+	assert(tonumber(mid.frame_stmt_idx) == 0, 'cap frame_stmt_idx still 0 (advance not run yet)')
+	assert(tonumber(mid.frame_gc) == 1, 'cap frame_gc = 1 (set by frames_child_delete_sets_parent_gc)')
+
+	-- Cap's own advance (what Engine.run does after run_frame returns):
+	-- advance stmt_idx 0 → 1, auto-nulls gc.
+	assert_ok(walker_advance(db, cap_pk, 1), db, 'cap advance to terminal')
+
 	local cap_row = first(db, "select frame_stmt_idx, frame_gc from objects where object_pk = '" .. cap_pk .. "'")
-	assert(tonumber(cap_row.frame_stmt_idx) == 0, 'cap frame_stmt_idx stays at 0')
-	assert(cap_row.frame_gc == nil, 'cap frame_gc stays null (caps are exempt from the child-delete cascade)')
+	assert(tonumber(cap_row.frame_stmt_idx) == 1, 'cap frame_stmt_idx = 1 (advanced through its cycle)')
+	assert(cap_row.frame_gc == nil, 'cap frame_gc = null (auto-nulled by advance)')
 
 	-- Frame 0 is gone; cap has no children.
 	local children = first(db, "select count(*) as n from objects where frame_parent = '" .. cap_pk .. "'")

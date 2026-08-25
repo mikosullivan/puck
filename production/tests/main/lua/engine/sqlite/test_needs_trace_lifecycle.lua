@@ -82,7 +82,7 @@ local function setup(db)
 	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	current_process_pk.register(db, function() return cap_pk end)
 
@@ -237,9 +237,9 @@ test('two different processes can each mark the same object independently', func
 	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_a_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	local cap_b_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local scalar_pk = first(db,
 		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
@@ -266,9 +266,9 @@ test('deleting the object cascades needs_trace rows for ALL processes marking it
 	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_a_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	local cap_b_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local scalar_pk = first(db,
 		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk
@@ -381,9 +381,9 @@ test('frame_gc 1 → null is not blocked by needs_trace rows for a DIFFERENT pro
 	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_a_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	local cap_b_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	local frame_a_pk = insert_nested_frame(db, cap_a_pk, user_pk)
 
@@ -453,7 +453,7 @@ test('needs_trace persists across connections; traces does not', function()
 	-- Set up state in db1.
 	local user_pk = first(db1, "select object_pk from objects where role_core = 'u'").object_pk
 	local cap_pk = first(db1,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 	current_process_pk.register(db1, function() return cap_pk end)
 	local scalar_pk = first(db1,
 		"insert into objects (base, scalar_number, owner_role) values ('o', 42, '" .. user_pk .. "') returning object_pk").object_pk

@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "test_x_equals_1",
-	"role": "Numbers sprint: end-to-end tests running `$x = 1` (and variants) through the sprint's engine. Transitively covers frame:set_local_to_scalar and the variable-scalar handler — both live behind the walker's dispatch and don't have direct tests. Exercises the sprint's schema shape (scalar_number carries the payload; scalar_string / scalar_bool / scalar_null all null; REAL affinity stores the value as float even when the source-level literal reads as an integer), the polymorphic add_scalar dispatch (string / number / boolean / nil literals all round-trip through the same handler), and the rebind path (upsert refs + drain).",
+	"role": "Numbers sprint: end-to-end tests running `$x = 1` (and variants) through the sprint's engine. Transitively covers the variable-scalar handler's inlined assignment path (savepoint + add_scalar + ensure_own_scope + upsert_ref + mark_frame_gc) — it lives behind the walker's dispatch and doesn't have direct tests. Exercises the sprint's schema shape (scalar_number carries the payload; scalar_string / scalar_bool / scalar_null all null; REAL affinity stores the value as float even when the source-level literal reads as an integer), the polymorphic add_scalar dispatch (string / number / boolean / nil literals all round-trip through the same handler), and the rebind path (upsert refs + drain).",
 	"run": "lua5.4 sprints/numbers/tests/test_x_equals_1.lua (from repo root)"
 }
 ]]
@@ -54,14 +54,14 @@ test('$x = 1: run() returns complete = 1', function()
 	h.assert_not_nil(result.cap_pk, 'result.cap_pk should be set')
 end)
 
-test('$x = 1: cap at born-terminal, refs empty, needs_trace empty after the tail drain', function()
+test('$x = 1: cap at post-cycle terminal, refs empty, needs_trace empty after the tail drain', function()
 	local e = new_engine()
 	e:load('$x = 1')
 	local result = e:run()
 
 	h.assert_eq(tonumber(scalar(e.cvm,
 		"select frame_stmt_idx from objects where object_pk = '" .. result.cap_pk .. "'")),
-		0, 'cap frame_stmt_idx = 0')
+		1, 'cap frame_stmt_idx = 1 (advanced through its cycle)')
 
 	h.assert_eq(tonumber(scalar(e.cvm, 'select count(*) from refs')), 0,
 		'refs empty (whole orphaned chain reaped)')

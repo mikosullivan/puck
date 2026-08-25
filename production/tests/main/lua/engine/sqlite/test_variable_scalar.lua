@@ -16,8 +16,8 @@ local VariableScalar = require('handlers.variable-scalar')
 
 --[[
 Fresh engine wired to the sprint's schema, with cap + frame 0 seeded
-and `engine.current_frame` set to a wrapped frame 0. The variable-
-scalar handler needs `engine.current_frame` populated to work.
+and `engine.current_frame_pk` / `engine.current_role_pk` set to frame 0.
+The variable-scalar handler needs both fields populated to work.
 ]]
 local function engine_with_live_frame()
 	local e = engine.new()
@@ -32,7 +32,7 @@ local function engine_with_live_frame()
 	local cap_pk
 	for row in e.cvm:nrows(
 		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) "
-		.. "values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk")
+		.. "values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk")
 	do
 		cap_pk = row.object_pk
 	end
@@ -49,7 +49,8 @@ local function engine_with_live_frame()
 		frame_pk = row.object_pk
 	end
 
-	e.current_frame = e.data:object_by_pk(frame_pk)
+	e.current_frame_pk = frame_pk
+	e.current_role_pk  = e.data:role_by_pk(frame_pk)
 	return e
 end
 
@@ -110,9 +111,9 @@ end)
 -- Guard clauses — raise sites
 -- ============================================================
 
-test('handler raises variable_scalar_no_current_frame when engine.current_frame is unset', function()
+test('handler raises variable_scalar_no_current_frame when engine.current_frame_pk is unset', function()
 	local e = engine.new()
-	-- Deliberately don't set e.current_frame.
+	-- Deliberately don't set e.current_frame_pk.
 	local handler = VariableScalar.new()
 
 	local ok, err = pcall(function()
@@ -231,7 +232,7 @@ end)
 
 test('successful dispatch marks the current frame frame_gc = 1', function()
 	local e = engine_with_live_frame()
-	local frame_pk = e.current_frame.object_pk
+	local frame_pk = e.current_frame_pk
 	local handler = VariableScalar.new()
 
 	h.assert_eq(handler:handle(e, {{['in'] = 'as'}, 'x', {v = 1}}), true)

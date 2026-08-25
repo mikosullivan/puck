@@ -217,7 +217,7 @@ end
 
 
 -- ============================================================
--- Restart — halted process continues via StopLarry:restart(value?)
+-- Restart — halted process continues via a second StopLarry:run(value?) call
 -- ============================================================
 
 print()
@@ -230,10 +230,10 @@ do  -- Bare restart (no value) completes a program that only had %process.stop
 	local halted = e:run()
 	assert_eq(halted.stopped, 1, "program halted first")
 
-	local finished = e:restart()
+	local finished = e:run()
 
-	assert_eq(finished.complete, 1, "restart() returns complete=1")
-	assert_eq(finished.stopped,  nil, "restart() doesn't set stopped")
+	assert_eq(finished.complete, 1, "second run() returns complete=1")
+	assert_eq(finished.stopped,  nil, "second run() doesn't set stopped")
 
 	-- Stop frame is gone.
 	local stop_still_there = scalar(e.cvm,
@@ -262,7 +262,7 @@ do  -- Restart runs subsequent statements after the halt. Second halt
 	end
 	assert_eq(bar, nil, "$bar NOT bound at first halt")
 
-	local halted2 = e:restart()
+	local halted2 = e:run()
 	assert_eq(halted2.stopped, 1, "halted again after $bar (second stop)")
 
 	-- Now $bar should be bound.
@@ -278,7 +278,7 @@ do  -- Restart with an injected value: cap's rv reflects the value.
 	e:load("%process.stop")
 
 	e:run()
-	e:restart("hello from the host")
+	e:run("hello from the host")
 
 	-- Walk cap → bucket → rv → scalar
 	local rv_string = scalar(e.cvm,
@@ -296,7 +296,7 @@ do  -- Restart with a numeric value: scalar_number
 	e:load("%process.stop")
 
 	e:run()
-	e:restart(42)
+	e:run(42)
 
 	local rv_number = scalar(e.cvm,
 		"select o.scalar_number from objects o "
@@ -308,18 +308,29 @@ do  -- Restart with a numeric value: scalar_number
 		"cap's rv holds the injected number after restart")
 end
 
-do  -- Restart when not halted raises stop_larry_restart_no_stop
+-- (Continuing a completed process is no longer an explicit error path.
+-- A second run() unconditionally calls restart_frame(cap_pk); the
+-- algorithm handles "already complete" naturally — no children means no
+-- recursion, no gc means no advance, and the delegated run_frame just
+-- walks an already-terminal cap.)
+
+
+do  -- Restart with an injected value on a NON-halted process (leaf isn't
+	-- a stop frame) raises stop_larry_inject_requires_stop_frame. Value
+	-- injection only makes sense when the process was intentionally
+	-- halted; on any other paused-but-not-stopped state (crash-restart,
+	-- already-completed) there's no reply the value could stand in for.
 	local e = StopLarry.new()
 	e:load("$foo = 'plain'")
-	e:run()  -- Completes normally; no stop frame.
+	e:run()  -- Completes normally; no stop frame in the DB.
 
-	local ok, err = pcall(function() return e:restart() end)
+	local ok, err = pcall(function() return e:run("some value") end)
 
-	assert_eq(ok, false, "restart() raised on a non-halted process")
-	if err and tostring(err):find('stop_larry_restart_process_complete', 1, true) then
-		pass("error message identifies stop_larry_restart_process_complete")
+	assert_eq(ok, false, "run(value) raised on a non-halted process")
+	if err and tostring(err):find('stop_larry_inject_requires_stop_frame', 1, true) then
+		pass("error message identifies stop_larry_inject_requires_stop_frame")
 	else
-		fail("error message identifies stop_larry_restart_process_complete",
+		fail("error message identifies stop_larry_inject_requires_stop_frame",
 			'got: ' .. tostring(err))
 	end
 end

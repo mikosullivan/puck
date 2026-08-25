@@ -356,7 +356,7 @@ test('non-o row populating a scalar column is rejected', function()
 
 	assert_fails_with(
 		db:exec("insert into objects (base, control, scalar_null, frame_ast, frame_stmt_idx, frame_parent, owner_role) "
-			.. "values ('o', 'f', 1, '[]', 0, null, '" .. user .. "')"),
+			.. "values ('o', 'f', 1, '[null]', 0, null, '" .. user .. "')"),
 		db, 'objects_scalar_columns_only_on_objects',
 		'frame row with scalar_null should be rejected')
 

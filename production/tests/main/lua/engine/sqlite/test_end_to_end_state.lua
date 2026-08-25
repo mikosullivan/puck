@@ -44,12 +44,12 @@ h.test('after empty run, the cap is in terminal state (frame_stmt_idx=0, frame_g
 	local cap = scalar(e.cvm,
 		"select frame_stmt_idx from objects where object_pk = ?",
 		result.cap_pk)
-	h.assert_eq(cap, 0, 'cap frame_stmt_idx should be 0 (cap has empty frame_ast, terminal = length = 0)')
+	h.assert_eq(cap, 1, 'cap frame_stmt_idx should be 1 (advanced through its cycle: frame 0 reap set cap.gc=1, run() ran gc + advanced)')
 
 	local frame_gc = scalar(e.cvm,
 		"select frame_gc from objects where object_pk = ?",
 		result.cap_pk)
-	h.assert_true(frame_gc == nil, 'cap frame_gc should be null (terminal); got: ' .. tostring(frame_gc))
+	h.assert_true(frame_gc == nil, 'cap frame_gc should be null (auto-nulled by advance); got: ' .. tostring(frame_gc))
 
 	local children = scalar(e.cvm,
 		"select count(*) from objects where frame_parent = ?",

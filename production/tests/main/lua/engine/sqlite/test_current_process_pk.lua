@@ -126,7 +126,7 @@ test('current_process_pk() populates needs_trace.process_pk from an INSERT', fun
 
 	-- Insert a cap frame.
 	local cap_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	-- Register the UDF pointing at the cap.
 	current_process_pk.register(db, function() return cap_pk end)
@@ -150,7 +150,7 @@ test('INSERT omitting process_pk picks up the DEFAULT from current_process_pk()'
 	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	current_process_pk.register(db, function() return cap_pk end)
 
@@ -173,7 +173,7 @@ test('INSERT via ref-delete trigger (implicit DEFAULT) records the current proce
 	local user_pk = first(db, "select object_pk from objects where role_core = 'u'").object_pk
 
 	local cap_pk = first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 
 	current_process_pk.register(db, function() return cap_pk end)
 

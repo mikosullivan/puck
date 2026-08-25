@@ -5,14 +5,16 @@
 	"exports": {
 		"stock_instances": "() -> array of Handler instances — one fresh instance of each stock Handler subclass; called by engine.new() to populate row_handlers"
 	},
-	"status": "V0.1 — VariableScalar for `$x = 1`, ProcessStop for `%process.stop`"
+	"status": "V0.1 — VariableScalar for `$x = 1`. %process.stop moved out of the handler chain: it's now dispatched by `Engine:run_row` to `Engine:process_stop` as a system primitive."
 }
 ]]
 
 --[[
 # `handlers`
 
-Aggregator module for the engine's stock Handler subclasses. Currently two handlers: [`VariableScalar`](https://puck.uno/src/engine/handlers/variable-scalar.lua) for the `$x = 1` assignment shape, and [`ProcessStop`](https://puck.uno/src/engine/handlers/process-stop.lua) for the `%process.stop` halt primitive. More handlers land as later slices add support for other row-head shapes.
+Aggregator module for the engine's stock Handler subclasses. Currently one handler: [`VariableScalar`](https://puck.uno/src/engine/handlers/variable-scalar.lua) for the `$x = 1` assignment shape. More handlers land as later slices add support for other row-head shapes.
+
+**`%process.stop` is not a handler.** The stop primitive was originally implemented as a Handler subclass; it moved to `Engine:process_stop` (a method on the engine class) so system-level primitives don't ride the pluggable user-extension chain. `Engine:run_row` recognizes the `%process.stop` row shape and calls `self:process_stop()` directly.
 
 **Adding a new stock handler:**
 
@@ -26,9 +28,7 @@ Aggregator module for the engine's stock Handler subclasses. Currently two handl
 local M = {}
 
 local VariableScalar = require('handlers.variable-scalar')
-local ProcessStop    = require('handlers.process-stop')
 M.VariableScalar = VariableScalar
-M.ProcessStop    = ProcessStop
 
 --[[
 ## `stock_instances` — fresh instances of every stock handler
@@ -36,13 +36,10 @@ M.ProcessStop    = ProcessStop
 Returns an array of newly-constructed Handler instances, one per stock subclass. The engine's `M.new()` calls this and appends each into `self.row_handlers` at construction, so every fresh engine has the standard dispatch chain wired.
 
 Order in the returned array matters — earlier handlers get first shot at each row per the chain-of-responsibility semantics. Specific handlers should come before general ones.
-
-Empty for now; grows as sprints register subclasses.
 ]]
 function M.stock_instances()
 	return {
 		VariableScalar.new(),
-		ProcessStop.new(),
 	}
 end
 

@@ -32,7 +32,7 @@
 		"object_platters":   "(object_pk, platters_pk) — same shape for the platters (the object's ordered class array). Platters is the ref keyed 'p'.",
 		"object_shadow":     "(object_pk, shadow_pk) — same shape for the shadow. Shadow is the ref keyed 's'; targets a hash, same as bucket."},
 	"gc_cycle_state_machine": "A frame's (frame_stmt_idx, frame_gc) pair moves through a strict state machine enforced by triggers on `objects`. The walker's per-statement operation is `UPDATE frame SET frame_stmt_idx = frame_stmt_idx + 1` — the trigger stack takes care of frame_gc auto-null, child-delete cascades, and the parent's frame_gc auto-set. Names to grep: frames_advance_requires_gc, frames_advance_sets_gc_null, frames_advance_rejects_non_null_gc, frames_gc_change_requires_no_child, frames_gc_set_rejects_at_terminal, frames_gc_reset_requires_empty_needs_trace, frames_delete_requires_no_child, frames_child_delete_sets_parent_gc, frames_child_delete_propagates_rv, frames_no_child_under_terminal_parent, frames_stmt_idx_starts_at_zero, frames_stmt_idx_advances_by_one, frames_gc_starts_null. Each raises with its trigger name as the error id — grep to see what invariant fired.",
-	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:drain_needs_trace` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
+	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:garbage_collect` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
 	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. The only columns that permit updates are `frame_gc`, `frame_stmt_idx`, and `debug`; every other column is set once at INSERT and never changes (scalar columns included — the objects_scalar_*_immutable triggers use `is not` null-safe distinctness, so even null→populated raises). Bucket, platters, and shadow ownership are `refs` rows (keyed 'b', 'p', 's') rather than dedicated columns.",
 	"object_properties_shape": "Under the b/p/s design, an object's structural properties live as three well-known keyed refs from the objects row. Enforcement triggers: refs_object_parent_key_must_be_bps (no other keys allowed from an 'o'-parent), refs_key_b_target_must_be_hash, refs_key_p_target_must_be_array, refs_key_s_target_must_be_hash. Uniqueness (parent, key) already caps each slot at one.",
 	"companions": {
@@ -242,16 +242,21 @@ create table objects (
 		check (role_parent is null or control is 'r'),
 
 	-- CaspM tree as JSON text. Biconditional with control='f' — every
-	-- frame has an frame_ast, no non-frame does. A cap frame (frame_process_cap=1) has
-	-- frame_ast='[]' — the cap doesn't dispatch anything, its "one slot" is
-	-- just a lifecycle position (0=live, 1=terminal). Immutable once
-	-- set (see objects_ast_immutable). SQL guarantees storage integrity
-	-- only (valid JSON, top-level array); semantic CaspM validity is
-	-- guaranteed out-of-band by the engine/parser. [ghi]
+	-- frame has an frame_ast, no non-frame does. A cap frame
+	-- (frame_process_cap=1) has frame_ast='[null]' — a single dummy
+	-- slot that gives the cap a real frame_stmt_idx range (0 = live,
+	-- 1 = terminal after advance). The dummy is never dispatched; the
+	-- walker's dispatch step is sidestepped by restart_frame's
+	-- recursion, which sees the cap in gc state (from the child's
+	-- reap) and moves stmt_idx 0 → 1 via advance without ever calling
+	-- run_row. Immutable once set (see objects_ast_immutable). SQL
+	-- guarantees storage integrity only (valid JSON, top-level array);
+	-- semantic CaspM validity is guaranteed out-of-band by the
+	-- engine/parser. [ghi]
 	frame_ast text
 		check ((control = 'f' and frame_ast is not null)
 			or (control is not 'f' and frame_ast is null))
-		check (frame_process_cap is null or frame_ast = '[]'),
+		check (frame_process_cap is null or frame_ast = '[null]'),
 
 	-- Current position within the frame's frame_ast. Set on frames, null on
 	-- non-frames. Under the frame_gc cycle the handler sets `frame_gc = 1` on the
@@ -272,12 +277,14 @@ create table objects (
 	-- Root-of-frame_process_cap flag. `frame_process_cap = 1` marks this frame as the top
 	-- cap of a call stack — the object identity of the frame_process_cap itself.
 	-- Null on nested frames (which have frame_parent set instead).
-	-- A cap has frame_ast='[]' (see check below), so json_array_length(frame_ast)=0
-	-- and the terminal predicate `frame_stmt_idx >= json_array_length(frame_ast)`
-	-- is satisfied at frame_stmt_idx=0 — the cap is born terminal and stays there
-	-- for the process's lifetime. The frame_stmt_idx <= json_array_length(frame_ast)
-	-- CHECK structurally forbids the cap from ever advancing past 0. Frame 0 sits
-	-- under the cap as a nested frame. Immutable via objects_process_cap_immutable. [ghi]
+	-- A cap has frame_ast='[null]' (see check above), so
+	-- json_array_length(frame_ast)=1: the cap is born at frame_stmt_idx=0
+	-- (live), and reaches terminal at frame_stmt_idx=1 (via advance
+	-- once its child has been processed). Cap participates in the
+	-- frame_gc cycle just like any other frame — child reap sets
+	-- cap.gc=1, cap's walker runs gc and advances. Frame 0 sits under
+	-- the cap as a nested frame. Immutable via
+	-- objects_process_cap_immutable. [ghi]
 	frame_process_cap integer
 		check (frame_process_cap = 1)
 		check (frame_process_cap is null or control is 'f'),
@@ -836,17 +843,15 @@ end;
 -- rule: at most 1 child per frame; the one that was there is now
 -- gone), so rule 4 permits the change.
 --
--- Unconditional. If a bug ever produces a "child under a terminal
--- parent" state (currently unreachable — `no_child_under_terminal_
--- parent` and rules 4+5 together prevent it), rule 7 will reject the
--- auto-set with a specific error id, aborting the outer DELETE. That's
--- the correct diagnostic: a specific rule identifies exactly which
--- invariant was broken, instead of the guard silently absorbing the
--- inconsistency. [ghi]
+-- Unconditional across all frame parents including caps. Caps
+-- participate in the frame_gc state machine just like any other frame:
+-- their child reaps → cap.gc = 1 → cap's walker runs gc + advances to
+-- terminal. This is how a normal process wraps up (cap sweeps frame_0's
+-- cascade + advances stmt_idx to terminal) and how a restart wraps up
+-- (recursion unwinds up through the cap). [ghi]
 create trigger frames_child_delete_sets_parent_gc
 after delete on objects
 when old.control = 'f' and old.frame_parent is not null
-	and (select frame_process_cap from objects where object_pk = old.frame_parent) is not 1
 begin
 	update objects set frame_gc = 1 where object_pk = old.frame_parent;
 end;
@@ -1061,21 +1066,21 @@ begin
 	select raise(abort, 'parent_frame_must_be_frame: frame_parent must reference a frame (control = ''f'')');
 end;
 
--- A child frame cannot be inserted under a nested-frame parent
--- that is in its terminal state. A terminal parent has no more
--- statements to dispatch; spawning a child there would resurrect a
--- done frame.
+-- A child frame cannot be inserted under a parent frame that is in
+-- its terminal state. A terminal parent has no more statements to
+-- dispatch; spawning a child there would resurrect a done frame.
 --
--- CAP parents are exempt (`frame_process_cap is not 1` on the parent). Caps
--- have empty frame_ast and are born terminal under the new formula, and
--- frame 0 is always inserted as a cap's child at boot — that's the
--- normal case, not a resurrection. Caps are static frame_process_cap
--- anchors, not executing frames. [ghi]
+-- No cap-exempt clause: under the current design cap.frame_ast is
+-- '[null]' (length 1), so a fresh cap sits at frame_stmt_idx=0 <
+-- length=1 — non-terminal — at frame 0's insert time. The cap only
+-- reaches terminal (frame_stmt_idx=1) after frame 0 reaps and cap's
+-- walker advances. By that point the process is done and no new
+-- child would ever try to slide in. [ghi]
 create trigger frames_no_child_under_terminal_parent
 before insert on objects
 when new.frame_parent is not null
 	and (
-		select frame_stmt_idx >= json_array_length(frame_ast) and frame_process_cap is not 1
+		select frame_stmt_idx >= json_array_length(frame_ast)
 		from objects
 		where object_pk = new.frame_parent
 	)

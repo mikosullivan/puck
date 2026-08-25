@@ -11,7 +11,7 @@
 End-to-end assertions. Two programs:
 
 - **Empty program** (`engine.caspm = {}`) — `run()` seeds the cap + frame 0, walks the empty frame_ast (nothing to dispatch), advances the cap to close the frame_process_cap. Returns `{complete = 1, cap_pk = ...}`.
-- **`$x = 1`** — full dispatch through the handler chain: variable-scalar handler → `frame:set_local_to_scalar('x', 'n', 1)` → scalar + bucket + scopes chain + marker; walker's advance sweeps the marker; frame 0's reap orphans the whole chain; the tail drain unwinds bucket → scopes → scopes[0] → scalar_1 via successive reap-and-cascade cycles. Post-run: cap terminal, `refs` empty, `needs_trace` empty, only the cap and the three core-role seeds remain in `objects`.
+- **`$x = 1`** — full dispatch through the handler chain: variable-scalar handler inlines savepoint + add_scalar + ensure_own_scope + upsert_ref + mark_frame_gc → scalar + bucket + scopes chain + marker; walker's advance sweeps the marker; frame 0's reap orphans the whole chain; the tail drain unwinds bucket → scopes → scopes[0] → scalar_1 via successive reap-and-cascade cycles. Post-run: cap terminal, `refs` empty, `needs_trace` empty, only the cap and the three core-role seeds remain in `objects`.
 ]]
 
 local h      = require('helpers')
@@ -78,8 +78,8 @@ h.test('$x = 1: runs end-to-end through the dispatch chain', function()
 	local cap = first(e.cvm,
 		"select frame_stmt_idx, frame_gc from objects where object_pk = '" .. result.cap_pk .. "'")
 	h.assert_true(cap ~= nil, 'cap should still exist (the cap is the process anchor)')
-	h.assert_eq(tonumber(cap.frame_stmt_idx), 0, 'cap frame_stmt_idx should be 0 (cap is born terminal — empty frame_ast, terminal = length(frame_ast) = 0)')
-	h.assert_true(cap.frame_gc == nil, 'cap frame_gc should be null (caps are exempt from the child-delete → frame_gc=1 cascade)')
+	h.assert_eq(tonumber(cap.frame_stmt_idx), 1, 'cap frame_stmt_idx should be 1 (advanced through its cycle: frame 0 reap set cap.gc=1, run() ran gc + advanced)')
+	h.assert_true(cap.frame_gc == nil, 'cap frame_gc should be null (auto-nulled by the advance-fires-set-null trigger)')
 
 	local cap_kids = scalar(e.cvm,
 		"select count(*) from objects where frame_parent = '" .. result.cap_pk .. "'")

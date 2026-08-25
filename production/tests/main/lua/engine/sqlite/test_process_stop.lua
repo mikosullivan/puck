@@ -8,12 +8,12 @@
 --[[
 # `test_process_stop`
 
-Assertions for the `%process.stop` primitive. The ProcessStop handler flips `engine.stopped`; the walker's per-iteration check exits the dispatch loop before advancing; run() returns a stopped result and run_frame skips the reap.
+Assertions for the `%process.stop` primitive. `Engine:run_row` recognizes the row shape and calls `Engine:process_stop` (a system primitive on the engine, not a pluggable handler) which flips `engine.stopped`; the walker's per-iteration check exits the dispatch loop before advancing; run() returns a stopped result and run_frame skips the reap.
 
 Program: `$x = 1\n%process.stop`.
 
 - Statement 0 dispatches through the variable-scalar handler → the `x` binding lands via the standard frame-local chain, then advances.
-- Statement 1 is `%process.stop` → the ProcessStop handler sets `engine.stopped = true` → the walker breaks BEFORE advancing → run_frame returns without reaping → run() returns `{complete = 0, stopped = 1, cap_pk = ...}`.
+- Statement 1 is `%process.stop` → `Engine:run_row` calls `Engine:process_stop` which sets `engine.stopped = true` → the walker breaks BEFORE advancing → run_frame returns without reaping → run() returns `{complete = 0, stopped = 1, cap_pk = ...}`.
 
 Post-halt: frame 0 is still under the cap (walkable via `frame_parent`), the cap sits at its born-terminal state (`frame_stmt_idx = 0, frame_gc = null`), and the `x` binding is still reachable via the ref chain because the frame that owns it never got reaped.
 ]]

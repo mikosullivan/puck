@@ -16,7 +16,7 @@
 		"upsert_ref":    "(parent_pk, key, child_pk) -> ref_pk — insert OR update on conflict (parent, key); on update, the schema's after-update mark trigger inserts the old child into needs_trace",
 		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key",
 		"mark_frame_gc": "(object_pk) — sets frame_gc=1 on the frame; the mid-dispatch signal for the walker's next GC pass",
-		"drain_needs_trace": "(process_pk) — sweeps every needs_trace mark for process_pk. Each marked object is either unmarked (still reachable — in uspace or has an incoming ref) or reaped (unreachable — no incoming refs; DELETE cascades outgoing refs, which fire the mark trigger on their children). Loops until the worklist is empty."
+		"garbage_collect": "(process_pk) — sweeps every needs_trace mark for process_pk. Each marked object is either unmarked (still reachable — in uspace or has an incoming ref) or reaped (unreachable — no incoming refs; DELETE cascades outgoing refs, which fire the mark trigger on their children). Loops until the worklist is empty."
 	},
 	"policy": "CVM DB access goes through dedicated per-statement methods only — no ad-hoc db:exec / db:nrows / db:prepare. Each cached SQL is its own method on the cvm class. Every statement the cvm uses is prepared upfront in cvm.new(); methods just fetch the cached handle, bind, execute, reset. Single-column reads use stmt:step + stmt:get_value(0) to skip nrows()'s per-row table allocation; full-row reads (object_by_pk) stay on nrows() so callers get every column at once.",
 	"performance": "Every method on this class is on a hot path. Once the dispatch loop lands (see the open questions in the docstring), most will fire on every statement dispatch; any cycle saved multiplies across the whole running program.",
@@ -115,6 +115,10 @@ function cvm.new(db)
 		"select * from objects where object_pk = ?"
 	)
 
+	self.stmt_role_by_pk = db:prepare(
+		"select owner_role from objects where object_pk = ?"
+	)
+
 	-- add_bucket / add_stack: insert a bare hash / array with the
 	-- target's owner_role, then link via a refs row. See the method
 	-- bodies below. Under the ownership-via-refs design, the collection
@@ -211,15 +215,19 @@ function cvm.new(db)
 		"select child from refs where parent = ? and key = ?"
 	)
 
+	self.stmt_get_ref_child_at_idx = db:prepare(
+		"select child from refs where parent = ? and idx = ?"
+	)
+
 	self.stmt_mark_frame_gc = db:prepare(
 		"update objects set frame_gc = 1 where object_pk = ?"
 	)
 
-	-- drain_needs_trace: the four prepared statements the drain loop
+	-- garbage_collect: the four prepared statements the drain loop
 	-- issues per marked object. `list_marks` pulls every mark for a
 	-- given process; the drain then iterates and, per object, checks
 	-- (a) uspace membership and (b) incoming refs to decide unmark vs
-	-- reap. See drain_needs_trace() below.
+	-- reap. See garbage_collect() below.
 	self.stmt_list_marks = db:prepare(
 		"select object_pk from needs_trace where process_pk = ?"
 	)
@@ -276,6 +284,32 @@ function cvm:object_by_pk(pk)
 	end
 
 	return object.new(self, row)
+end
+
+--[[
+## `role_by_pk` — canonical pk-to-owner_role load
+
+Returns the `owner_role` pk for the given object. Skips the full-row
+fetch + wrapper allocation that `object_by_pk` does — for callers
+that only need to know the owner (assignment handlers materializing
+scalars, for example, need only the frame's pk and the frame's
+`owner_role` to inherit).
+
+Returns `nil` if no row matches the pk.
+]]
+function cvm:role_by_pk(pk)
+	local stmt = self.stmt_role_by_pk
+	stmt:bind_values(pk)
+
+	local role
+
+	if stmt:step() == SQLITE_ROW then
+		role = stmt:get_value(0)
+	end
+
+	stmt:reset()
+
+	return role
 end
 
 --[[
@@ -572,6 +606,74 @@ function cvm:get_ref_child(parent_pk, key)
 end
 
 --[[
+## `get_ref_child_at_idx` — look up a ref's child by (parent, idx)
+
+Array-position analogue of `get_ref_child`. Returns the `child`
+object_pk for the ref with the given `parent` and array `idx`, or
+`nil` if none. Used for array-position reads — e.g., resolving
+`scopes[0]` under the b/p/s + scopes convention.
+]]
+function cvm:get_ref_child_at_idx(parent_pk, idx)
+	local stmt = self.stmt_get_ref_child_at_idx
+	stmt:bind_values(parent_pk, idx)
+
+	local child_pk
+
+	if stmt:step() == SQLITE_ROW then
+		child_pk = stmt:get_value(0)
+	end
+
+	stmt:reset()
+
+	return child_pk
+end
+
+--[[
+## `ensure_own_scope` — get-or-create the frame's own scope hash
+
+Returns the pk of the hash at `scopes[0]` — the frame's own locals
+for this call — materializing the chain on first call:
+
+1. Get-or-create the frame's bucket (via `add_bucket`, which
+   returns the existing bucket if there is one).
+2. Get-or-create the frame's `scopes` ArrayPrimitive, hung off the
+   bucket under key `'scopes'`.
+3. Get-or-create the own-scope HashPrimitive at `scopes[0]` (array
+   append with the first entry lands at idx 0).
+
+Not idempotent-optimized — every call re-fetches. Handlers that
+need multiple accesses within one dispatch can cache the returned
+pk locally.
+
+Ported from the frame wrapper's `ensure_own_scope` method; assignment
+handlers now call this directly on the CVM instead of going through
+a frame wrapper.
+]]
+function cvm:ensure_own_scope(frame_pk, owner_role_pk)
+	-- Get-or-create the frame's bucket.
+	local bucket_pk = self:add_bucket(frame_pk)
+
+	-- Get-or-create the scopes array.
+	local scopes_pk = self:get_ref_child(bucket_pk, 'scopes')
+
+	if not scopes_pk then
+		scopes_pk = self:add_array(owner_role_pk)
+		self:add_ref(bucket_pk, 'scopes', scopes_pk)
+	end
+
+	-- Get-or-create the own-scope hash at scopes[0].
+	local own_pk = self:get_ref_child_at_idx(scopes_pk, 0)
+
+	if not own_pk then
+		own_pk = self:add_hash(owner_role_pk)
+		-- Array-style append: key=nil, idx auto-computed. First entry lands at idx=0.
+		self:add_ref(scopes_pk, nil, own_pk)
+	end
+
+	return own_pk
+end
+
+--[[
 ## `mark_frame_gc` — flag a frame as mid-dispatch (frame_gc = 1)
 
 Sets `frame_gc = 1` on the target frame's objects row. The row-handler for
@@ -592,7 +694,7 @@ function cvm:mark_frame_gc(object_pk)
 end
 
 --[[
-## `drain_needs_trace` — sweep every mark for a process, unmarking or reaping
+## `garbage_collect` — sweep every mark for a process, unmarking or reaping
 
 Walks the current process's `needs_trace` worklist and, per marked
 object, either unmarks (still reachable) or reaps (unreachable). Loops
@@ -633,7 +735,7 @@ leaving them alive as an unreachable pair. The walking-skeleton
 grammar can't construct such a state; a real trace-and-sweep pass
 lands when it can.
 ]]
-function cvm:drain_needs_trace(process_pk)
+function cvm:garbage_collect(process_pk)
 	while true do
 		-- Fetch the current worklist for this process.
 		local list = self.stmt_list_marks

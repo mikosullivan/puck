@@ -116,7 +116,7 @@ core role.
 ]]
 local function seed_cap(db, user_pk)
 	return first(db,
-		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+		"insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[null]', 0, '" .. user_pk .. "') returning object_pk").object_pk
 end
 
 
