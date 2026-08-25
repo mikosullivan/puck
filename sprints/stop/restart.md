@@ -39,29 +39,24 @@ Three frames stacked. `frame_0` is at `stmt_idx=0` (paused mid-dispatch of `%pro
 
 ## restart()
 
-All the restart-specific work lives inside `restart()` — nothing added to `run_frame`. A normal (non-restart) dispatch pays no per-call tax; production's walker stays as-is.
-
-### walk the frame chain
-
-Start at the process cap. Walk `frame_parent` down to the frame that has no children — the leaf. That's where the process was paused. If the walk never moves off the cap, the process is already complete; raise.
-
 ### optional: setting the return value
 
-If the caller passed a value into `restart(value)`, materialize it as a scalar and set the leaf frame's rv to it (three writes — scalar, bucket, rv ref — wrapped in a savepoint so a partial injection can't leave the halt state inconsistent).
+If the caller passed a value into `restart(value)`, walk to the leaf frame and set its rv to a scalar of that value (three writes — scalar, bucket, rv ref — wrapped in a savepoint so a partial injection can't leave the halt state inconsistent).
 
-### reap the leaf, then advance the parent
+### restart_frame(top-of-stack)
 
-Delete the leaf frame. Two triggers fire on the leaf's parent: `frames_child_delete_propagates_rv` lifts the leaf's rv (whatever it holds — the injected value, or null) into the parent's rv slot, and `frames_child_delete_sets_parent_gc` sets the parent's `frame_gc = 1`.
+The rest of the work happens inside `restart_frame`, a method parallel to `run_frame`. `restart_frame` walks the same ast + reap logic as `run_frame` — and it doesn't duplicate that code, it delegates to `run_frame` for it. What it adds is a pre-step: if this frame has a child, `restart_frame` the child first, then drain and advance past the halted statement, THEN delegate to `run_frame`.
 
-Drain needs_trace (the reap's cascade populated it; the next step's auto-null-gc trigger won't reset gc while marks are outstanding).
+`restart()` kicks off the recursion by calling `restart_frame` on the top of the call stack (the cap's only child). Everything below unfolds:
 
-Advance the parent past the halted statement. The parent's stmt_idx is still pointing at whatever caused the halt; without this step the walker would immediately re-dispatch and re-halt.
+- The recursion drills down through any paused sub-frames.
+- The bottom frame — a childless leaf, terminal-at-create under the sprint's halt model — reaches its `run_frame` delegation. `run_frame` walks the empty ast (immediate break) and reaps. The reap fires the schema's two triggers on the parent: `frames_child_delete_propagates_rv` (parent's rv gets the leaf's rv, whatever was injected or null) and `frames_child_delete_sets_parent_gc` (parent.gc → 1).
+- The recursion unwinds one level. The parent's `restart_frame` frame drains, advances past the halted statement (necessary — the parent's stmt_idx is still on the `%process.stop`, and if we don't advance we'd re-dispatch and re-halt), then delegates to `run_frame`. `run_frame` walks the remaining statements and reaps at frame end.
+- The reap fires the same triggers on the grandparent. And so on up the chain.
 
-### run the parent
+**Why parallel methods, not a modified `run_frame`.** The child-check + drain + advance work is only needed on restart. Putting it in `run_frame` would tax every dispatch (every fresh-frame walk pays for a SELECT-and-branch that's only relevant to the rare restart path). Splitting into `run_frame` (untouched, no tax) + `restart_frame` (adds the prelude, delegates) keeps normal dispatch fast and confines the restart machinery to the restart path.
 
-Call `Engine.run_frame` on the parent. Production's walker takes over from there — dispatches remaining statements, reaps at frame end, propagate-rv unwinds one level up (parent's parent), and so on until the cap.
-
-Wrap the run_frame call in xpcall + halt-catch; a subsequent `%process.stop` inside the resumed program halts the same way.
+**No walker duplication.** `restart_frame` doesn't re-implement the ast loop or the reap. Both methods use exactly one implementation of that work — production's `run_frame`.
 
 ## Related
 
