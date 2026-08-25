@@ -1,11 +1,12 @@
 --[[
 {
 	"module": "stop_larry",
-	"role": "Sprint-scoped Engine subclass that swaps in the sprint's process_stop handler and wraps :run() in an xpcall that catches the HALT sentinel. Inherits everything else from production's Larry (which itself inherits from Engine). Named `stop_larry` (not `larry`) to avoid shadowing production's Larry in package.path — this module requires production's `larry` module, so a same-name collision would recurse.",
+	"role": "Sprint-scoped Engine subclass that swaps in the sprint's process_stop handler, catches the HALT sentinel from :run(), and overrides :run_frame to recurse into any existing child before dispatching. The recursion is what makes restart work: `restart()` optionally injects a rv on the leaf, then calls run_frame on the top-of-stack frame; the override drills down through any pending child, reaps it, and unwinds back up. Named `stop_larry` (not `larry`) to avoid shadowing production's Larry in package.path.",
 	"exports": {
-		"new":    "(opts?) -> StopLarry — same signature as Larry.new; also swaps the stock ProcessStop handler for the sprint's version",
-		"run":    "() -> result table — overrides Engine:run to catch the HALT sentinel; returns {stopped=1, cap_pk=...} on halt, {complete=1, cap_pk=...} on normal completion",
-		"restart": "(value?) -> result table — restarts a halted process. Walks the frame chain from the process cap down to the leaf frame; if only the cap remains, raises `stop_larry_restart_process_complete`. If `value` is given, materializes a scalar of that Lua value on the leaf frame's rv so it propagates up on reap; otherwise the leaf frame reaps with a null rv. Then advances the parent past whatever it was doing when it halted, and continues walking. Returns the same result-hash shape as run()."
+		"new":       "(opts?) -> StopLarry — same signature as Larry.new; also swaps the stock ProcessStop handler for the sprint's version",
+		"run":       "() -> result table — overrides Engine:run to catch the HALT sentinel; returns {stopped=1, cap_pk=...} on halt, {complete=1, cap_pk=...} on normal completion",
+		"run_frame": "(frame_pk) — overrides Engine:run_frame with a pre-recurse: if the frame has a child, run_frame the child first (it bottoms out at the leaf, reaps, propagate-rv sets self's rv, sets_parent_gc sets self's gc=1), drain, advance past the halted statement, THEN delegate to Engine.run_frame for the normal walker loop. On a fresh frame with no child the override is a straight-through call to Engine.run_frame.",
+		"restart":   "(value?) -> result table — restarts a halted process. Optionally materializes a scalar of `value` on the leaf frame's rv (three writes wrapped in a savepoint). Then calls run_frame on the top-of-stack frame (cap's only child). The override's child-recursion handles the drill-down; on return, the process is done or has re-halted."
 	},
 	"depends_on": ["larry (production)", "engine (production)", "halt", "process_stop"]
 }
@@ -16,22 +17,28 @@
 
 Sprint-scoped Larry subclass for the stop sprint.
 
-**Three additions:**
+**Four overrides / additions:**
 
 1. `StopLarry.new(opts)` — calls production's `Larry.new`, then
    walks `self.row_handlers` and replaces production's ProcessStop
-   handler with the sprint's version. Everything else stays wired
-   as production configured it.
+   handler with the sprint's version.
 
 2. `StopLarry:run()` — wraps the parent's `Engine.run(self)` in
    `xpcall`. If the caught error is our HALT sentinel, returns a
    stopped-result hash. Anything else re-raises via `error(err, 0)`.
 
-3. `StopLarry:restart(value?)` — restarts a halted process. Optionally
-   injects a rv onto the stop frame first, then reaps the stop frame
-   (triggers propagate-rv + sets_parent_gc), advances the parent
-   past the %process.stop statement, and re-enters the walker to
-   continue execution.
+3. `StopLarry:run_frame(frame_pk)` — overrides Engine's run_frame
+   with a check-and-recurse pre-step: if this frame has a child,
+   run_frame the child first. The child bottoms out at the leaf,
+   reaps, and via propagate-rv + sets_parent_gc leaves us with
+   rv set and gc=1 on this frame. Then drain + advance past the
+   halted statement so the walker doesn't re-dispatch it. Only
+   then delegate to Engine.run_frame for the normal walker loop.
+
+4. `StopLarry:restart(value?)` — the whole restart action. Walks
+   to find the leaf (for optional value injection), then calls
+   run_frame on the top-of-stack frame (cap's child). The
+   run_frame override's recursion handles everything else.
 ]=]
 
 local Larry               = require('larry')
@@ -100,54 +107,133 @@ end
 
 
 --[[
+## `StopLarry:run_frame`
+
+Overrides Engine's run_frame with a check-and-recurse pre-step.
+
+**Fresh frame path.** If the frame has no child (the common case —
+fresh dispatch of frame 0 during `run()`, or any frame that hasn't
+halted), the check falls through immediately and we delegate
+straight to `Engine.run_frame` for its normal walker loop. Zero
+behavioral change from production.
+
+**Halted-frame path.** If the frame has a child (this frame paused
+mid-dispatch during a previous halt, and the child is the pending
+sub-frame), recursion drills down. The child's own run_frame may
+recurse further; eventually the recursion bottoms out at a terminal
+leaf (a stop frame under our current halt model — empty ast,
+stmt_idx=0). Engine.run_frame on the leaf immediately breaks the
+walker loop and reaps. The reap fires the schema's two child-delete
+triggers:
+
+- `frames_child_delete_propagates_rv` writes whatever rv the child
+  held to this frame's rv slot (materializing this frame's bucket
+  on demand if needed).
+- `frames_child_delete_sets_parent_gc` sets this frame's
+  `frame_gc = 1`.
+
+After recursion returns, we've got rv set and gc=1. Two mechanical
+follow-ups before we can safely re-enter the walker on this frame:
+
+1. **Drain needs_trace.** The child's cascade populated
+   needs_trace; the advance's auto-null-gc trigger
+   (`frames_gc_reset_requires_empty_needs_trace`) refuses to reset
+   gc while the current process has outstanding marks.
+
+2. **Advance past the halted statement.** The paused `stmt_idx` is
+   still pointing at whatever statement caused the halt (the
+   `%process.stop` call). If we don't advance, the walker loop's
+   next dispatch would re-execute that statement and re-halt. The
+   advance moves stmt_idx forward one and auto-nulls gc via
+   `frames_advance_sets_gc_null`.
+
+Then delegate to Engine.run_frame. From here the walker loop iterates
+over the remaining statements (starting from the advanced position),
+dispatches each, and reaps this frame at the end — which fires the
+same triggers on THIS frame's parent, unwinding one level up the
+recursion.
+
+**Scope note.** The check is at the top of run_frame, once per call.
+That's sufficient under this sprint because %process.stop is the
+only handler that spawns a child, and it raises HALT immediately —
+control never returns to the walker loop, so there's no "child
+spawned mid-loop" case to handle. Future sprints where handlers
+spawn children without halting (real method-call dispatch, etc.)
+will need per-iteration checks.
+]]
+function StopLarry:run_frame(frame_pk)
+	local db = self.cvm
+
+	-- Check if this frame has a child.
+	local child_pk
+
+	for row in db:nrows(
+		"select object_pk from objects where frame_parent = '" .. frame_pk .. "'"
+	) do
+		child_pk = row.object_pk
+	end
+
+	if child_pk then
+		-- Recurse into the child. It bottoms out at the leaf, reaps,
+		-- and via propagate-rv + sets_parent_gc leaves this frame
+		-- with rv set and gc=1.
+		self:run_frame(child_pk)
+
+		-- Drain before the advance so frames_gc_reset_requires_empty_needs_trace
+		-- passes.
+		self.data:drain_needs_trace(self.cap_pk)
+
+		-- Advance past the halted statement.
+		local current_idx
+
+		for row in db:nrows(
+			"select frame_stmt_idx from objects where object_pk = '" .. frame_pk .. "'"
+		) do
+			current_idx = row.frame_stmt_idx
+		end
+
+		self.stmts.advance:bind_values(current_idx + 1, frame_pk)
+		self.stmts.advance:step()
+		self.stmts.advance:reset()
+	end
+
+	-- Delegate to Engine.run_frame for the normal walker loop.
+	Engine.run_frame(self, frame_pk)
+end
+
+
+--[[
 ## `StopLarry:restart`
 
-Restarts a halted process. Optionally injects a value onto the stop
-frame's rv slot; then reaps the stop frame and continues walking
-the parent frame from just past the %process.stop statement.
+Restarts a halted process. Optional value injection first; then
+run_frame on the top-of-stack frame (cap's child). The run_frame
+override's recursion drills down to the leaf and unwinds naturally.
 
 Steps:
 
-1. **Find the stop frame** — the single row with
-   `engine_class='stop'`. Raises `stop_larry_restart_no_stop` if
-   absent (nothing to restart).
-2. **Optional rv injection** — if `value` is given, materialize a
-   scalar via `engine.data:add_scalar`, ensure the stop frame has a
-   bucket, and upsert the `rv` ref pointing at the scalar.
-3. **Reap the stop frame.** DELETE. Two triggers fire on the parent:
-   `frames_child_delete_propagates_rv` copies the stop frame's rv
-   up (whatever it holds — the injected value, or null); and
-   `frames_child_delete_sets_parent_gc` sets the parent's frame_gc
-   to 1 (cap-exempt, but the parent here is always a nested frame
-   since %process.stop can't be called from the cap).
-4. **Advance the parent** past the %process.stop statement. The
-   parent's frame_gc is now 1 (from step 3) so the advance is
-   valid; the advance auto-nulls gc back to null via
-   `frames_advance_sets_gc_null`.
-5. **Drain needs_trace** to clean up any refs the reap orphaned
-   before the walker's next tick.
-6. **Re-enter the walker** on the parent via `Engine.run_frame`,
-   wrapped in the same xpcall + halt-catch pattern as `:run()`.
-   run_frame walks the remaining statements, reaps the parent
-   naturally at completion, and returns.
+1. **Find the leaf frame** — walk `frame_parent` chain from
+   `cap_pk` down. If the walk never moves (cap has no children),
+   the process is complete — raise
+   `stop_larry_restart_process_complete`.
 
-Returns `{complete = 1, cap_pk = ...}` on normal completion of the
-restarted program, `{stopped = 1, cap_pk = ...}` if the restarted
-program hits another %process.stop.
+2. **Optional value injection.** If `value` is given, materialize
+   a scalar (polymorphic on Lua type), ensure the leaf's bucket,
+   upsert the `rv` ref. Three writes inside a savepoint —
+   partial injection would leave the halt state inconsistent.
 
-Value injection uses `engine.data:add_scalar(value, owner_role)`
-which is polymorphic on Lua's `type(value)` — string, number,
-boolean, and nil all route to the right scalar_* column.
+3. **Find the top of the call stack** (cap's only child; guaranteed
+   to exist since we didn't hit the process-complete branch).
+
+4. **Run it.** `self:run_frame(top_pk)` inside an xpcall. The
+   override's recursion handles the descent. On success →
+   `{complete=1, cap_pk=...}`. On HALT (re-halted during
+   execution) → `{stopped=1, cap_pk=...}`. Any other raise
+   re-raises via `error(err, 0)`.
 ]]
 function StopLarry:restart(value)
 	local db = self.cvm
 
-	-- 1. Walk the frame chain from the cap down to the leaf frame.
-	-- Under the current design the bottom is always a stop frame
-	-- (the only thing that halts a process), but this walk doesn't
-	-- assume that — any leaf frame is a valid restart anchor. The
-	-- chain is linear (unique(frame_parent) constraint), so a plain
-	-- loop suffices.
+	-- 1. Walk to the leaf frame (or fail if the process is complete).
 	local leaf_pk = self.cap_pk
 
 	while true do
@@ -168,23 +254,16 @@ function StopLarry:restart(value)
 		error("stop_larry_restart_process_complete: no non-cap frames present; nothing to restart")
 	end
 
-	-- Look up the parent (the frame the leaf frame's under) and its owner_role.
-	local parent_pk
-	local owner_role
-
-	for row in db:nrows(
-		"select frame_parent, owner_role from objects where object_pk = '" .. leaf_pk .. "'"
-	) do
-		parent_pk = row.frame_parent
-		owner_role = row.owner_role
-	end
-
-	-- 2. Optional rv injection onto the leaf frame. The three writes
-	-- (scalar row, bucket row, rv ref) land inside one savepoint so
-	-- either all three commit or none of them do — a partial injection
-	-- would leave a bucket without an rv (or a bucket ref to nothing)
-	-- and the halt state would go inconsistent.
+	-- 2. Optional value injection onto the leaf frame.
 	if value ~= nil then
+		local owner_role
+
+		for row in db:nrows(
+			"select owner_role from objects where object_pk = '" .. leaf_pk .. "'"
+		) do
+			owner_role = row.owner_role
+		end
+
 		assert(db:exec('savepoint restart_inject_rv;') == 0, db:errmsg())
 
 		local ok, err = pcall(function()
@@ -202,40 +281,18 @@ function StopLarry:restart(value)
 		assert(db:exec('release savepoint restart_inject_rv;') == 0, db:errmsg())
 	end
 
-	-- 3. Reap the leaf frame. Triggers fire against the parent.
-	local rc = db:exec(
-		"delete from objects where object_pk = '" .. leaf_pk .. "'"
-	)
-
-	if rc ~= 0 then
-		error("stop_larry_restart_reap_failed: " .. tostring(db:errmsg()))
-	end
-
-	-- 4. Drain the needs_trace worklist the reap populated. Must happen
-	-- BEFORE the advance — the advance's auto-null-gc trigger
-	-- (`frames_gc_reset_requires_empty_needs_trace`) refuses to reset
-	-- gc while the current process has outstanding marks. Mirrors the
-	-- ordering production's run_frame uses per statement.
-	self.data:drain_needs_trace(self.cap_pk)
-
-	-- 5. Advance parent past the %process.stop statement.
-	local current_idx
+	-- 3. Find the top-of-stack frame (cap's child).
+	local top_pk
 
 	for row in db:nrows(
-		"select frame_stmt_idx from objects where object_pk = '" .. parent_pk .. "'"
+		"select object_pk from objects where frame_parent = '" .. self.cap_pk .. "'"
 	) do
-		current_idx = row.frame_stmt_idx
+		top_pk = row.object_pk
 	end
 
-	self.stmts.advance:bind_values(current_idx + 1, parent_pk)
-	self.stmts.advance:step()
-	self.stmts.advance:reset()
-
-	-- 6. Re-enter the walker on the parent. Same halt-catch pattern
-	-- as :run() — a nested %process.stop inside the remainder halts
-	-- the same way.
+	-- 4. Run it. run_frame override recurses into any child.
 	local ok, result_or_err = xpcall(
-		function() return self:run_frame(parent_pk) end,
+		function() return self:run_frame(top_pk) end,
 		function(err) return err end
 	)
 
