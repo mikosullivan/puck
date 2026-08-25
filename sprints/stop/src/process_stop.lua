@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "process_stop",
-	"role": "Sprint-scoped rewrite of the ProcessStop handler for the stop sprint. Matches the same CaspM row shape production's handler does (fc-head + call atom with fn='stop', rc.sys='process'), but instead of flipping engine.stopped it inserts a stop frame under the current frame (base='o', control='f', engine_class='stop', empty ast so terminal at birth) and raises the HALT sentinel from `halt.lua`. The sprint's Larry catches the raise in its overridden run().",
+	"role": "Sprint-scoped rewrite of the ProcessStop handler for the stop sprint. Matches the same CaspM row shape production's handler does (fc-head + call atom with fn='stop', rc.sys='process'), but instead of flipping engine.stopped it inserts a stop frame under the current frame (base='o', control='f', engine_class='stop', empty ast so terminal at birth) via the `stop_insert_stop_frame` prepared statement (set up in StopLarry.new), then raises the HALT sentinel from `halt.lua`. The sprint's Larry catches the raise in its overridden run().",
 	"exports": {
 		"new":    "() -> ProcessStop",
 		"handle": "(engine, row) -> raises HALT sentinel on match; returns false when the row isn't ours"
@@ -43,8 +43,12 @@ of the process chain, reap it (its terminal-at-birth state makes
 that natural), propagate its rv upward, and continue. This sprint
 lays the anchor; the rerun path stays deferred.
 ]]
+local sqlite  = require('lsqlite3')
 local Handler = require('handler')
 local halt    = require('halt')
+
+-- Cached at module load; avoids a `sqlite.DONE` global lookup per step check.
+local SQLITE_DONE = sqlite.DONE
 
 
 local ProcessStop = setmetatable({}, {__index = Handler})
@@ -78,20 +82,20 @@ function ProcessStop:handle(engine, row)
 		return false
 	end
 
-	-- Insert the stop frame under the current frame. Owner_role
-	-- inherits from the current frame so the stop frame is owned by
-	-- whoever the caller is owned by. Empty ast + frame_stmt_idx=0
-	-- means terminal at birth.
+	-- Insert the stop frame under the current frame via the prepared
+	-- statement `stop_insert_stop_frame` (set up in StopLarry.new). The
+	-- statement's SELECT inherits owner_role from the current frame,
+	-- so the stop frame is owned by whoever the caller is owned by.
+	-- Empty ast + frame_stmt_idx=0 means terminal at birth.
 	local current_pk = engine.current_frame.object_pk
+	local stmt       = engine.stmts.stop_insert_stop_frame
 
-	local sql = "insert into objects "
-		.. "(base, control, engine_class, frame_ast, frame_stmt_idx, frame_parent, owner_role) "
-		.. "select 'o', 'f', 'stop', '[]', 0, '" .. current_pk .. "', owner_role "
-		.. "from objects where object_pk = '" .. current_pk .. "'"
+	stmt:bind_values(current_pk)
 
-	local rc = engine.cvm:exec(sql)
+	local rc = stmt:step()
+	stmt:reset()
 
-	if rc ~= 0 then
+	if rc ~= SQLITE_DONE then
 		error("process_stop_insert_failed: " .. tostring(engine.cvm:errmsg()))
 	end
 

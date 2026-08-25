@@ -1,27 +1,32 @@
 --[[
 {
 	"module": "stop_larry",
-	"role": "Sprint-scoped Engine subclass that swaps in the sprint's process_stop handler, catches the HALT sentinel from :run(), and overrides :run_frame to recurse into any existing child before dispatching. The recursion is what makes restart work: `restart()` optionally injects a rv on the leaf, then calls run_frame on the top-of-stack frame; the override drills down through any pending child, reaps it, and unwinds back up. Named `stop_larry` (not `larry`) to avoid shadowing production's Larry in package.path.",
+	"role": "Sprint-scoped Engine subclass that swaps in the sprint's process_stop handler, catches the HALT sentinel from :run(), and overrides :run_frame to recurse into any existing child before dispatching. The recursion is what makes restart work: `restart()` optionally injects a rv on the leaf, then calls run_frame on the top-of-stack frame; the override drills down through any pending child, reaps it, and unwinds back up. Named `stop_larry` (not `larry`) to avoid shadowing production's Larry in package.path. All SQL uses prepared statements bound with parameter values — same rule production's engine follows, and no interpolation of pks into SQL strings.",
 	"exports": {
-		"new":       "(opts?) -> StopLarry — same signature as Larry.new; also swaps the stock ProcessStop handler for the sprint's version",
+		"new":       "(opts?) -> StopLarry — same signature as Larry.new; also swaps the stock ProcessStop handler for the sprint's version and prepares sprint-scoped SQL under self.stmts",
 		"run":       "() -> result table — overrides Engine:run to catch the HALT sentinel; returns {stopped=1, cap_pk=...} on halt, {complete=1, cap_pk=...} on normal completion",
-		"run_frame": "(frame_pk) — overrides Engine:run_frame with a pre-recurse: if the frame has a child, run_frame the child first (it bottoms out at the leaf, reaps, propagate-rv sets self's rv, sets_parent_gc sets self's gc=1), drain, advance past the halted statement, THEN delegate to Engine.run_frame for the normal walker loop. On a fresh frame with no child the override is a straight-through call to Engine.run_frame.",
-		"restart":   "(value?) -> result table — restarts a halted process. Optionally materializes a scalar of `value` on the leaf frame's rv (three writes wrapped in a savepoint). Then calls run_frame on the top-of-stack frame (cap's only child). The override's child-recursion handles the drill-down; on return, the process is done or has re-halted."
+		"run_frame": "(frame_pk) — overrides Engine:run_frame with a pre-recurse: if the frame has a child, run_frame the child first, drain, advance past the halted statement, THEN delegate to Engine.run_frame for the normal walker loop. On a fresh frame with no child the override is a straight-through call to Engine.run_frame.",
+		"restart":   "(value?) -> result table — restarts a halted process. Optionally materializes a scalar of `value` on the leaf frame's rv (three writes wrapped in a savepoint). Then calls run_frame on the top-of-stack frame (cap's only child). The override's child-recursion handles the drill-down."
 	},
-	"depends_on": ["larry (production)", "engine (production)", "halt", "process_stop"]
+	"prepared_statements_added_to_self.stmts": {
+		"stop_find_child_of":      "select object_pk from objects where frame_parent = ?",
+		"stop_get_owner_role":     "select owner_role from objects where object_pk = ?",
+		"stop_insert_stop_frame":  "insert into objects (base, control, engine_class, frame_ast, frame_stmt_idx, frame_parent, owner_role) select 'o', 'f', 'stop', '[]', 0, ?1, owner_role from objects where object_pk = ?1"
+	},
+	"depends_on": ["larry (production)", "engine (production)", "halt", "process_stop", "lsqlite3 (for SQLITE_ROW)"]
 }
 ]]
 
 --[=[
-# `larry` (sprint-scoped)
+# `stop_larry` (sprint-scoped)
 
 Sprint-scoped Larry subclass for the stop sprint.
 
 **Four overrides / additions:**
 
-1. `StopLarry.new(opts)` — calls production's `Larry.new`, then
-   walks `self.row_handlers` and replaces production's ProcessStop
-   handler with the sprint's version.
+1. `StopLarry.new(opts)` — calls production's `Larry.new`, prepares
+   sprint-scoped SQL under `self.stmts`, then swaps the stock
+   ProcessStop handler for the sprint's version.
 
 2. `StopLarry:run()` — wraps the parent's `Engine.run(self)` in
    `xpcall`. If the caught error is our HALT sentinel, returns a
@@ -39,13 +44,24 @@ Sprint-scoped Larry subclass for the stop sprint.
    to find the leaf (for optional value injection), then calls
    run_frame on the top-of-stack frame (cap's child). The
    run_frame override's recursion handles everything else.
+
+**SQL policy.** All queries use prepared statements bound with
+parameter values. Sprint-scoped prepared statements are added to
+`self.stmts` in `StopLarry.new` (prefixed `stop_` to keep them
+distinct from production's stmts). No string-interpolation of pks
+into SQL — that opens a SQL-injection hole.
 ]=]
 
+local sqlite              = require('lsqlite3')
 local Larry               = require('larry')
 local Engine              = require('engine')
 local halt                = require('halt')
 local SprintProcessStop   = require('process_stop')
 local ProductionProcessStop = require('handlers.process-stop')
+
+-- Cached at module load; avoids a `sqlite.ROW` global lookup per step check.
+local SQLITE_ROW  = sqlite.ROW
+local SQLITE_DONE = sqlite.DONE
 
 
 local StopLarry = setmetatable({}, {__index = Larry})
@@ -56,12 +72,35 @@ StopLarry.__index = StopLarry
 ## `StopLarry.new`
 
 Constructs a sprint-scoped Larry. Delegates to `Larry.new(opts)` for
-the base setup, then rewraps the metatable and swaps the stock
-ProcessStop handler.
+the base setup, rewraps the metatable, prepares sprint-scoped SQL
+statements under `self.stmts`, and swaps production's stock
+ProcessStop handler for the sprint's version.
 ]]
 function StopLarry.new(opts)
 	local instance = Larry.new(opts)
 	setmetatable(instance, StopLarry)
+
+	-- Sprint-scoped prepared statements. Prefixed `stop_` to avoid
+	-- collision with production's stmts. Compile once here; every
+	-- use below is bind_values + step/nrows + reset.
+	instance.stmts.stop_find_child_of = instance.cvm:prepare(
+		"select object_pk from objects where frame_parent = ?"
+	)
+
+	instance.stmts.stop_get_owner_role = instance.cvm:prepare(
+		"select owner_role from objects where object_pk = ?"
+	)
+
+	-- Insert the stop frame as a child of the current frame. Owner_role
+	-- inherits from the current frame via the SELECT — one parameter,
+	-- referenced twice via ?1. Called from the sprint's ProcessStop
+	-- handler at %process.stop-dispatch time.
+	instance.stmts.stop_insert_stop_frame = instance.cvm:prepare(
+		"insert into objects "
+		.. "(base, control, engine_class, frame_ast, frame_stmt_idx, frame_parent, owner_role) "
+		.. "select 'o', 'f', 'stop', '[]', 0, ?1, owner_role "
+		.. "from objects where object_pk = ?1"
+	)
 
 	-- Swap production's ProcessStop for the sprint's. Identify by
 	-- metatable-identity check (each Handler subclass sets its own
@@ -74,6 +113,28 @@ function StopLarry.new(opts)
 	end
 
 	return instance
+end
+
+
+--[[
+## `find_child_of` — helper
+
+Returns the object_pk of the given frame's single child (or nil if
+none). Wraps the `stop_find_child_of` prepared statement.
+]]
+local function find_child_of(self, frame_pk)
+	local stmt = self.stmts.stop_find_child_of
+	stmt:bind_values(frame_pk)
+
+	local child_pk
+
+	if stmt:step() == SQLITE_ROW then
+		child_pk = stmt:get_value(0)
+	end
+
+	stmt:reset()
+
+	return child_pk
 end
 
 
@@ -162,16 +223,7 @@ spawn children without halting (real method-call dispatch, etc.)
 will need per-iteration checks.
 ]]
 function StopLarry:run_frame(frame_pk)
-	local db = self.cvm
-
-	-- Check if this frame has a child.
-	local child_pk
-
-	for row in db:nrows(
-		"select object_pk from objects where frame_parent = '" .. frame_pk .. "'"
-	) do
-		child_pk = row.object_pk
-	end
+	local child_pk = find_child_of(self, frame_pk)
 
 	if child_pk then
 		-- Recurse into the child. It bottoms out at the leaf, reaps,
@@ -183,18 +235,23 @@ function StopLarry:run_frame(frame_pk)
 		-- passes.
 		self.data:drain_needs_trace(self.cap_pk)
 
-		-- Advance past the halted statement.
+		-- Read the current stmt_idx via production's prepared statement.
+		local get_idx = self.stmts.get_stmt_idx
+		get_idx:bind_values(frame_pk)
+
 		local current_idx
 
-		for row in db:nrows(
-			"select frame_stmt_idx from objects where object_pk = '" .. frame_pk .. "'"
-		) do
-			current_idx = row.frame_stmt_idx
+		if get_idx:step() == SQLITE_ROW then
+			current_idx = get_idx:get_value(0)
 		end
 
-		self.stmts.advance:bind_values(current_idx + 1, frame_pk)
-		self.stmts.advance:step()
-		self.stmts.advance:reset()
+		get_idx:reset()
+
+		-- Advance past the halted statement.
+		local advance = self.stmts.advance
+		advance:bind_values(current_idx + 1, frame_pk)
+		advance:step()
+		advance:reset()
 	end
 
 	-- Delegate to Engine.run_frame for the normal walker loop.
@@ -225,10 +282,7 @@ Steps:
    to exist since we didn't hit the process-complete branch).
 
 4. **Run it.** `self:run_frame(top_pk)` inside an xpcall. The
-   override's recursion handles the descent. On success →
-   `{complete=1, cap_pk=...}`. On HALT (re-halted during
-   execution) → `{stopped=1, cap_pk=...}`. Any other raise
-   re-raises via `error(err, 0)`.
+   override's recursion handles the descent.
 ]]
 function StopLarry:restart(value)
 	local db = self.cvm
@@ -237,16 +291,8 @@ function StopLarry:restart(value)
 	local leaf_pk = self.cap_pk
 
 	while true do
-		local next_pk
-
-		for row in db:nrows(
-			"select object_pk from objects where frame_parent = '" .. leaf_pk .. "'"
-		) do
-			next_pk = row.object_pk
-		end
-
+		local next_pk = find_child_of(self, leaf_pk)
 		if not next_pk then break end
-
 		leaf_pk = next_pk
 	end
 
@@ -256,13 +302,17 @@ function StopLarry:restart(value)
 
 	-- 2. Optional value injection onto the leaf frame.
 	if value ~= nil then
+		-- Look up leaf's owner_role for the injected scalar.
+		local get_owner = self.stmts.stop_get_owner_role
+		get_owner:bind_values(leaf_pk)
+
 		local owner_role
 
-		for row in db:nrows(
-			"select owner_role from objects where object_pk = '" .. leaf_pk .. "'"
-		) do
-			owner_role = row.owner_role
+		if get_owner:step() == SQLITE_ROW then
+			owner_role = get_owner:get_value(0)
 		end
+
+		get_owner:reset()
 
 		assert(db:exec('savepoint restart_inject_rv;') == 0, db:errmsg())
 
@@ -282,13 +332,7 @@ function StopLarry:restart(value)
 	end
 
 	-- 3. Find the top-of-stack frame (cap's child).
-	local top_pk
-
-	for row in db:nrows(
-		"select object_pk from objects where frame_parent = '" .. self.cap_pk .. "'"
-	) do
-		top_pk = row.object_pk
-	end
+	local top_pk = find_child_of(self, self.cap_pk)
 
 	-- 4. Run it. run_frame override recurses into any child.
 	local ok, result_or_err = xpcall(
