@@ -196,23 +196,22 @@ end
 
 
 -- ============================================================
--- engine.stopped flag is NOT set under the sprint's handler
+-- engine.stopped field doesn't exist under HALT-as-sentinel
 -- ============================================================
 
 print()
-print("== engine.stopped is unused under sprint's model ==")
+print("== engine.stopped doesn't exist under HALT ==")
 
-do  -- The sprint's handler doesn't touch engine.stopped; the halt
-	-- signal is entirely exception-based. The field can still exist
-	-- on the engine (initialized by production's Engine.new) but is
-	-- never flipped to true.
+do  -- Under HALT-as-sentinel, there's no self.stopped flag anywhere
+	-- — production's Engine.new doesn't initialize it, and neither
+	-- Engine:process_stop nor StopLarry:process_stop ever touches it.
 	local e = StopLarry.new()
 	e:load("%process.stop")
 
 	e:run()
 
-	assert_eq(e.stopped, false,
-		"engine.stopped stays false (sprint's handler doesn't set it)")
+	assert_eq(e.stopped, nil,
+		"engine.stopped is nil (no such field under HALT-as-sentinel)")
 end
 
 
