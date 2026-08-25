@@ -41,7 +41,7 @@ refs: (empty — no scopes were built)
 
 Three frames stacked. `frame_0` is at `stmt_idx=0` (paused mid-dispatch of `%process.stop`). `stop_frame` is terminal-at-birth (empty ast, stmt_idx=0). `frame_gc` is null on every frame.
 
-## restart() — the six steps
+## restart() — the seven steps
 
 ### 1. Walk cap → leaf frame
 
@@ -105,13 +105,17 @@ refs:
 
 The scalar carries the value. The stop frame's rv slot is now populated.
 
-### 4. Reap the stop frame
+### 4. Restart the process
+
+The restart itself IS a single write — a DELETE against the leaf frame:
 
 ~~~sql
 delete from objects where object_pk = <leaf_pk>
 ~~~
 
-This is where the magic happens. Two triggers fire on the parent (`frame_0`) BEFORE the row actually goes:
+Everything meaningful about restart happens as a side effect of this delete. The leaf's rv (if any) propagates up to the parent, the parent's frame_gc flips to 1, and the process is one step away from resuming its dispatch loop. The remaining sections (drain, advance, re-enter walker) are the mechanical follow-through that makes the walker actually pick up where it left off, but the moment of restart — the point at which the halted process becomes an unhalted one — is this DELETE.
+
+Two triggers fire on the parent (`frame_0`) BEFORE the row actually goes:
 
 **`frames_child_delete_propagates_rv`** (BEFORE) — reads the stop frame's outgoing refs to find its bucket → rv, then writes to the parent's bucket → rv. If the parent had no bucket, materializes one first. Under value-injected restart, `frame_0` didn't have a bucket; the trigger creates it, links it via `key='b'`, and inserts the `rv` ref pointing at the same scalar the stop frame's rv pointed at.
 
