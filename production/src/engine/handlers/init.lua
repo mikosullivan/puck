@@ -5,16 +5,18 @@
 	"exports": {
 		"stock_instances": "() -> array of Handler instances — one fresh instance of each stock Handler subclass; called by engine.new() to populate row_handlers"
 	},
-	"status": "V0.1 — VariableScalar for `$x = 1`. %process.stop moved out of the handler chain: it's now dispatched by `Engine:run_row` to `Engine:process_stop` as a system primitive."
+	"status": "V0.1 — MainHandler (stub) is the only stock handler. VariableScalar exists as a sibling file but is not registered; it'll come back as an optimization once the main handler covers its cases at general-dispatch speed. %process.stop is dispatched by Engine:run_row to Engine:process_stop as a system primitive (not a handler)."
 }
 ]]
 
 --[[
 # `handlers`
 
-Aggregator module for the engine's stock Handler subclasses. Currently one handler: [`VariableScalar`](https://puck.uno/src/engine/handlers/variable-scalar.lua) for the `$x = 1` assignment shape. More handlers land as later slices add support for other row-head shapes.
+Aggregator module for the engine's stock Handler subclasses. Currently one handler is registered: [`MainHandler`](https://puck.uno/src/engine/handlers/main-handler.lua) — a stub for the general CaspM dispatcher being built up.
 
-**`%process.stop` is not a handler.** The stop primitive was originally implemented as a Handler subclass; it moved to `Engine:process_stop` (a method on the engine class) so system-level primitives don't ride the pluggable user-extension chain. `Engine:run_row` recognizes the `%process.stop` row shape and calls `self:process_stop()` directly.
+**`VariableScalar` deliberately NOT registered.** The file [handlers/variable-scalar.lua](https://puck.uno/src/engine/handlers/variable-scalar.lua) still exists on disk and is still `require`-able for its class definition, but it isn't in the stock roster. Once the main handler covers assignment via its general path, `VariableScalar` gets re-added in front of `MainHandler` as a shape-specific optimization that short-circuits the general dispatch.
+
+**`%process.stop` is not a handler.** The stop primitive lives on the engine as `Engine:process_stop`, called by `Engine:run_row` on row-shape match — a system-level primitive, not a user-extensible dispatch shape.
 
 **Adding a new stock handler:**
 
@@ -27,8 +29,8 @@ Aggregator module for the engine's stock Handler subclasses. Currently one handl
 ]]
 local M = {}
 
-local VariableScalar = require('handlers.variable-scalar')
-M.VariableScalar = VariableScalar
+local MainHandler = require('handlers.main-handler')
+M.MainHandler = MainHandler
 
 --[[
 ## `stock_instances` — fresh instances of every stock handler
@@ -39,7 +41,7 @@ Order in the returned array matters — earlier handlers get first shot at each 
 ]]
 function M.stock_instances()
 	return {
-		VariableScalar.new(),
+		MainHandler.new(),
 	}
 end
 

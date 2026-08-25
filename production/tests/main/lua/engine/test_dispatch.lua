@@ -193,7 +193,7 @@ h.test("engine:run_row raises unrecognized_caspm when row_handlers is empty", fu
 	-- Clear the stock chain to test the empty-chain fallback specifically.
 	e:clear_handlers()
 	assert_raises_matching(
-		function() e:run_row({{['in'] = 'as'}}) end,
+		function() e:run_row({{['cmd'] = '='}}) end,
 		'unrecognized_caspm',
 		"empty row_handlers should raise unrecognized_caspm"
 	)
@@ -205,7 +205,7 @@ h.test("engine:run_row's unrecognized_caspm raise includes the row-head atom-key
 	-- reshape logic surfaces the row-head atom-keys.
 	e:clear_handlers()
 	assert_raises_matching(
-		function() e:run_row({{['in'] = 'as'}}) end,
+		function() e:run_row({{['cmd'] = '='}}) end,
 		'in',
 		"raise should surface the row-head atom-keys detail"
 	)
@@ -243,9 +243,12 @@ h.test("engine.new()'s row_handlers is exactly the stock roster, one of each", f
 	local handlers = require('handlers')
 
 	local expected_classes = {
-		VariableScalar = handlers.VariableScalar,
+		MainHandler = handlers.MainHandler,
 		-- add more here as new handler classes get registered:
 		--   NextHandler = handlers.NextHandler,
+		-- (VariableScalar exists but is not registered as a stock
+		-- handler for now — will re-appear as an optimization once
+		-- the main handler covers assignment via its general path.)
 		-- (%process.stop is not a handler; it's dispatched by
 		-- Engine:run_row to Engine:process_stop as a system primitive.)
 	}

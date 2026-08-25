@@ -97,7 +97,7 @@ $sample = 1     # end-of-line comment
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"sample",
 		{
@@ -196,7 +196,7 @@ $a = 1; $b = 2; $c = 3          # semicolons as command separators
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"a",
 		{
@@ -206,7 +206,7 @@ $a = 1; $b = 2; $c = 3          # semicolons as command separators
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"b",
 		{
@@ -216,7 +216,7 @@ $a = 1; $b = 2; $c = 3          # semicolons as command separators
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"c",
 		{
@@ -265,7 +265,7 @@ $a = 1; $b = 2; $c = 3          # semicolons as command separators
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"d",
 		{
@@ -338,7 +338,7 @@ $a = 1 $b = 2 $c = 3            # no semicolons
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"a",
 		{
@@ -348,7 +348,7 @@ $a = 1 $b = 2 $c = 3            # no semicolons
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"b",
 		{
@@ -358,7 +358,7 @@ $a = 1 $b = 2 $c = 3            # no semicolons
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"c",
 		{
@@ -424,7 +424,7 @@ $x = $y = $z = $j
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"z",
 		{
@@ -433,7 +433,7 @@ $x = $y = $z = $j
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"y",
 		{
@@ -442,7 +442,7 @@ $x = $y = $z = $j
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -491,7 +491,7 @@ $local_var = 10
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"local_var",
 		{
@@ -530,7 +530,7 @@ $local_var = 10
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -577,7 +577,7 @@ $local_var = 10
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -623,7 +623,7 @@ $local_var = 10
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -670,7 +670,7 @@ $local_var = 10
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -722,7 +722,7 @@ $obj.field_access
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "field_access",
@@ -773,7 +773,7 @@ foo.bar
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "bar",
@@ -878,13 +878,13 @@ foo = 'bar'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"fn": "bar",
@@ -937,19 +937,19 @@ foo = 'bar'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"fn": "bar",
 					"rc": [
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -1009,13 +1009,13 @@ foo = 'bar'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"fn": "method",
@@ -1094,7 +1094,7 @@ $foo.&bar('a', 'b') 1, 2, 3
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -1113,7 +1113,7 @@ $foo.&bar('a', 'b') 1, 2, 3
 				],
 				"fn": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -1206,7 +1206,7 @@ $foo.&bar('a', 'b')(1, 2, 3)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -1225,7 +1225,7 @@ $foo.&bar('a', 'b')(1, 2, 3)
 				],
 				"fn": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -1319,7 +1319,7 @@ $foo.(&bar || 'gup') 1, 2, 3
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -1339,7 +1339,7 @@ $foo.(&bar || 'gup') 1, 2, 3
 				"fn": {
 					"left": [
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"fn": "call",
@@ -1406,7 +1406,7 @@ $foo.'bar'
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "bar",
@@ -1459,7 +1459,7 @@ $foo."bar"
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "bar",
@@ -1512,7 +1512,7 @@ $whole = 42
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"whole",
 		{
@@ -1557,7 +1557,7 @@ $sep = 1_000_000
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"sep",
 		{
@@ -1602,7 +1602,7 @@ $frac = 3.14
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"frac",
 		{
@@ -1647,7 +1647,7 @@ $sci = 2.5e-3
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"sci",
 		{
@@ -1693,7 +1693,7 @@ $hex = 0xFF_FF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"hex",
 		{
@@ -1739,7 +1739,7 @@ $oct = 0o755
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"oct",
 		{
@@ -1785,7 +1785,7 @@ $bin = 0b1111_1111
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"bin",
 		{
@@ -1830,7 +1830,7 @@ $negfive = -5
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"negfive",
 		{
@@ -1876,7 +1876,7 @@ $negzero = -0
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"negzero",
 		{
@@ -1927,7 +1927,7 @@ $yes = true
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"yes",
 		{
@@ -1972,7 +1972,7 @@ $no = false
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"no",
 		{
@@ -2017,7 +2017,7 @@ $nothing = null
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"nothing",
 		{
@@ -2062,7 +2062,7 @@ $sq = 'literal string'
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"sq",
 		{
@@ -2107,7 +2107,7 @@ $sym = :hello
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"sym",
 		{
@@ -2152,7 +2152,7 @@ $sq_apostrophe = 'it''s escaped by doubling'
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"sq_apostrophe",
 		{
@@ -2199,7 +2199,7 @@ $dq_plain = "plain double-quoted"
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"dq_plain",
 		{
@@ -2247,7 +2247,7 @@ $dq_interp = "hello, #{$sample}"
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"dq_interp",
 		{
@@ -2295,7 +2295,7 @@ $dq_expr = "total is #{$whole + $frac}"
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"dq_expr",
 		{
@@ -2343,7 +2343,7 @@ $dq_nested = "count: #{{a: 1, b: 2}.length}"
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"dq_nested",
 		{
@@ -2391,7 +2391,7 @@ $dq_escapes = "tabs \t and newlines \n and backslashes \\ and quotes \""
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"dq_escapes",
 		{
@@ -2441,7 +2441,7 @@ $literal_true_string = :true              # the string, not the boolean
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"literal_true_string",
 		{
@@ -2508,7 +2508,7 @@ $empty_arr = []
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"empty_arr",
 		{
@@ -2583,7 +2583,7 @@ $arr = [1, 'two', true, null, [3, 4]]
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"arr",
 		{
@@ -2658,7 +2658,7 @@ $empty_hash = {}
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"empty_hash",
 		{
@@ -2725,7 +2725,7 @@ $hash = {display: true, color: :red, 'quoted key': 1}
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"hash",
 		{
@@ -2834,7 +2834,7 @@ $nested_arr = [
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"nested_arr",
 		{
@@ -2978,7 +2978,7 @@ $nested_hash = {
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"nested_hash",
 		{
@@ -3086,7 +3086,7 @@ $x = 10
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -3132,12 +3132,12 @@ $x += 1
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3191,12 +3191,12 @@ $x -= 1
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3250,12 +3250,12 @@ $x *= 2
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3309,12 +3309,12 @@ $x /= 2
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3368,12 +3368,12 @@ $x %= 3
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3427,12 +3427,12 @@ $x **= 2
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3486,12 +3486,12 @@ $x ||= 'default'
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3545,12 +3545,12 @@ $x &&= 'guarded'
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3612,7 +3612,7 @@ $hash['key'] = 'value'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -3677,7 +3677,7 @@ $arr[0] = 99
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -3739,7 +3739,7 @@ $obj.name = 'alice'
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -3828,7 +3828,7 @@ $x = 2 $y = 3
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -3838,7 +3838,7 @@ $x = 2 $y = 3
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"y",
 		{
@@ -3962,7 +3962,7 @@ $x = $foo = 42
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -4026,7 +4026,7 @@ $x = $foo = $bar = 1
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -4091,7 +4091,7 @@ $x = ($foo += 1)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -4144,7 +4144,7 @@ $x = $foo++
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -4196,7 +4196,7 @@ $x = $foo++
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -4267,12 +4267,12 @@ $sum = 1 + 2
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"sum",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4334,12 +4334,12 @@ $diff = 10 - 3
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"diff",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4401,12 +4401,12 @@ $prod = 4 * 5
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"prod",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4468,12 +4468,12 @@ $quot = 20 / 4
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"quot",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4535,12 +4535,12 @@ $mod = 7 % 3
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"mod",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4602,12 +4602,12 @@ $pow = 2 ** 8
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"pow",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4669,12 +4669,12 @@ $eq = ($a == $b)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"eq",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4736,12 +4736,12 @@ $ne = ($a != $b)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"ne",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4803,12 +4803,12 @@ $lt = ($a < $b)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"lt",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4870,12 +4870,12 @@ $le = ($a <= $b)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"le",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -4937,12 +4937,12 @@ $gt = ($a > $b)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"gt",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -5004,12 +5004,12 @@ $ge = ($a >= $b)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"ge",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -5070,7 +5070,7 @@ $word_and = $yes and $no
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"word_and",
 		{
@@ -5129,7 +5129,7 @@ $word_or = $yes or $no
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"word_or",
 		{
@@ -5185,7 +5185,7 @@ $word_not = not $yes
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"word_not",
 		{
@@ -5241,7 +5241,7 @@ $punct_and = $yes && $no
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"punct_and",
 		{
@@ -5300,7 +5300,7 @@ $punct_or = $yes || $no
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"punct_or",
 		{
@@ -5356,7 +5356,7 @@ $punct_not = !$yes
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"punct_not",
 		{
@@ -5425,7 +5425,7 @@ $ternary = ($x > 0) ? 'positive' : 'non-positive'
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"ternary",
 		{
@@ -5440,7 +5440,7 @@ $ternary = ($x > 0) ? 'positive' : 'non-positive'
 						],
 						"test": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -5674,7 +5674,7 @@ end
 				"else":{
 					"cl":{
 						"bd":[[{
-									"in":"fc"
+									"in":"mc"
 								},{
 									"a":[{
 											"v":"adult",
@@ -5692,7 +5692,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"a":[{
 													"v":"child",
@@ -5707,7 +5707,7 @@ end
 							}
 						},
 						"test":[{
-								"in":"fc"
+								"in":"mc"
 							},{
 								"a":[{
 										"v":13,
@@ -5723,7 +5723,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"a":[{
 													"v":"teen",
@@ -5738,7 +5738,7 @@ end
 							}
 						},
 						"test":[{
-								"in":"fc"
+								"in":"mc"
 							},{
 								"a":[{
 										"v":20,
@@ -5754,7 +5754,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"a":[{
 													"v":"twentysomething",
@@ -5771,7 +5771,7 @@ end
 						"test":{
 							"op":"and",
 							"left":[{
-									"in":"fc"
+									"in":"mc"
 								},{
 									"a":[{
 											"v":18,
@@ -5784,7 +5784,7 @@ end
 									}
 								}],
 							"right":[{
-									"in":"fc"
+									"in":"mc"
 								},{
 									"a":[{
 											"v":30,
@@ -5902,7 +5902,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"primary",
@@ -5914,7 +5914,7 @@ end
 							}
 						},
 						"test":[{
-								"in":"fc"
+								"in":"mc"
 							},{
 								"a":[{
 										"v":42,
@@ -5930,7 +5930,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"secondary",
@@ -5942,7 +5942,7 @@ end
 							}
 						},
 						"test":[{
-								"in":"fc"
+								"in":"mc"
 							},{
 								"a":[{
 										"v":43,
@@ -6018,7 +6018,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"denied",
@@ -6105,7 +6105,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"denied",
@@ -6195,7 +6195,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"denied",
@@ -6286,7 +6286,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"denied",
@@ -6377,7 +6377,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"denied",
@@ -6461,7 +6461,7 @@ end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"proceed",
@@ -6556,7 +6556,7 @@ if &ok &yay else &nay end
 				"else":{
 					"cl":{
 						"bd":[[{
-									"in":"fc"
+									"in":"mc"
 								},{
 									"rc":{
 										"var":"nay",
@@ -6571,7 +6571,7 @@ if &ok &yay else &nay end
 						"action":{
 							"cl":{
 								"bd":[[{
-											"in":"fc"
+											"in":"mc"
 										},{
 											"rc":{
 												"var":"yay",
@@ -6583,7 +6583,7 @@ if &ok &yay else &nay end
 							}
 						},
 						"test":[{
-								"in":"fc"
+								"in":"mc"
 							},{
 								"rc":{
 									"var":"ok",
@@ -6772,7 +6772,7 @@ while $foo > 1
 		"begin_while",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -6792,7 +6792,7 @@ while $foo > 1
 			"after": [
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -6812,7 +6812,7 @@ while $foo > 1
 			"before": [
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -6831,7 +6831,7 @@ while $foo > 1
 			"between": [
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -6913,7 +6913,7 @@ while &foo while &bar end end
 		"while_end",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "call",
@@ -6930,7 +6930,7 @@ while &foo while &bar end end
 					"while_end",
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"fn": "call",
@@ -7008,7 +7008,7 @@ while &foo begin while &bar end
 		"while_end",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "call",
@@ -7025,7 +7025,7 @@ while &foo begin while &bar end
 					"begin_while",
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"fn": "call",
@@ -7115,7 +7115,7 @@ while &foo == true begin while ! &bar end
 		"while_end",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -7127,7 +7127,7 @@ while &foo == true begin while ! &bar end
 				"fn": "==",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "call",
@@ -7149,7 +7149,7 @@ while &foo == true begin while ! &bar end
 						"op": "!",
 						"operand": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"fn": "call",
@@ -7266,7 +7266,7 @@ end
 		"while_end",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -7286,12 +7286,12 @@ end
 			"bd": [
 				[
 					{
-						"in": "as"
+						"cmd": "="
 					},
 					"x",
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -7373,7 +7373,7 @@ end
 			"bd": [
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "call",
@@ -7531,7 +7531,7 @@ end
 		"while_end",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "call",
@@ -7548,7 +7548,7 @@ end
 					"begin_while",
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -7568,12 +7568,12 @@ end
 						"bd": [
 							[
 								{
-									"in": "as"
+									"cmd": "="
 								},
 								"attempt",
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
@@ -7591,7 +7591,7 @@ end
 							],
 							[
 								{
-									"in": "fc"
+									"cmd": "mc"
 								},
 								{
 									"fn": "call",
@@ -7678,7 +7678,7 @@ end
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "each",
@@ -7695,7 +7695,7 @@ end
 						"bd": [
 							[
 								{
-									"in": "fc"
+									"cmd": "mc"
 								},
 								{
 									"a": [
@@ -7820,7 +7820,7 @@ end
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "each",
@@ -7838,19 +7838,19 @@ end
 						"bd": [
 							[
 								{
-									"in": "fc"
+									"cmd": "mc"
 								},
 								{
 									"a": [
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
@@ -7870,7 +7870,7 @@ end
 												"fn": "+",
 												"rc": [
 													{
-														"in": "fc"
+														"cmd": "mc"
 													},
 													{
 														"fn": "count",
@@ -7965,7 +7965,7 @@ end
 		"while_end",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -7986,12 +7986,12 @@ end
 			"bd": [
 				[
 					{
-						"in": "as"
+						"cmd": "="
 					},
 					"x",
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -8152,7 +8152,7 @@ end
 
 #--- norm -----------------------------------------------------------
 [[[{
-				"in":"fc"
+				"in":"mc"
 			},{
 				"rc":{
 					"var":"people",
@@ -8164,10 +8164,10 @@ end
 					"cl":{
 						"as":"person_loop",
 						"bd":[[[{
-										"in":"fc"
+										"in":"mc"
 									},{
 										"rc":[{
-												"in":"fc"
+												"in":"mc"
 											},{
 												"rc":{
 													"var":"person",
@@ -8194,7 +8194,7 @@ end
 																			}
 																		},
 																		"test":[{
-																				"in":"fc"
+																				"in":"mc"
 																			},{
 																				"a":[{
 																						"var":"target",
@@ -8425,7 +8425,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{
@@ -8433,7 +8433,7 @@ end
 				"bd": [
 					[
 						{
-							"in": "as"
+							"cmd": "="
 						},
 						"a",
 						{
@@ -8443,7 +8443,7 @@ end
 					],
 					[
 						{
-							"in": "as"
+							"cmd": "="
 						},
 						"b",
 						{
@@ -8453,12 +8453,12 @@ end
 					],
 					[
 						{
-							"in": "as"
+							"cmd": "="
 						},
 						"c",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -8541,7 +8541,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"result",
 		{
@@ -8551,7 +8551,7 @@ end
 					[
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -8790,7 +8790,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"foo",
 		{
@@ -8930,7 +8930,7 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -9089,7 +9089,7 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -9182,7 +9182,7 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -9468,13 +9468,13 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
 									[
 										{
-											"in": "fc"
+											"cmd": "mc"
 										},
 										{
 											"fn": "to_s",
@@ -9540,12 +9540,12 @@ $x = @name
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -9599,7 +9599,7 @@ $x = @name
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -9664,7 +9664,7 @@ $x = @name
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -9674,7 +9674,7 @@ $x = @name
 				},
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -9686,7 +9686,7 @@ $x = @name
 						"fn": "+",
 						"rc": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -9756,7 +9756,7 @@ $x = @name
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -9768,7 +9768,7 @@ $x = @name
 			"fn": "[]",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
@@ -9834,7 +9834,7 @@ $x = @name
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -9850,7 +9850,7 @@ $x = @name
 			"fn": "[]=",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
@@ -9917,13 +9917,13 @@ $x = @name
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "length",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -9935,7 +9935,7 @@ $x = @name
 						"fn": "[]",
 						"rc": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -10022,7 +10022,7 @@ $x = @name
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -10032,13 +10032,13 @@ $x = @name
 				},
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "length",
 						"rc": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -10050,7 +10050,7 @@ $x = @name
 								"fn": "[]",
 								"rc": [
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
@@ -10073,7 +10073,7 @@ $x = @name
 			"fn": "[]=",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
@@ -10155,7 +10155,7 @@ end
 				"bd": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -10174,7 +10174,7 @@ end
 					],
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -10268,7 +10268,7 @@ end
 				"bd": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -10372,7 +10372,7 @@ end
 				"bd": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -10488,7 +10488,7 @@ end
 				"bd": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -10507,7 +10507,7 @@ end
 					],
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -10614,7 +10614,7 @@ end
 				"bd": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -10835,7 +10835,7 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -11270,7 +11270,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"rich_params",
 		{
@@ -11438,7 +11438,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"greet",
 		{
@@ -11449,7 +11449,7 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -11541,7 +11541,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"make_prefixer",
 		{
@@ -11552,7 +11552,7 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -11672,7 +11672,7 @@ $greet.call('alice')
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -11734,7 +11734,7 @@ $obj.method_name(1, 2)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -11800,7 +11800,7 @@ $obj.method_name 1, 2
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -11907,19 +11907,19 @@ $obj.method_name 1, 2
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -11946,19 +11946,19 @@ $obj.method_name 1, 2
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -12025,7 +12025,7 @@ $obj.method_name 1, 2
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -12037,7 +12037,7 @@ $obj.method_name 1, 2
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -12089,13 +12089,13 @@ $obj.method_name 1, 2
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "call",
@@ -12159,7 +12159,7 @@ $obj.method_name 1, 2
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -12169,7 +12169,7 @@ $obj.method_name 1, 2
 				},
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "call",
@@ -12300,13 +12300,13 @@ $obj.method(1 + 2)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -12372,7 +12372,7 @@ $obj.method($x)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -12455,7 +12455,7 @@ $obj.method('a', [1, 2], {k: 1})
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -12549,12 +12549,12 @@ $result = $obj.method_name(1, 2)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"result",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -12627,7 +12627,7 @@ $obj.fetch('https://x', timeout: 30)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -12704,7 +12704,7 @@ $obj.fetch 'https://x', timeout: 30
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -12782,7 +12782,7 @@ $obj.config(mode: :strict, depth: 3)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "config",
@@ -12861,7 +12861,7 @@ $obj.run(*$args, **$opts)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -12944,7 +12944,7 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -13016,7 +13016,7 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -13077,7 +13077,7 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -13146,7 +13146,7 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -13221,7 +13221,7 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -13296,7 +13296,7 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -13428,12 +13428,12 @@ $foo = &bar
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"foo",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "call",
@@ -13489,12 +13489,12 @@ $greeting = &greet('alice')
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"greeting",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -13559,12 +13559,12 @@ $result = &compute(10, 20)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"result",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -13639,12 +13639,12 @@ $resp = &fetch('https://x', timeout: 30)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"resp",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -13775,7 +13775,7 @@ end
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"blocks": [
@@ -13785,7 +13785,7 @@ end
 							[
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
@@ -13875,7 +13875,7 @@ end
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"blocks": [
@@ -13885,13 +13885,13 @@ end
 							[
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"fn": "call",
@@ -14037,7 +14037,7 @@ end
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"blocks": [
@@ -14047,13 +14047,13 @@ end
 							[
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"fn": "call",
@@ -14081,13 +14081,13 @@ end
 							[
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"fn": "call",
@@ -14115,13 +14115,13 @@ end
 							[
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"fn": "call",
@@ -14215,7 +14215,7 @@ end
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "each",
@@ -14232,7 +14232,7 @@ end
 						"bd": [
 							[
 								{
-									"in": "fc"
+									"cmd": "mc"
 								},
 								{
 									"a": [
@@ -14463,7 +14463,7 @@ return $x * 2
 		"return",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -14565,7 +14565,7 @@ return &compute
 		"return",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "call",
@@ -14619,7 +14619,7 @@ return &compute
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -14674,7 +14674,7 @@ return &compute
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "return",
@@ -14829,7 +14829,7 @@ end
 											}
 										},
 										"test":[{
-												"in":"fc"
+												"in":"mc"
 											},{
 												"a":[{
 														"v":0,
@@ -14846,7 +14846,7 @@ end
 						},{
 							"l":4
 						}],["scope","return",[{
-								"in":"fc"
+								"in":"mc"
 							},{
 								"a":[{
 										"v":2,
@@ -14917,7 +14917,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"exit_frame",
 		{
@@ -14926,7 +14926,7 @@ end
 					[
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
@@ -14994,7 +14994,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"empty_cls",
 		{
@@ -15068,7 +15068,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"widget",
 		{
@@ -15234,13 +15234,13 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
@@ -15293,13 +15293,13 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
@@ -15971,7 +15971,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"character",
 		{
@@ -16088,7 +16088,7 @@ end
 								"bd": [
 									[
 										{
-											"in": "fc"
+											"cmd": "mc"
 										},
 										{
 											"a": [
@@ -16107,7 +16107,7 @@ end
 									],
 									[
 										{
-											"in": "fc"
+											"cmd": "mc"
 										},
 										{
 											"a": [
@@ -16147,7 +16147,7 @@ end
 					],
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -16176,19 +16176,19 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
 																[
 																	{
-																		"in": "fc"
+																		"cmd": "mc"
 																	},
 																	{
 																		"a": [
@@ -16215,7 +16215,7 @@ end
 												"fn": "+",
 												"rc": [
 													{
-														"in": "fc"
+														"cmd": "mc"
 													},
 													{
 														"a": [
@@ -16255,7 +16255,7 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
@@ -16294,7 +16294,7 @@ end
 											"return",
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"a": [
@@ -16340,7 +16340,7 @@ end
 												"return",
 												[
 													{
-														"in": "fc"
+														"cmd": "mc"
 													},
 													{
 														"a": [
@@ -16366,7 +16366,7 @@ end
 					],
 					[
 						{
-							"in": "as"
+							"cmd": "="
 						},
 						"to_str",
 						{
@@ -16377,19 +16377,19 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
 																[
 																	{
-																		"in": "fc"
+																		"cmd": "mc"
 																	},
 																	{
 																		"a": [
@@ -16416,7 +16416,7 @@ end
 												"fn": "+",
 												"rc": [
 													{
-														"in": "fc"
+														"cmd": "mc"
 													},
 													{
 														"a": [
@@ -16459,7 +16459,7 @@ end
 								"bd": [
 									[
 										{
-											"in": "fc"
+											"cmd": "mc"
 										},
 										{
 											"a": [
@@ -16469,7 +16469,7 @@ end
 												},
 												[
 													{
-														"in": "fc"
+														"cmd": "mc"
 													},
 													{
 														"fn": "call",
@@ -16489,13 +16489,13 @@ end
 									[
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
@@ -16507,7 +16507,7 @@ end
 															"fn": "+",
 															"rc": [
 																{
-																	"in": "fc"
+																	"cmd": "mc"
 																},
 																{
 																	"a": [
@@ -16608,12 +16608,12 @@ $captain = $character.new('name': 'picard', "rank": 'captain')
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"captain",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "new",
@@ -16700,12 +16700,12 @@ $picard = $character.new(name: 'picard', rank: 'captain')
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"picard",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "new",
@@ -16805,13 +16805,13 @@ end
 						"return",
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
 									[
 										{
-											"in": "fc"
+											"cmd": "mc"
 										},
 										{
 											"fn": "to_s",
@@ -16925,13 +16925,13 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
@@ -17013,7 +17013,7 @@ $self_check = %self
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"self_check",
 		{
@@ -17058,7 +17058,7 @@ $frame = %call
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"frame",
 		{
@@ -17103,7 +17103,7 @@ $chain_ref = %chain
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"chain_ref",
 		{
@@ -17148,7 +17148,7 @@ $engine_ref = %engine
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"engine_ref",
 		{
@@ -17193,7 +17193,7 @@ $bucket_ref = %bucket
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"bucket_ref",
 		{
@@ -17243,7 +17243,7 @@ $bucket_ref = %bucket
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -17301,7 +17301,7 @@ $bucket_ref = %bucket
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -17397,7 +17397,7 @@ puts(true)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -17416,7 +17416,7 @@ puts(true)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "puts",
@@ -17482,7 +17482,7 @@ puts(true)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "read_line",
@@ -17535,12 +17535,12 @@ $input = %stdin.read_line
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"input",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "read_line",
@@ -17588,7 +17588,7 @@ $timestamp = %now
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"timestamp",
 		{
@@ -17645,12 +17645,12 @@ $noise = %random.bytes(16)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"noise",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -17711,7 +17711,7 @@ $puckd = %fetch('caspian.uno/csv.casp')
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"puckd",
 		{
@@ -17776,12 +17776,12 @@ $banged = %stdin.read_line + '!'
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"banged",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -17793,7 +17793,7 @@ $banged = %stdin.read_line + '!'
 				"fn": "+",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "read_line",
@@ -17849,12 +17849,12 @@ $net = %chain.net
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"net",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "net",
@@ -17916,12 +17916,12 @@ $x = %stdin.read_line + '!'
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -17933,7 +17933,7 @@ $x = %stdin.read_line + '!'
 				"fn": "+",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "read_line",
@@ -18295,19 +18295,19 @@ end
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"fn": "call",
@@ -18319,13 +18319,13 @@ end
 								],
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"fn": "call",
@@ -18428,19 +18428,19 @@ end
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"fn": "call",
@@ -18452,13 +18452,13 @@ end
 								],
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"a": [
@@ -18566,13 +18566,13 @@ end
 			"l": 1,
 			"left": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"fn": "call",
@@ -18584,13 +18584,13 @@ end
 						],
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
 									[
 										{
-											"in": "fc"
+											"cmd": "mc"
 										},
 										{
 											"fn": "call",
@@ -18617,7 +18617,7 @@ end
 			"op": "||",
 			"right": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"fn": "call",
@@ -18699,13 +18699,13 @@ end
 			"l": 1,
 			"left": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"fn": "call",
@@ -18717,13 +18717,13 @@ end
 						],
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"a": [
 									[
 										{
-											"in": "fc"
+											"cmd": "mc"
 										},
 										{
 											"fn": "call",
@@ -18750,7 +18750,7 @@ end
 			"op": "||",
 			"right": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"fn": "call",
@@ -18817,19 +18817,19 @@ $foo.bar(&gup | &baz)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"fn": "call",
@@ -18938,24 +18938,24 @@ $value = &get_key | &normalize | &fetch
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"value",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"fn": "call",
@@ -19046,24 +19046,24 @@ $top10 = &fetch_records() | &sort 'asc' | &take 10
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"top10",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"fn": "call",
@@ -19166,24 +19166,24 @@ $x = &foo | &(&bear | &baz) | &gup
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"fn": "call",
@@ -19197,13 +19197,13 @@ $x = &foo | &(&bear | &baz) | &gup
 							"fn": "call",
 							"rc": [
 								{
-									"in": "fc"
+									"cmd": "mc"
 								},
 								{
 									"a": [
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"fn": "call",
@@ -19245,7 +19245,7 @@ $x = &foo | &(&bear | &baz) | &gup
 # no runtime property lookup. Full CaspJ preserves the three surface forms
 # distinctly ({var}/method-call for `$foo.call(...)`, `{amp: "foo"}` for
 # `&foo`, and `{amp: {var: "foo"}}` for the `&$foo` shorthand). Norm collapses
-# all three to a function_call with `fn: "call"` — the runtime sees one shape.
+# all three to a method_call with `fn: "call"` — the runtime sees one shape.
 #
 
 #--- code -----------------------------------------------------------
@@ -19307,7 +19307,7 @@ $foo.call('xyz')
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -19325,7 +19325,7 @@ $foo.call('xyz')
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -19342,7 +19342,7 @@ $foo.call('xyz')
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -19412,18 +19412,18 @@ $html = &normalize($text) | $formatter.render
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"html",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
@@ -19508,19 +19508,19 @@ $foo.bar | $gup.zap | $bear.blah
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"fn": "bar",
@@ -19618,30 +19618,30 @@ $saved = &get_record 42 |&
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"saved",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"a": [
 								[
 									{
-										"in": "fc"
+										"cmd": "mc"
 									},
 									{
 										"a": [
 											[
 												{
-													"in": "fc"
+													"cmd": "mc"
 												},
 												{
 													"a": [
@@ -19759,7 +19759,7 @@ $foo = 2
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"foo",
 		{
@@ -19769,7 +19769,7 @@ $foo = 2
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"foo",
 		{
@@ -19929,7 +19929,7 @@ EOF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"plain_heredoc",
 		{
@@ -19977,7 +19977,7 @@ EOF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"typed_heredoc",
 		{
@@ -20027,7 +20027,7 @@ EOF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"interp_heredoc",
 		{
@@ -20076,7 +20076,7 @@ EOF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"literal_heredoc",
 		{
@@ -20136,7 +20136,7 @@ B
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20201,7 +20201,7 @@ EOF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"literal_heredoc",
 		{
@@ -20257,7 +20257,7 @@ B
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20321,7 +20321,7 @@ EOF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"literal_heredoc",
 		{
@@ -20370,7 +20370,7 @@ EOF
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"trimmed",
 		{
@@ -20471,7 +20471,7 @@ $hash['a']
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20528,7 +20528,7 @@ $hash['b']
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20585,7 +20585,7 @@ $hash[$key]
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20649,12 +20649,12 @@ $item = $hash['a']
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"item",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -20717,7 +20717,7 @@ $hash['a'] = 2
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20782,7 +20782,7 @@ $hash[$key] = 2
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20847,7 +20847,7 @@ $hash[$key] = $val
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20916,7 +20916,7 @@ $hash['a', 1, 'b']
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -20993,7 +20993,7 @@ $hash['a', $foo, 'b'] = 'bar'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -21073,7 +21073,7 @@ $array[0]
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -21130,7 +21130,7 @@ $array[-1]
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -21189,7 +21189,7 @@ $array[-0]
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -21255,12 +21255,12 @@ $first = $array[0]
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"first",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -21323,7 +21323,7 @@ $array[0] = 2
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -21388,7 +21388,7 @@ $array[-1] = 99
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -21449,7 +21449,7 @@ $array.push 'bar'
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -21639,12 +21639,12 @@ $j = foo + bar
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"j",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -21709,13 +21709,13 @@ $foo.bar.gup
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "gup",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "bar",
@@ -21775,19 +21775,19 @@ $foo.bar.gup.baz
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "baz",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "gup",
 						"rc": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"fn": "bar",
@@ -21858,13 +21858,13 @@ $foo.bar()
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "baz",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -21876,7 +21876,7 @@ $foo.bar()
 						"fn": "gup",
 						"rc": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"fn": "bar",
@@ -21939,18 +21939,18 @@ $x = $foo.bar.gup
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "gup",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "bar",
@@ -22006,7 +22006,7 @@ $obj.name = 'alice'
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -22076,7 +22076,7 @@ $foo.bar.gup.baz = 'bear'
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -22088,13 +22088,13 @@ $foo.bar.gup.baz = 'bear'
 				"fn": "baz=",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "gup",
 						"rc": [
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"fn": "bar",
@@ -22157,7 +22157,7 @@ $foo.bar.gup = $value
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -22169,7 +22169,7 @@ $foo.bar.gup = $value
 				"fn": "gup=",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "bar",
@@ -22283,7 +22283,7 @@ $$foo.value = 'bar'
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -22337,7 +22337,7 @@ $$foo.value
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "value",
@@ -22385,7 +22385,7 @@ $meta = $$foo
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"meta",
 		{
@@ -22435,12 +22435,12 @@ $v = $$foo.value
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"v",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "value",
@@ -22493,13 +22493,13 @@ $$foo.a.b
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "b",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "a",
@@ -22640,7 +22640,7 @@ $$foo.a.b
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -22652,7 +22652,7 @@ $$foo.a.b
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -22664,7 +22664,7 @@ $$foo.a.b
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -22681,7 +22681,7 @@ $$foo.a.b
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -22701,7 +22701,7 @@ $$foo.a.b
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -22817,7 +22817,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"greeter",
 		{
@@ -22833,7 +22833,7 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
@@ -22989,7 +22989,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"dsn",
 		{
@@ -23023,25 +23023,25 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
 													[
 														{
-															"in": "fc"
+															"cmd": "mc"
 														},
 														{
 															"a": [
 																[
 																	{
-																		"in": "fc"
+																		"cmd": "mc"
 																	},
 																	{
 																		"a": [
 																			[
 																				{
-																					"in": "fc"
+																					"cmd": "mc"
 																				},
 																				{
 																					"a": [
@@ -23068,7 +23068,7 @@ end
 															"fn": "+",
 															"rc": [
 																{
-																	"in": "fc"
+																	"cmd": "mc"
 																},
 																{
 																	"a": [
@@ -23191,7 +23191,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"config",
 		{
@@ -23325,7 +23325,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"greeter",
 		{
@@ -23341,7 +23341,7 @@ end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
@@ -23444,7 +23444,7 @@ $greeter = instance method hello($name)return 'Hello, ' + $name end end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"greeter",
 		{
@@ -23460,7 +23460,7 @@ $greeter = instance method hello($name)return 'Hello, ' + $name end end
 										"return",
 										[
 											{
-												"in": "fc"
+												"cmd": "mc"
 											},
 											{
 												"a": [
@@ -23534,7 +23534,7 @@ $myrx = rx(/what|ever/i)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"myrx",
 		{
@@ -23588,7 +23588,7 @@ i)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"myrx",
 		{
@@ -23641,7 +23641,7 @@ i)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"myrx",
 		{
@@ -23692,7 +23692,7 @@ $simple = rx(/foo/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"simple",
 		{
@@ -23743,7 +23743,7 @@ $nested = rx(/(x|(y)+)/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"nested",
 		{
@@ -23794,7 +23794,7 @@ $multi_flag = rx(/abc/im)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"multi_flag",
 		{
@@ -23845,7 +23845,7 @@ $cclass = rx(/[a-zA-Z0-9_]/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"cclass",
 		{
@@ -23896,7 +23896,7 @@ $neg_class = rx(/[^abc]/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"neg_class",
 		{
@@ -23947,7 +23947,7 @@ $num = rx(/\d+\.\d+/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"num",
 		{
@@ -23998,7 +23998,7 @@ $anchored = rx(/^foo$/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"anchored",
 		{
@@ -24049,7 +24049,7 @@ $noncap = rx(/(?:foo|bar)+/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"noncap",
 		{
@@ -24100,7 +24100,7 @@ $named = rx(/(?<year>\d{4})-(?<month>\d{2})/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"named",
 		{
@@ -24151,7 +24151,7 @@ $backref = rx(/(.)\1/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"backref",
 		{
@@ -24202,7 +24202,7 @@ $lookahead = rx(/foo(?=bar)/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"lookahead",
 		{
@@ -24253,7 +24253,7 @@ $slashed = rx(/a\/b/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"slashed",
 		{
@@ -24304,7 +24304,7 @@ $range = rx(/x{2,5}/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"range",
 		{
@@ -24355,7 +24355,7 @@ $dot = rx(/./)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"dot",
 		{
@@ -24406,7 +24406,7 @@ $wordy = rx(/\bword\b/i)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"wordy",
 		{
@@ -24457,7 +24457,7 @@ $alt = rx(/foo|bar|baz/)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"alt",
 		{
@@ -24508,7 +24508,7 @@ $empty_rx = rx(//)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"empty_rx",
 		{
@@ -24638,7 +24638,7 @@ $empty_rx = rx(//)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "new",
@@ -24870,7 +24870,7 @@ $empty_rx = rx(//)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "new",
@@ -24943,7 +24943,7 @@ $empty_rx = rx(//)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "new",
@@ -25015,7 +25015,7 @@ $widget = %('foo.bar/widget.casp')
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"widget",
 		{
@@ -25105,7 +25105,7 @@ $foo['bar', 2, $gup]
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25183,7 +25183,7 @@ $foo['bar', 2, $gup] = 42
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25256,7 +25256,7 @@ $foo['bar', 2, $gup] = 42
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25318,7 +25318,7 @@ $hash['missing']?
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25384,7 +25384,7 @@ $hash['x', 'y', 'z']?
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25462,7 +25462,7 @@ $hash['x', 'y', 'z']? = 'foo'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25536,7 +25536,7 @@ $hash['k']? = 42
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25601,7 +25601,7 @@ $hash['k']? = 42
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -25673,12 +25673,12 @@ $result = $hash['a', 'b']?
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"result",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -25772,7 +25772,7 @@ $foo.$myfunc 'bar'
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -25835,7 +25835,7 @@ $foo.$myfunc('bar')
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -25892,7 +25892,7 @@ $foo.$myfunc()
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": {
@@ -25944,7 +25944,7 @@ $foo.$myfunc
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": {
@@ -26006,7 +26006,7 @@ $foo.$myfunc 1, 2
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -26073,7 +26073,7 @@ $foo.$myfunc 1, 2
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -26143,12 +26143,12 @@ $result = $foo.$myfunc('bar')
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"result",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -26241,7 +26241,7 @@ $arr <+ 'whatever'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -26301,7 +26301,7 @@ $arr <+ $item
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -26368,13 +26368,13 @@ $arr <+ $x + 1
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
 				[
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"a": [
@@ -26453,7 +26453,7 @@ $hash['items'] <+ 'new'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -26465,7 +26465,7 @@ $hash['items'] <+ 'new'
 			"fn": "<+",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"a": [
@@ -26531,7 +26531,7 @@ $obj.items <+ 'new'
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -26543,7 +26543,7 @@ $obj.items <+ 'new'
 			"fn": "<+",
 			"rc": [
 				{
-					"in": "fc"
+					"cmd": "mc"
 				},
 				{
 					"fn": "items",
@@ -26598,7 +26598,7 @@ $arr<+5
 [
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -26724,18 +26724,18 @@ $caller.call 1
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"caller",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "new",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "caller",
@@ -26751,7 +26751,7 @@ $caller.call 1
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -26771,7 +26771,7 @@ $caller.call 1
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -26904,10 +26904,10 @@ $caller.call 1
 [[{
 			"in":"as"
 		},"caller",[{
-				"in":"fc"
+				"in":"mc"
 			},{
 				"rc":[{
-						"in":"fc"
+						"in":"mc"
 					},{
 						"rc":{
 							"var":"foo",
@@ -26922,7 +26922,7 @@ $caller.call 1
 						"action":{
 							"cl":{
 								"bd":[[[{
-												"in":"fc"
+												"in":"mc"
 											},{
 												"a":[{
 														"var":"ctrl",
@@ -26938,7 +26938,7 @@ $caller.call 1
 							}
 						},
 						"test":[{
-								"in":"fc"
+								"in":"mc"
 							},{
 								"rc":{
 									"var":"caller",
@@ -26951,7 +26951,7 @@ $caller.call 1
 		},{
 			"l":4
 		}],[[{
-				"in":"fc"
+				"in":"mc"
 			},{
 				"a":[{
 						"v":1,
@@ -27029,7 +27029,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"foo",
 		{
@@ -27042,7 +27042,7 @@ end
 						},
 						[
 							{
-								"in": "fc"
+								"cmd": "mc"
 							},
 							{
 								"fn": "index",
@@ -27198,7 +27198,7 @@ end # end of outer function
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"foo",
 		{
@@ -27206,7 +27206,7 @@ end # end of outer function
 				"bd": [
 					[
 						{
-							"in": "fc"
+							"cmd": "mc"
 						},
 						{
 							"fn": "call",
@@ -27451,7 +27451,7 @@ $arr[0, 1, 2,]
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"arr",
 		{
@@ -27474,7 +27474,7 @@ $arr[0, 1, 2,]
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"hash",
 		{
@@ -27506,7 +27506,7 @@ $arr[0, 1, 2,]
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -27532,7 +27532,7 @@ $arr[0, 1, 2,]
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -27555,7 +27555,7 @@ $arr[0, 1, 2,]
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "method",
@@ -27583,7 +27583,7 @@ $arr[0, 1, 2,]
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"a": [
@@ -27708,7 +27708,7 @@ end
 											[
 												[
 													{
-														"in": "fc"
+														"cmd": "mc"
 													},
 													{
 														"a": [
@@ -27804,12 +27804,12 @@ $foo.$method_name(1, 2, 3)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"method_name",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "call",
@@ -27823,7 +27823,7 @@ $foo.$method_name(1, 2, 3)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -27924,7 +27924,7 @@ $foo.$func(1, 2, 3)
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"func",
 		{
@@ -27942,7 +27942,7 @@ $foo.$func(1, 2, 3)
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -28070,7 +28070,7 @@ end
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"cl",
 		{
@@ -28084,7 +28084,7 @@ end
 				"bd": [
 					[
 						{
-							"in": "as"
+							"cmd": "="
 						},
 						"foo",
 						{
@@ -28094,7 +28094,7 @@ end
 					],
 					[
 						{
-							"in": "as"
+							"cmd": "="
 						},
 						"cl",
 						{
@@ -28124,7 +28124,7 @@ end
 	],
 	[
 		{
-			"in": "fc"
+			"cmd": "mc"
 		},
 		{
 			"fn": "call",
@@ -28179,7 +28179,7 @@ $foo = {42 : 'bar'}
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"foo",
 		{
@@ -28272,7 +28272,7 @@ $foo.if
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "if",
@@ -28310,7 +28310,7 @@ $foo.if
 # .dsl call wiring the bwc to a receiver; and a .call invocation. The
 # CaspM shows the bwc `foo` staying as {bwc: "foo"} in the function
 # body (engine resolves at runtime via the active DSL), the assign bwc
-# for the two setvar statements, and function_call bwcs for the three
+# for the two setvar statements, and method_call bwcs for the three
 # method calls (.new, .caller, .dsl, .call).
 #
 
@@ -28407,7 +28407,7 @@ $caller.call
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"fn",
 		{
@@ -28429,18 +28429,18 @@ $caller.call
 	],
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"caller",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "new",
 				"rc": [
 					{
-						"in": "fc"
+						"cmd": "mc"
 					},
 					{
 						"fn": "caller",
@@ -28456,7 +28456,7 @@ $caller.call
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -28479,7 +28479,7 @@ $caller.call
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"fn": "call",
@@ -28501,7 +28501,7 @@ $caller.call
 #====================================================================
 # name: binary method-op with variables — `$foo + $bar`
 # `+` is a method — CaspM collapses `{op:"+", left, right}` to a
-# function_call with `receiver: $foo, function: "+", args: [$bar]`.
+# method_call with `receiver: $foo, function: "+", args: [$bar]`.
 # Same rule for `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`,
 # `>=`, `<=>`. Contrast with genuine non-method operators (`||`, `&&`,
 # `|`, `|&`, `!`) which stay as op atoms.
@@ -28540,12 +28540,12 @@ $x = $foo + $bar
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -28573,7 +28573,7 @@ $x = $foo + $bar
 #====================================================================
 # name: paren-less dot method call with one arg — `$foo.zap $bar`
 # Paren-less method call at statement position — the row shape `[recv,
-# method_name, {args: [...]}]` in CaspJ collapses to a function_call
+# method_name, {args: [...]}]` in CaspJ collapses to a method_call
 # in CaspM (same envelope shape whether the source used parens or not).
 #
 
@@ -28607,7 +28607,7 @@ $foo.zap $bar
 	[
 		[
 			{
-				"in": "fc"
+				"cmd": "mc"
 			},
 			{
 				"a": [
@@ -28671,7 +28671,7 @@ $x = $foo || $bar
 [
 	[
 		{
-			"in": "as"
+			"cmd": "="
 		},
 		"x",
 		{

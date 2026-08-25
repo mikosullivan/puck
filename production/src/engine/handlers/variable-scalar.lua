@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "handlers.variable-scalar",
-	"role": "Handler subclass for the CaspM assignment pattern that binds a scalar value to a bare local name — the `$x = 1` shape. Matches `row[1].in == 'as'`; unpacks the target name (row[2]) and the value atom (row[3]); does the write inline — savepoint, add_scalar, ensure_own_scope, upsert_ref, mark_frame_gc — against the CVM directly, using engine.current_frame_pk + engine.current_role_pk for the frame context. Declines any other row shape (returns false); raises on value-atom shapes not yet supported.",
+	"role": "Handler subclass for the CaspM assignment pattern that binds a scalar value to a bare local name — the `$x = 1` shape. Matches `row[1].cmd == '='`; unpacks the target name (row[2]) and the value atom (row[3]); does the write inline — savepoint, add_scalar, ensure_own_scope, upsert_ref, mark_frame_gc — against the CVM directly, using engine.current_frame_pk + engine.current_role_pk for the frame context. Declines any other row shape (returns false); raises on value-atom shapes not yet supported.",
 	"exports": {
 		"new":    "() -> VariableScalar",
 		"handle": "(engine, row) -> true (recognized and executed) | false (not our shape)"
@@ -14,9 +14,9 @@
 --[[
 # `handlers.variable-scalar`
 
-Handler for the CaspM shape produced by `$x = 1` — a three-element row whose head atom is `{in='as'}`, followed by a bare variable name and a value atom.
+Handler for the CaspM shape produced by `$x = 1` — a three-element row whose head atom is `{cmd='='}`, followed by a bare variable name and a value atom.
 
-**Match criteria:** `row[1]` is a table with `.in == 'as'`. Any other head shape returns false; the next handler in the chain gets a shot.
+**Match criteria:** `row[1]` is a table with `.cmd == '='`. Any other head shape returns false; the next handler in the chain gets a shot.
 
 **On match, execute:**
 
@@ -44,8 +44,8 @@ end
 
 
 function VariableScalar:handle(engine, row)
-	-- Match: row[1] must be a table with `in` == 'as'.
-	if type(row[1]) ~= 'table' or row[1]['in'] ~= 'as' then
+	-- Match: row[1] must be a table with `cmd` == '='.
+	if type(row[1]) ~= 'table' or row[1]['cmd'] ~= '=' then
 		return false
 	end
 

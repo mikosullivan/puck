@@ -109,13 +109,13 @@ Cap seeded, frame 0 seeded under it. Nothing has run yet.
 <tbody>
 <tr class="tbl-row-role"><td><code>eae0b9fb-…</code></td><td><code>o</code></td><td><code>r</code></td><td><code>u</code></td><td><code>eae0b9fb-…</code></td><td>null</td><td>null</td><td>null</td><td class="col-comment">user role</td></tr>
 <tr class="tbl-row-frame"><td><code>0c72f81a-…</code></td><td><code>o</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[null]</code></td><td><code>0</code></td><td>null</td><td class="col-comment">cap — <code>frame_process_cap = 1</code>, process root</td></tr>
-<tr class="tbl-row-frame"><td><code>2dc612e0-…</code></td><td><code>o</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[[{"in":"as"},"x",{"v":1}]]</code></td><td><code>0</code></td><td><code>0c72f81a-…</code></td><td class="col-comment">frame 0 — under the cap</td></tr>
+<tr class="tbl-row-frame"><td><code>2dc612e0-…</code></td><td><code>o</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[[{"cmd":"="},"x",{"v":1}]]</code></td><td><code>0</code></td><td><code>0c72f81a-…</code></td><td class="col-comment">frame 0 — under the cap</td></tr>
 </tbody>
 </table>
 
 ### After frame 0's statement dispatches
 
-The handler for `{in='as'}` did its four writes inline inside `savepoint variable_scalar_assign`: `cvm:add_scalar` materializes the scalar (polymorphic dispatch on the Lua-type of the value), `cvm:ensure_own_scope` ensures the bucket → scopes → scopes[0] chain, `cvm:upsert_ref` binds `x` in scopes[0], then `cvm:mark_frame_gc` does `UPDATE frame SET frame_gc = 1`. Frame 0 is now at `(frame_stmt_idx=0, frame_gc=1, no children)` — ready to advance. See [scopes](./scopes) for the bucket/scopes chain shape.
+The handler for `{cmd='='}` did its four writes inline inside `savepoint variable_scalar_assign`: `cvm:add_scalar` materializes the scalar (polymorphic dispatch on the Lua-type of the value), `cvm:ensure_own_scope` ensures the bucket → scopes → scopes[0] chain, `cvm:upsert_ref` binds `x` in scopes[0], then `cvm:mark_frame_gc` does `UPDATE frame SET frame_gc = 1`. Frame 0 is now at `(frame_stmt_idx=0, frame_gc=1, no children)` — ready to advance. See [scopes](./scopes) for the bucket/scopes chain shape.
 
 ### After frame 0's advance
 

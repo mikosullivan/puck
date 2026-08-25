@@ -21,7 +21,7 @@ $x = 1
 
 - **Boot.** `engine.new()` opens the CVM. The schema seeds three role rows (engine, cache, user).
 - **Cap + frame 0.** `run()` inserts the process cap (`control = 'f'`, `frame_process_cap = 1`, `frame_ast = '[null]'`, `frame_stmt_idx = 0`) and frame 0 under it (also `'f'`, `frame_parent = cap`, `frame_ast = <caspm>`, `frame_stmt_idx = 0`). The cap's single-slot ast lets it participate in the frame_gc cycle: cap starts non-terminal, advances to `stmt_idx = 1` for terminal.
-- **Statement 0 dispatches.** The `{in: 'as'}` handler does its four writes inline inside a savepoint:
+- **Statement 0 dispatches.** The `{cmd: '='}` handler does its four writes inline inside a savepoint:
 	- calls `cvm:add_scalar(1, user)` — Lua's `type(1) == 'number'` picks the `scalar_number` column; REAL affinity coerces the integer to `1.0` at insert time.
 	- calls `cvm:ensure_own_scope(frame_pk, role_pk)` — materializes the bucket → scopes → scopes[0] chain, returns the own-scope pk.
 	- calls `cvm:upsert_ref(scopes[0], 'x', scalar_pk)` — binds `x` in the frame's own scope.

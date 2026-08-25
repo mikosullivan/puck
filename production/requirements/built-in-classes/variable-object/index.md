@@ -127,7 +127,7 @@ The `++` and `--` operators are the ONLY Caspian-source way to bump a variable. 
 
 Mnemonic: **prefix does it first, suffix does it after.** Same convention as C, C++, Java, JavaScript.
 
-**User-written mutators use the typed-parameter surface.** Developers wanting their own similar operations (`&clamp($$x, 0, 10)`, `&swap($$a, $$b)`, `&multiply_by($$x, 3)`) write ordinary functions with a `{class: %(core:variable)}` param annotation — the same mechanism spec'd in [§ Pass-by-reference](#pass-by-reference). Those calls go through `function_call` in CaspM like any other user function; only the built-in bumps get their own CaspM bwc as an internal optimization for the hottest operator sugar.
+**User-written mutators use the typed-parameter surface.** Developers wanting their own similar operations (`&clamp($$x, 0, 10)`, `&swap($$a, $$b)`, `&multiply_by($$x, 3)`) write ordinary functions with a `{class: %(core:variable)}` param annotation — the same mechanism spec'd in [§ Pass-by-reference](#pass-by-reference). Those calls go through `method_call` in CaspM like any other user function; only the built-in bumps get their own CaspM bwc as an internal optimization for the hottest operator sugar.
 
 ## Interaction with closures
 
@@ -237,5 +237,5 @@ _No open items — closure-capture behavior settled in [Interaction with closure
 
 - [syntax/variables-and-assignment](https://puck.uno/requirements/syntax/variables-and-assignment) — variable declaration, value assignment, scoping rules.
 - [syntax/sigils](https://puck.uno/requirements/syntax/sigils) — the sigil family (`$`, `$$`, `%`, `@`, `&`).
-- [caspianj § Calls](https://puck.uno/requirements/caspianj#calls) — how variable-objects fit into the function_call primitive, especially for bump operators.
+- [caspianj § Calls](https://puck.uno/requirements/caspianj#calls) — how variable-objects fit into the method_call primitive, especially for bump operators.
 - [lua/scope](https://puck.uno/requirements/lua/scope) — the scope runtime that owns variable slots; interaction with `$$foo` still to be pinned.

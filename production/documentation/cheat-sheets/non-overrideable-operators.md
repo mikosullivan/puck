@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "cheat_sheets_non_overrideable_operators",
-	"role": "one-view reference to every Caspian operator that is a language primitive — user code cannot redefine it on a class the way it can for `+`, `==`, and other method-ops. These are the operators the engine dispatches directly on `op:` in CaspM (short-circuit boolean ops, pipes, ternary) or that desugar to a fixed internal primitive (bumps). Contrast with method-ops which collapse to function_call and dispatch through the receiver's class — those live in caspianj § Calls.",
+	"role": "one-view reference to every Caspian operator that is a language primitive — user code cannot redefine it on a class the way it can for `+`, `==`, and other method-ops. These are the operators the engine dispatches directly on `op:` in CaspM (short-circuit boolean ops, pipes, ternary) or that desugar to a fixed internal primitive (bumps). Contrast with method-ops which collapse to method_call and dispatch through the receiver's class — those live in caspianj § Calls.",
 	"status": "cheat sheet — canonical semantics live per-operator on the linked spec pages",
 	"audience": "developers writing Caspian who want to know 'can I override this on my class?' at a glance; engine implementers cross-referencing which ops stay as op atoms in CaspM"
 }}
@@ -63,22 +63,22 @@ Value-into-call composition. Not a method because the LHS becomes the first argu
 
 ## Bumps
 
-Not "operators" in the op-atom sense in CaspM — the transpiler produces op atoms in CaspJ (`{op: "++_suffix", operand}`, etc.), and the normalizer collapses each to a dedicated internal primitive (`{in: "si"}` for suffix increment, and so on). But they belong here because user code has no way to override them: `++` and `--` always mutate through the same slot-write primitive as `.value=` / subscript-set.
+Not "operators" in the op-atom sense in CaspM — the transpiler produces op atoms in CaspJ (`{op: "++_suffix", operand}`, etc.), and the normalizer collapses each to a dedicated internal primitive (`{cmd: "si"}` for suffix increment, and so on). But they belong here because user code has no way to override them: `++` and `--` always mutate through the same slot-write primitive as `.value=` / subscript-set.
 
 | Source | CaspJ op | CaspM primitive |
 |---|---|---|
-| `$x++` | `{op: "++_suffix", operand: X}` | `[{in: "si"}, X-as-lvalue]` |
-| `++$x` | `{op: "++_prefix", operand: X}` | `[{in: "pi"}, X-as-lvalue]` |
-| `$x--` | `{op: "--_suffix", operand: X}` | `[{in: "sd"}, X-as-lvalue]` |
-| `--$x` | `{op: "--_prefix", operand: X}` | `[{in: "pd"}, X-as-lvalue]` |
+| `$x++` | `{op: "++_suffix", operand: X}` | `[{cmd: "si"}, X-as-lvalue]` |
+| `++$x` | `{op: "++_prefix", operand: X}` | `[{cmd: "pi"}, X-as-lvalue]` |
+| `$x--` | `{op: "--_suffix", operand: X}` | `[{cmd: "sd"}, X-as-lvalue]` |
+| `--$x` | `{op: "--_prefix", operand: X}` | `[{cmd: "pd"}, X-as-lvalue]` |
 
 The operand is an lvalue atom (`{varobj: NAME}` for variables, `{subscript: {receiver, key}}` for subscripts). See [caspianj § Bumps](https://puck.uno/requirements/caspianj#bumps).
 
 ## Assignment
 
-`=` is a language construct, not an operator that dispatches through a class. It desugars to the `assign` internal primitive (`[{in: "as"}, LVALUE, VALUE]`) at CaspM. Compound assignments (`+=`, `-=`, `*=`, etc.) are sugar for `LHS = LHS OP RHS` — they inherit whatever the underlying op-method does but the assignment step itself is not overrideable. See [caspianj § Assignment](https://puck.uno/requirements/caspianj#assignment).
+`=` is a language construct, not an operator that dispatches through a class. It desugars to the `assign` internal primitive (`[{cmd: "="}, LVALUE, VALUE]`) at CaspM. Compound assignments (`+=`, `-=`, `*=`, etc.) are sugar for `LHS = LHS OP RHS` — they inherit whatever the underlying op-method does but the assignment step itself is not overrideable. See [caspianj § Assignment](https://puck.uno/requirements/caspianj#assignment).
 
 ## Not on this sheet
 
-- **Method-ops** — `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `<=>`, `.` (method-call), `[]` (subscript-get). These CAN be overridden on a user class by declaring the method with the operator's name (`method &+($other) ... end`). In CaspM they collapse to `function_call` with the op string as `function:`. See [caspianj § Calls](https://puck.uno/requirements/caspianj#calls).
+- **Method-ops** — `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `<=>`, `.` (method-call), `[]` (subscript-get). These CAN be overridden on a user class by declaring the method with the operator's name (`method &+($other) ... end`). In CaspM they collapse to `method_call` with the op string as `function:`. See [caspianj § Calls](https://puck.uno/requirements/caspianj#calls).
 - **Global-method sigils** — `%name` names, `@name` bucket shorthand, `$$name` varobj sigil, `&name` amp invocation. Not operators — they're parsing-level surface for reaching a specific runtime feature. See the [global methods cheat sheet](global-methods).

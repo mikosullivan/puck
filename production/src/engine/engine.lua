@@ -597,7 +597,7 @@ function M:run_row(row)
 		local head = expr[1]
 		local call = expr[2]
 
-		if type(head) == 'table' and head['in'] == 'fc'
+		if type(head) == 'table' and head['cmd'] == 'mc'
 			and type(call) == 'table' and call.fn == 'stop'
 			and type(call.rc) == 'table' and call.rc.sys == 'process'
 		then

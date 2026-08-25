@@ -73,7 +73,7 @@ local test = h.test
 test('handler returns true for {in=\'as\'} row shape', function()
 	local e = engine_with_live_frame()
 	local handler = VariableScalar.new()
-	local row = {{['in'] = 'as'}, 'x', {v = 1}}
+	local row = {{['cmd'] = '='}, 'x', {v = 1}}
 
 	local rc = handler:handle(e, row)
 	h.assert_eq(rc, true, 'returned true')
@@ -100,7 +100,7 @@ test('handler returns false when row[1].in is not \'as\'', function()
 	local e = engine_with_live_frame()
 	local handler = VariableScalar.new()
 
-	h.assert_eq(handler:handle(e, {{['in'] = 'fc'}, 'x', {v = 1}}), false,
+	h.assert_eq(handler:handle(e, {{['cmd'] = 'mc'}, 'x', {v = 1}}), false,
 		'other in-value returns false')
 	h.assert_eq(handler:handle(e, {{other = 'as'}, 'x', {v = 1}}), false,
 		'missing in-key returns false')
@@ -117,7 +117,7 @@ test('handler raises variable_scalar_no_current_frame when engine.current_frame_
 	local handler = VariableScalar.new()
 
 	local ok, err = pcall(function()
-		handler:handle(e, {{['in'] = 'as'}, 'x', {v = 1}})
+		handler:handle(e, {{['cmd'] = '='}, 'x', {v = 1}})
 	end)
 	h.assert_true(not ok, 'raised')
 	h.assert_true(tostring(err):find('variable_scalar_no_current_frame', 1, true) ~= nil,
@@ -130,7 +130,7 @@ test('handler raises variable_scalar_unsupported_value_atom when value atom is m
 
 	-- Missing v field.
 	local ok, err = pcall(function()
-		handler:handle(e, {{['in'] = 'as'}, 'x', {other = 1}})
+		handler:handle(e, {{['cmd'] = '='}, 'x', {other = 1}})
 	end)
 	h.assert_true(not ok, 'raised on missing v field')
 	h.assert_true(tostring(err):find('variable_scalar_unsupported_value_atom', 1, true) ~= nil,
@@ -138,7 +138,7 @@ test('handler raises variable_scalar_unsupported_value_atom when value atom is m
 
 	-- value_atom not a table.
 	ok, err = pcall(function()
-		handler:handle(e, {{['in'] = 'as'}, 'x', 'raw-string'})
+		handler:handle(e, {{['cmd'] = '='}, 'x', 'raw-string'})
 	end)
 	h.assert_true(not ok, 'raised on non-table value atom')
 	h.assert_true(tostring(err):find('variable_scalar_unsupported_value_atom', 1, true) ~= nil,
@@ -155,7 +155,7 @@ test('number literal routes to scalar_number (REAL storage)', function()
 	local e = engine_with_live_frame()
 	local handler = VariableScalar.new()
 
-	h.assert_eq(handler:handle(e, {{['in'] = 'as'}, 'n', {v = 42}}), true)
+	h.assert_eq(handler:handle(e, {{['cmd'] = '='}, 'n', {v = 42}}), true)
 
 	local row = first(e.cvm,
 		"select scalar_number, typeof(scalar_number) as ty from objects "
@@ -169,7 +169,7 @@ test('string literal routes to scalar_string (TEXT storage)', function()
 	local e = engine_with_live_frame()
 	local handler = VariableScalar.new()
 
-	h.assert_eq(handler:handle(e, {{['in'] = 'as'}, 's', {v = 'hello'}}), true)
+	h.assert_eq(handler:handle(e, {{['cmd'] = '='}, 's', {v = 'hello'}}), true)
 
 	local row = first(e.cvm,
 		"select scalar_string, typeof(scalar_string) as ty from objects "
@@ -183,7 +183,7 @@ test('boolean true routes to scalar_bool = 1', function()
 	local e = engine_with_live_frame()
 	local handler = VariableScalar.new()
 
-	h.assert_eq(handler:handle(e, {{['in'] = 'as'}, 'b', {v = true}}), true)
+	h.assert_eq(handler:handle(e, {{['cmd'] = '='}, 'b', {v = true}}), true)
 
 	local row = first(e.cvm,
 		"select scalar_bool from objects where scalar_bool is not null")
@@ -195,7 +195,7 @@ test('boolean false routes to scalar_bool = 0', function()
 	local e = engine_with_live_frame()
 	local handler = VariableScalar.new()
 
-	h.assert_eq(handler:handle(e, {{['in'] = 'as'}, 'b', {v = false}}), true)
+	h.assert_eq(handler:handle(e, {{['cmd'] = '='}, 'b', {v = false}}), true)
 
 	local row = first(e.cvm,
 		"select scalar_bool from objects where scalar_bool is not null")
@@ -212,7 +212,7 @@ test('successful dispatch builds bucket → scopes → scopes[0] → x → scala
 	local e = engine_with_live_frame()
 	local handler = VariableScalar.new()
 
-	h.assert_eq(handler:handle(e, {{['in'] = 'as'}, 'x', {v = 7}}), true)
+	h.assert_eq(handler:handle(e, {{['cmd'] = '='}, 'x', {v = 7}}), true)
 
 	-- One bucket, one scopes array, one scopes[0] hash.
 	h.assert_eq(tonumber(first(e.cvm,
@@ -235,7 +235,7 @@ test('successful dispatch marks the current frame frame_gc = 1', function()
 	local frame_pk = e.current_frame_pk
 	local handler = VariableScalar.new()
 
-	h.assert_eq(handler:handle(e, {{['in'] = 'as'}, 'x', {v = 1}}), true)
+	h.assert_eq(handler:handle(e, {{['cmd'] = '='}, 'x', {v = 1}}), true)
 
 	local frame_gc = first(e.cvm,
 		"select frame_gc from objects where object_pk = '" .. frame_pk .. "'").frame_gc

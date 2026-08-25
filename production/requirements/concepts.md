@@ -165,7 +165,7 @@ Examples that have earned their reuse in Caspian:
 
 - **Exceptions** serve return / raise / exit. One control-flow mechanism carries three semantic uses; the engine has one exception dispatcher, developers learn one machinery.
 - **Aggregate hashes** ([`lua/aggregate-hash`](https://puck.uno/requirements/lua/aggregate-hash)) serve `%amber` / scope frames / delegated environments — every "lookup walks a chain of hashes" pattern. One primitive, many roles.
-- **`function_call` bwc** ([caspianj § Calls](https://puck.uno/requirements/caspianj#calls)) collapses bareword calls, dot method calls, closure invocations, downloaded-method applications — every callable invocation — to one CaspM shape.
+- **`method_call` bwc** ([caspianj § Calls](https://puck.uno/requirements/caspianj#calls)) collapses bareword calls, dot method calls, closure invocations, downloaded-method applications — every callable invocation — to one CaspM shape.
 - **Freeze** is Caspian's constant mechanism across three surfaces: variables via [`variable-object.freeze`](https://puck.uno/requirements/built-in-classes/variable-object#freezing), hash fields via [`.freeze_field`](https://puck.uno/requirements/built-in-classes/primitives/hash#freezing-fields), whole objects via [`.obj.freeze`](https://puck.uno/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze). No separate `const` keyword; freeze does everything.
 - **`assign` bwc** serves variable assign and subscript assign — dispatch on lvalue shape.
 - **Aggregate `.set(key, value)`** is the scope runtime's assignment mechanism AND the general walk-then-write primitive available to any aggregate consumer.

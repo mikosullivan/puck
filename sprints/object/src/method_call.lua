@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "method_call",
-	"role": "Sprint-scoped Handler that dispatches CaspM fc-shape rows (function calls). Matches the row shape the normalizer produces for `receiver.method` — a row containing one array-atom whose head is {in='fc'} and body is {fn=<method_name>, rc=<receiver_atom>}. Recursively evaluates receiver atoms (variables, literals, nested fc calls), dispatches methods via the .obj name-check fast-path and the engine_class='obj' layer, materializes the return value into the frame's rv slot. Not a full method-call primitive — no lazy args, no class-chain walk beyond engine_class, no support for methods on receivers that aren't agents. Enough to run `$foo = 'bar'; $foo.obj.pk` end-to-end.",
+	"role": "Sprint-scoped Handler that dispatches CaspM fc-shape rows (function calls). Matches the row shape the normalizer produces for `receiver.method` — a row containing one array-atom whose head is {in='mc'} and body is {fn=<method_name>, rc=<receiver_atom>}. Recursively evaluates receiver atoms (variables, literals, nested fc calls), dispatches methods via the .obj name-check fast-path and the engine_class='obj' layer, materializes the return value into the frame's rv slot. Not a full method-call primitive — no lazy args, no class-chain walk beyond engine_class, no support for methods on receivers that aren't agents. Enough to run `$foo = 'bar'; $foo.obj.pk` end-to-end.",
 	"exports": {
 		"new": "() -> MethodCall — Handler subclass instance; add to an engine via engine:add_handler(MethodCall.new())"
 	},
@@ -17,18 +17,18 @@ A minimal method-call dispatcher for the object sprint.
 
 **Row match.** The normalizer produces this shape for `$foo.obj.pk`:
 
-    [[{in='fc'}, {fn='pk', rc=[{in='fc'}, {fn='obj', rc={var='foo'}}]}]]
+    [[{in='mc'}, {fn='pk', rc=[{in='mc'}, {fn='obj', rc={var='foo'}}]}]]
 
 One row, one atom (which is itself an array of a head atom and a call
 atom). The handler matches when `row[1]` is a table whose first
-element carries `in='fc'`.
+element carries `in='mc'`.
 
 **Evaluation.** `evaluate_atom` walks the atom tree recursively:
 
 - `{var=<name>}` — look up the variable in the frame's scope chain
   via the `frame_scoped_vars` view.
 - `{v=<literal>}` — materialize a scalar row via `engine.data:add_scalar`.
-- `[{in='fc'}, {fn=..., rc=...}]` — evaluate the receiver, then
+- `[{in='mc'}, {fn=..., rc=...}]` — evaluate the receiver, then
   dispatch the method.
 
 **Dispatch.** Two paths, checked in order:
@@ -93,7 +93,7 @@ function MethodCall:handle(engine, row)
 		return false
 	end
 
-	if type(row[1][1]) ~= 'table' or row[1][1]['in'] ~= 'fc' then
+	if type(row[1][1]) ~= 'table' or row[1][1]['cmd'] ~= 'mc' then
 		return false
 	end
 
@@ -128,8 +128,8 @@ function evaluate_atom(engine, atom)
 		return engine.data:add_scalar(atom['v'], engine.current_frame.owner_role)
 	end
 
-	-- fc atom: [{in='fc'}, {fn=..., rc=...}]
-	if type(atom[1]) == 'table' and atom[1]['in'] == 'fc' then
+	-- fc atom: [{in='mc'}, {fn=..., rc=...}]
+	if type(atom[1]) == 'table' and atom[1]['cmd'] == 'mc' then
 		local call = atom[2]
 		local receiver_pk = evaluate_atom(engine, call.rc)
 		return dispatch_method(engine, receiver_pk, call.fn)

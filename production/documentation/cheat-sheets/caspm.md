@@ -3,26 +3,26 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "cheat_sheets_caspm",
-	"role": "one-view reference to every CaspM command atom — the two atom kinds the spec labels 'command' at caspianj § CaspM-only internals. Splits into internal primitives (`{in: SHORT}` — closed registry, normalizer-synthesized) and bareword commands (`{bwc: NAME}` — source-writable, open set). Not spec-authoritative — canonical shapes live at caspianj.md.",
+	"role": "one-view reference to every CaspM command atom — the two atom kinds the spec labels 'command' at caspianj § CaspM-only internals. Splits into internal primitives (`{cmd: SHORT}` — closed registry, normalizer-synthesized) and bareword commands (`{bwc: NAME}` — source-writable, open set). Not spec-authoritative — canonical shapes live at caspianj.md.",
 	"status": "cheat sheet — table plus short prose; canonical semantics live per-primitive on caspianj § CaspM",
 	"audience": "engine implementers and Caspian devs cross-referencing what an atom in a CaspM dump means; readers of the CaspM sidecar files"
 }}
 ~~~
 
-CaspM has two kinds of command atom: **internal primitives** (`{in: SHORT}`), which the normalizer synthesizes from a closed registry of short tokens, and **bareword commands** (`{bwc: NAME}`), which come from source-writable bareword identifiers. Every other atom in CaspM is data or structure — the two below are the "do something" atoms. See [caspianj § CaspM-only internals](https://puck.uno/requirements/caspianj#caspm-only-internals-the-in-atom-type) for the design rationale.
+CaspM has two kinds of command atom: **internal primitives** (`{cmd: SHORT}`), which the normalizer synthesizes from a closed registry of short tokens, and **bareword commands** (`{bwc: NAME}`), which come from source-writable bareword identifiers. Every other atom in CaspM is data or structure — the two below are the "do something" atoms. See [caspianj § CaspM-only internals](https://puck.uno/requirements/caspianj#caspm-only-internals-the-in-atom-type) for the design rationale.
 
-## Internal primitives — `{in: SHORT}`
+## Internal primitives — `{cmd: SHORT}`
 
 Closed registry. Normalizer-synthesized; never appears in CaspJ. Two-character `SHORT` value per entry — chosen because these are the highest-frequency atoms in CaspM.
 
 | `in:` | Long name | Purpose | Envelope |
 |---|---|---|---|
-| `fc` | `function_call` | The unified call primitive — every call in Caspian (amp, dot method, closure invocation, bareword call, binop) collapses to this shape. See [§ Calls](https://puck.uno/requirements/caspianj#calls). | `[{"in": "fc"}, {rc, fn, a?, kw?, blocks?, l?}]` |
-| `as` | `assign` | The unified assignment primitive. All source-level assignments (variable, subscript, future attribute) collapse here. Lvalue-shape dispatch: string → variable, `{subscript: ...}` → subscript write. See [§ Assignment](https://puck.uno/requirements/caspianj#assignment). | `[{"in": "as"}, LVALUE, VALUE, {l}?]` |
-| `si` | `suffix_increment` | `$foo++`. See [§ Bumps](https://puck.uno/requirements/caspianj#bumps). | `[{"in": "si"}, NAME]` |
-| `pi` | `prefix_increment` | `++$foo`. | `[{"in": "pi"}, NAME]` |
-| `sd` | `suffix_decrement` | `$foo--`. | `[{"in": "sd"}, NAME]` |
-| `pd` | `prefix_decrement` | `--$foo`. | `[{"in": "pd"}, NAME]` |
+| `fc` | `method_call` | The unified call primitive — every call in Caspian (amp, dot method, closure invocation, bareword call, binop) collapses to this shape. See [§ Calls](https://puck.uno/requirements/caspianj#calls). | `[{"cmd": "mc"}, {rc, fn, a?, kw?, blocks?, l?}]` |
+| `as` | `assign` | The unified assignment primitive. All source-level assignments (variable, subscript, future attribute) collapse here. Lvalue-shape dispatch: string → variable, `{subscript: ...}` → subscript write. See [§ Assignment](https://puck.uno/requirements/caspianj#assignment). | `[{"cmd": "="}, LVALUE, VALUE, {l}?]` |
+| `si` | `suffix_increment` | `$foo++`. See [§ Bumps](https://puck.uno/requirements/caspianj#bumps). | `[{"cmd": "si"}, NAME]` |
+| `pi` | `prefix_increment` | `++$foo`. | `[{"cmd": "pi"}, NAME]` |
+| `sd` | `suffix_decrement` | `$foo--`. | `[{"cmd": "sd"}, NAME]` |
+| `pd` | `prefix_decrement` | `--$foo`. | `[{"cmd": "pd"}, NAME]` |
 
 Future internal primitives (scope-frame push/pop, dispatch fast-paths) get an entry here when spec'd. The registry is closed — no adding a new short at runtime.
 
@@ -70,7 +70,7 @@ Distinct from commands — these are data / structure / meta atoms, not "do some
 | `{dsp: X}` | `{double_splat: X}` | Kw splat. |
 | `{l: N}` | `{line: N}` | Line meta — only on multi-line statements. |
 | `{if: {conditions, else}}` | — | If atom (per spec; see caveat below). |
-| `{op: OP, ...}` | — | General operator — should be normalized away (pipes to nested calls, binops to two-element function_call). |
+| `{op: OP, ...}` | — | General operator — should be normalized away (pipes to nested calls, binops to two-element method_call). |
 
 ## Actual vs spec
 
@@ -83,11 +83,11 @@ Two clusters:
 
 ### Bumps
 
-**Spec** ([§ Bumps](https://puck.uno/requirements/caspianj#bumps)): all four bump forms collapse to internal primitives from the closed registry — `{in: "si"}`, `{in: "pi"}`, `{in: "sd"}`, `{in: "pd"}`.
+**Spec** ([§ Bumps](https://puck.uno/requirements/caspianj#bumps)): all four bump forms collapse to internal primitives from the closed registry — `{cmd: "si"}`, `{cmd: "pi"}`, `{cmd: "sd"}`, `{cmd: "pd"}`.
 
 **Actual**:
 
-- `$x++` produces `[{"postinc": "x"}]` — a `{postinc: NAME}` atom, not the `{in: "si"}` primitive.
+- `$x++` produces `[{"postinc": "x"}]` — a `{postinc: NAME}` atom, not the `{cmd: "si"}` primitive.
 - `$x--` produces `[{"postdec": "x"}]` similarly.
 - Prefix bumps (`++$x`, `--$x`) raise `transpile: cannot parse: ++$x` — they don't parse at the transpiler layer.
 
@@ -95,18 +95,18 @@ Four documented internal primitives are unemitted; two of them are unreachable f
 
 ### Subscript assignment
 
-**Spec** ([§ Assignment](https://puck.uno/requirements/caspianj#assignment)): subscript writes collapse to `{in: "as"}` with a `{subscript}` lvalue that the assign handler dispatches on:
+**Spec** ([§ Assignment](https://puck.uno/requirements/caspianj#assignment)): subscript writes collapse to `{cmd: "="}` with a `{subscript}` lvalue that the assign handler dispatches on:
 
 ~~~json
-[{"in": "as"}, {"subscript": {"receiver": ..., "key": ...}}, VALUE]
+[{"cmd": "="}, {"subscript": {"receiver": ..., "key": ...}}, VALUE]
 ~~~
 
 Lvalue-shape dispatch is a stated design principle — the same `assign` primitive handles variable, subscript, and (future) attribute writes.
 
-**Actual**: `$h['k'] = 42` produces a function_call routing through the receiver's `[]=` method:
+**Actual**: `$h['k'] = 42` produces a method_call routing through the receiver's `[]=` method:
 
 ~~~json
-[{"in": "fc"}, {"fn": "[]=", "rc": {"var": "h"}, "a": [{"v": "k"}, {"v": 42}]}]
+[{"cmd": "mc"}, {"fn": "[]=", "rc": {"var": "h"}, "a": [{"v": "k"}, {"v": 42}]}]
 ~~~
 
 Two different mechanisms for assignment (assign primitive for `$var = ...`, method dispatch for `$h[k] = ...`) instead of the spec's uniform `assign`-with-lvalue-dispatch.
@@ -146,8 +146,8 @@ The spec doesn't formally define a return atom shape, but its design principle (
 Spec and code agree on these — listed here so the divergence list above isn't misread as covering everything:
 
 - **Key shortening** — `line → l`, `value → v`, `body → bd`, `args → a`, `params → pm`, `closure → cl`, `fetch → ft`, `array → ar`, `varobj → vo`, `begin_end → be`. Applied consistently by the normalizer. (Spec examples still show long-key form pending a mechanical sweep; the code emits short keys.)
-- **`{in: "fc"}` for calls** — amp calls, dot method calls, closure invocations, and binops all collapse to `function_call` with `{fn, rc, a, opts?, blocks?}` envelope. Matches spec.
-- **`{in: "as"}` for variable assignment** — `$x = 1` produces `[{"in": "as"}, "x", {"v": 1}]`. Matches spec.
+- **`{cmd: "mc"}` for calls** — amp calls, dot method calls, closure invocations, and binops all collapse to `method_call` with `{fn, rc, a, opts?, blocks?}` envelope. Matches spec.
+- **`{cmd: "="}` for variable assignment** — `$x = 1` produces `[{"cmd": "="}, "x", {"v": 1}]`. Matches spec.
 - **`unless` → negated-`if`** — the normalizer wraps the condition with `{op: "!"}` and rewrites `unless_end` → `if_end`, then that flows through the if-atom collapse below. Matches spec.
 - **If-atom collapse** — `if / elsif / else` produces `{if: {conditions: [{test, action}], else: <action>}}`. `else` field omitted when the source has no else clause. Matches [§ If](https://puck.uno/requirements/caspianj#if) on the outer shape, but with an intentional deviation on the inner shape (see next entry).
 - **`action` carries a closure envelope** — each branch's `action` (and the top-level `else`) is a `{cl: {pm, bd}}` closure atom, not a bare statement list. This is a deliberate design choice: blocks are closures, and at execution time each block invocation pushes a fresh frame with `lexical_parent` pointing at the enclosing frame. Variables assigned inside the block don't leak into the enclosing scope. Spec text at [§ If](https://puck.uno/requirements/caspianj#if) still shows action as a bare `[<statement-atoms>]` list — the spec needs updating to reflect this.

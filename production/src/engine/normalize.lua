@@ -1,7 +1,7 @@
 --[[
 {
 	"module":  "normalize",
-	"role":    "full CaspianJ -> norm CaspianJ. Rewrites the transpiler's self-documenting form into the compact shape the engine walks: statement-prefix collapse (`[scope, setvar, ...]` -> `[{in: 'as'}, ...]`, function-call rows -> `[{in: 'fc'}, ...]`), single call-atom shape `{fn, rc, a?, kw?, blocks?}` for amp / dot-method / binop calls, compact key rewrites (line -> l, value -> v, body -> bd, args -> a, params -> pm, closure -> cl, fetch -> ft, array -> ar, varobj -> vo, begin_end -> be), drops comment atoms, documentation / vibecode BWC rows, cosmetic `base` / `dq` flags, and trailing sole-`line` statement-position line metas. Pipe operators (`{op: '|'}` / `{op: '|&'}`) desugar to nested calls first; general binops (`{op: '+'}` etc.) rewrite to a two-element call row. Bareword-command atoms (`{bwc: name}`) pass through unchanged in V1.",
+	"role":    "full CaspianJ -> norm CaspianJ. Rewrites the transpiler's self-documenting form into the compact shape the engine walks: statement-prefix collapse (`[scope, setvar, ...]` -> `[{cmd: '='}, ...]`, function-call rows -> `[{cmd: 'mc'}, ...]`), single call-atom shape `{fn, rc, a?, kw?, blocks?}` for amp / dot-method / binop calls, compact key rewrites (line -> l, value -> v, body -> bd, args -> a, params -> pm, closure -> cl, fetch -> ft, array -> ar, varobj -> vo, begin_end -> be), drops comment atoms, documentation / vibecode BWC rows, cosmetic `base` / `dq` flags, and trailing sole-`line` statement-position line metas. Pipe operators (`{op: '|'}` / `{op: '|&'}`) desugar to nested calls first; general binops (`{op: '+'}` etc.) rewrite to a two-element call row. Bareword-command atoms (`{bwc: name}`) pass through unchanged in V1.",
 	"exports": {
 		"normalize": "CaspianJ (Lua table) -> CaspianJ (Lua table) — norm variant. Input is not mutated; output is a fresh table."
 	}
@@ -29,8 +29,8 @@ drop-me values.
 **Rewrites in play.**
 
 - **Statement-prefix collapse.** `[scope, setvar, name, RHS]` ->
-  `[{in: 'as'}, name, RHS]`. Amp-call rows and dot-method rows
-  both become `[{in: 'fc'}, {fn, rc, ...}]`. Sugared forms
+  `[{cmd: '='}, name, RHS]`. Amp-call rows and dot-method rows
+  both become `[{cmd: 'mc'}, {fn, rc, ...}]`. Sugared forms
   (`unless_end`, `until_end`, postinc, compound-assign, `@name`,
   `@name = X`) desugar to their standard counterparts here.
 - **Compact-key rename.** `line` -> `l`, `value` -> `v`, `body` ->
@@ -144,7 +144,7 @@ end
 -- `[recv, "method", envelope?, {line}?]` or a `{blocks: [...]}` trailing
 -- atom variant) into the norm call form:
 --
---   [{in: "fc"}, {fn: METHOD, rc: RECV, a?, kw?, blocks?, l?}]
+--   [{cmd: "mc"}, {fn: METHOD, rc: RECV, a?, kw?, blocks?, l?}]
 --
 -- `fn`   — method name string. `"call"` for amp-calls (both `&name` and
 --          `&(expr)` route through `.call`).
@@ -205,7 +205,7 @@ local function collapse_call_row(v, fn, recv)
 	if kw_val ~= nil then call.kw = kw_val end
 	if blocks_val ~= nil then call.blocks = blocks_val end
 
-	return {{["in"] = "fc"}, call}
+	return {{["cmd"] = "mc"}, call}
 end
 
 --[[
@@ -317,7 +317,7 @@ normalize_atom = function(v)
 				-- a different line (multi-line RHS like `$x = begin ...
 				-- end`); drop it for single-line RHS.
 				local rhs = norm_sub(v[4])
-				local out = {{["in"] = "as"}, v[3], rhs}
+				local out = {{["cmd"] = "="}, v[3], rhs}
 				local trailing = v[#v]
 
 				if #v >= 5 and is_line_meta(trailing) then
@@ -357,8 +357,8 @@ normalize_atom = function(v)
 					a = {rhs},
 				}
 				return {
-					{["in"] = "as"}, name,
-					{{["in"] = "fc"}, call},
+					{["cmd"] = "="}, name,
+					{{["cmd"] = "mc"}, call},
 				}
 			end
 
@@ -380,7 +380,7 @@ normalize_atom = function(v)
 				if line then name_atom.l = line end
 
 				return {
-					{["in"] = "fc"},
+					{["cmd"] = "mc"},
 					{
 						fn = "[]=",
 						rc = {sys = "bucket"},
@@ -503,7 +503,7 @@ normalize_atom = function(v)
 		-- Dot-method call row: `[recv, method, envelope?, ...]`. Method
 		-- name is either a bareword string (static dispatch: `$obj.foo`)
 		-- or a value atom (dynamic dispatch: `$obj.$fname` -> position [2]
-		-- is `{var: "fname"}`). Both fold into the same `{in: "fc"}` call
+		-- is `{var: "fname"}`). Both fold into the same `{cmd: "mc"}` call
 		-- shape with `fn` carrying the method name / atom.
 		--
 		-- Excludes param-list arrays. A `params: [...]` field can contain
@@ -591,7 +591,7 @@ normalize_atom = function(v)
 		if type(v.line) == "number" then name_atom.l = v.line end
 
 		return {
-			{["in"] = "fc"},
+			{["cmd"] = "mc"},
 			{
 				fn = "[]",
 				rc = {sys = "bucket"},
@@ -608,7 +608,7 @@ normalize_atom = function(v)
 
 	-- Dot-operator atom `{op: ".", left, right, args?, kw?, blocks?, line?}` —
 	-- the CaspianJ shape of every dot-method call. Rewrites to
-	-- `[{in: "fc"}, {fn, rc: NORM(left), a?, kw?, blocks?}]` — the standard
+	-- `[{cmd: "mc"}, {fn, rc: NORM(left), a?, kw?, blocks?}]` — the standard
 	-- norm call shape. `fn` is the bare string method name for bareword and
 	-- string-literal forms (`$foo.bar` and `$foo.'bar'` both collapse to
 	-- `fn: "bar"`); an atom for dynamic dispatch (`$foo.$var` -> `fn: {var:
@@ -648,7 +648,7 @@ normalize_atom = function(v)
 			call.blocks = normalize_blocks(v.blocks)
 		end
 
-		return {{["in"] = "fc"}, call}
+		return {{["cmd"] = "mc"}, call}
 	end
 
 	-- Ternary atom `{op: "?:", cond, then, else, line?}` → rewrites to
@@ -677,7 +677,7 @@ normalize_atom = function(v)
 		-- fall through
 	elseif v.op ~= nil and v.left ~= nil and v.right ~= nil and v.op ~= "." then
 		-- General binop atom — rewrite as a call row. `1 + 2` becomes
-		-- `[{in: "fc"}, {fn: "+", rc: NORM(left), a: [NORM(right)]}]`. Line
+		-- `[{cmd: "mc"}, {fn: "+", rc: NORM(left), a: [NORM(right)]}]`. Line
 		-- info on the binop atom itself is dropped; the operands keep their
 		-- own `l:` fields.
 		local call = {
@@ -685,7 +685,7 @@ normalize_atom = function(v)
 			rc = norm_sub(v.left),
 			a = {norm_sub(v.right)},
 		}
-		return {{["in"] = "fc"}, call}
+		return {{["cmd"] = "mc"}, call}
 	end
 
 	-- Generic object atom: recurse into fields, drop cosmetic flags, rename
