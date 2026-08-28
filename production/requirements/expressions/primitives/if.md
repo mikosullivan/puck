@@ -66,7 +66,7 @@ The current transpiler emits an `if` atom shaped:
 The normalizer's job is to rewrite that atom into an `fc` call to engine.if:
 
     [{"cmd": "mc"}, {
-        "rc": {"var": "engine"},
+        "rcvr": {"var": "engine"},
         "fn": "if",
         "a": [
             [

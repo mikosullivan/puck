@@ -34,7 +34,7 @@ local function schema_db()
 	-- connection open.
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'schema apply failed: ' .. tostring(db:errmsg()))
-	rc = db:exec(slurp(PREFLIGHT_PATH))
+	rcvr = db:exec(slurp(PREFLIGHT_PATH))
 	assert(rc == sqlite.OK, 'preflight apply failed: ' .. tostring(db:errmsg()))
 	return db
 end
@@ -447,7 +447,7 @@ test('needs_trace persists across connections; traces does not', function()
 	local db1 = sqlite.open(path)
 	local rc = db1:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'db1 schema: ' .. tostring(db1:errmsg()))
-	rc = db1:exec(slurp(PREFLIGHT_PATH))
+	rcvr = db1:exec(slurp(PREFLIGHT_PATH))
 	assert(rc == sqlite.OK, 'db1 preflight: ' .. tostring(db1:errmsg()))
 
 	-- Set up state in db1.
@@ -470,7 +470,7 @@ test('needs_trace persists across connections; traces does not', function()
 	-- preflight recreates the temp tables + triggers and sets pragmas.
 	-- The engine follows exactly this pattern on every connection open.
 	local db2 = sqlite.open(path)
-	rc = db2:exec(slurp(PREFLIGHT_PATH))
+	rcvr = db2:exec(slurp(PREFLIGHT_PATH))
 	assert(rc == sqlite.OK, 'db2 preflight: ' .. tostring(db2:errmsg()))
 
 	-- needs_trace: persisted, should still be there.

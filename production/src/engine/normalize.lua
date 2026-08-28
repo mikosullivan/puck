@@ -1,7 +1,7 @@
 --[[
 {
 	"module":  "normalize",
-	"role":    "full CaspianJ -> norm CaspianJ. Rewrites the transpiler's self-documenting form into the compact shape the engine walks: statement-prefix collapse (`[scope, setvar, ...]` -> `[{cmd: '='}, ...]`, function-call rows -> `[{cmd: 'mc'}, ...]`), single call-atom shape `{fn, rc, a?, kw?, blocks?}` for amp / dot-method / binop calls, compact key rewrites (line -> l, value -> v, body -> bd, args -> a, params -> pm, closure -> cl, fetch -> ft, array -> ar, varobj -> vo, begin_end -> be), drops comment atoms, documentation / vibecode BWC rows, cosmetic `base` / `dq` flags, and trailing sole-`line` statement-position line metas. Pipe operators (`{op: '|'}` / `{op: '|&'}`) desugar to nested calls first; general binops (`{op: '+'}` etc.) rewrite to a two-element call row. Bareword-command atoms (`{bwc: name}`) pass through unchanged in V1.",
+	"role":    "full CaspianJ -> norm CaspianJ. Rewrites the transpiler's self-documenting form into the compact shape the engine walks: EVERY command collapses to the method_call shape `[{cmd: 'mc'}, {fn, rcvr, args?, kw?, blocks?}]`. Assignment is a method_call with `fn: '='` and `rcvr: {sys: 'frame'}` (implicit receiver — the current frame); dot-method calls carry the source-level receiver; binops are `fn: OP, rcvr: left, args: [right]`. Both statement-position setvar (`[scope, setvar, name, RHS]`) and expression-position setvar (`{setvar: {name, value}}`) collapse to the same method_call envelope. Compact key rewrites (line -> l, value -> v, body -> bd, params -> pm, closure -> cl, fetch -> ft, array -> ar, varobj -> vo, begin_end -> be). Drops comment atoms, documentation / vibecode BWC rows, cosmetic `base` / `dq` flags, and trailing sole-`line` statement-position line metas. Pipe operators (`{op: '|'}` / `{op: '|&'}`) desugar to nested calls first. Bareword-command atoms (`{bwc: name}`) pass through unchanged in V1.",
 	"exports": {
 		"normalize": "CaspianJ (Lua table) -> CaspianJ (Lua table) — norm variant. Input is not mutated; output is a fresh table."
 	}
@@ -28,11 +28,19 @@ drop-me values.
 
 **Rewrites in play.**
 
-- **Statement-prefix collapse.** `[scope, setvar, name, RHS]` ->
-  `[{cmd: '='}, name, RHS]`. Amp-call rows and dot-method rows
-  both become `[{cmd: 'mc'}, {fn, rc, ...}]`. Sugared forms
-  (`unless_end`, `until_end`, postinc, compound-assign, `@name`,
-  `@name = X`) desugar to their standard counterparts here.
+- **Every command is a method_call.** The engine walks one row
+  shape: `[{cmd: 'mc'}, {fn, rcvr, args?, kw?, blocks?, l?}]`.
+  Assignment (`$x = 1`) becomes `[{cmd: 'mc'}, {fn: '=', rcvr: {sys:
+  'frame'}, args: ['x', {v: 1}]}]` — the receiver is the current frame,
+  named via the `sys` system-reference atom, resolved to
+  `engine.current_frame_pk` at dispatch time. Amp-call rows,
+  dot-method rows, and binops all collapse to the same shape.
+  Sugared forms (`unless_end`, `until_end`, postinc,
+  compound-assign, `@name`, `@name = X`) desugar to their
+  standard counterparts here. Both statement-position and
+  expression-position setvar produce the same method_call
+  envelope — there's no "assignment as expression" vs
+  "assignment as statement" distinction at the CaspM layer.
 - **Compact-key rename.** `line` -> `l`, `value` -> `v`, `body` ->
   `bd`, `args` -> `a`, `params` -> `pm`, and so on (full map in
   `KEY_MAP`). Structural keys keep their names.
@@ -44,7 +52,7 @@ drop-me values.
   deferred but the finder recognizes it so the shape doesn't
   regress silently.
 - **Binops as calls.** `1 + 2` in full is `{op: '+', left, right}`;
-  in norm it's a call row with `fn: '+'`, `rc: left`, `a: [right]`.
+  in norm it's a call row with `fn: '+'`, `rcvr: left`, `args: [right]`.
   Short-circuit ops (`and`, `or`, `&&`, `||`) stay in `{op, left,
   right}` shape because they need runtime short-circuit dispatch.
 
@@ -60,14 +68,13 @@ local desugar_pipe
 
 -- Compact-key rename map: full atom key -> norm atom key. Applied inside
 -- object atoms by normalize_atom's generic-object branch. Structural keys
--- (`var`, `hash`, `kw`, `blocks`, `at`, `sys`, `fn`, `rc`, `pattern`,
+-- (`var`, `hash`, `kw`, `blocks`, `at`, `sys`, `fn`, `rcvr`, `pattern`,
 -- `flags`, `rx`, `cond`, `meta`, `bwc`, ...) stay as-is because they're
 -- already terse or too structurally load-bearing to rename.
 local KEY_MAP = {
 	line      = "l",
 	value     = "v",
 	body      = "bd",
-	args      = "a",
 	params    = "pm",
 	closure   = "cl",
 	fetch     = "ft",
@@ -75,7 +82,7 @@ local KEY_MAP = {
 	varobj    = "vo",
 	begin_end = "be",
 	splat     = "sp",
-	receiver  = "rc",
+	receiver  = "rcvr",
 	["function"] = "fn",
 }
 
@@ -124,6 +131,50 @@ local function norm_sub(v)
 	return normalize_atom(v)
 end
 
+-- Push an `amp` sigil down through a dot chain to the leftmost leaf.
+-- The transpiler emits `&foo.bar.baz` as `{amp: {op:'.', left: {op:'.',
+-- left: {bwc:'foo'}, right:'bar'}, right:'baz'}}` — amp wrapping the
+-- whole chain (low-precedence parse). But `&` is a high-precedence
+-- sigil binding to just the identifier it prefixes, so `&foo.bar.baz`
+-- is semantically `(&foo).bar.baz`. Rewriting the dot expression to
+-- move the amp inside gives us `{op:'.', left: {op:'.', left: LEAF',
+-- right:'bar'}, right:'baz'}` where LEAF' is the leftmost leaf wrapped
+-- as amp — which then normalizes as if the source had been `$foo.call().bar.baz`.
+--
+-- Leaf-collapse rule: if the leftmost leaf is `{bwc: NAME}` (itself a
+-- bareword call), replace with `{amp: NAME}` (string form) rather than
+-- `{amp: {bwc: NAME}}`. `bwc` and `amp` are both "call this"; wrapping
+-- one in the other would produce a double-call. The string form of
+-- amp resolves through the amp handler to `.call({var: NAME})` — a
+-- single call, which is what the user wrote.
+local function push_amp_down_through_dots(dot)
+	local out = {}
+
+	for k, val in pairs(dot) do
+		out[k] = val
+	end
+
+	if type(dot.left) == "table" and dot.left.op == "."
+			and dot.left.left ~= nil and dot.left.right ~= nil then
+		out.left = push_amp_down_through_dots(dot.left)
+	else
+		-- Base case: wrap the leftmost leaf.
+		local leaf = dot.left
+
+		if type(leaf) == "table" and leaf.bwc ~= nil and leaf[1] == nil then
+			out.left = {amp = leaf.bwc}
+
+			if type(leaf.line) == "number" then
+				out.left.line = leaf.line
+			end
+		else
+			out.left = {amp = leaf}
+		end
+	end
+
+	return out
+end
+
 -- Recurse through the elements of a `blocks: [...]` list, renaming inner
 -- keys (`body` -> `bd`, `params` -> `pm`) via normalize_atom on each entry.
 local function normalize_blocks(blocks)
@@ -144,14 +195,14 @@ end
 -- `[recv, "method", envelope?, {line}?]` or a `{blocks: [...]}` trailing
 -- atom variant) into the norm call form:
 --
---   [{cmd: "mc"}, {fn: METHOD, rc: RECV, a?, kw?, blocks?, l?}]
+--   [{cmd: "mc"}, {fn: METHOD, rcvr: RECV, args?, kw?, blocks?, l?}]
 --
 -- `fn`   — method name string. `"call"` for amp-calls (both `&name` and
 --          `&(expr)` route through `.call`).
--- `rc`   — receiver value. For amp-calls: `{var: X, l: N}` when the amp
+-- `rcvr` — receiver value. For amp-calls: `{var: X, l: N}` when the amp
 --          target is a bareword; the target atom itself for `&(EXPR)`.
 --          For dot-method: the (recursively normalized) recv.
--- `a`    — positional args, present iff non-empty.
+-- `args` — positional args, present iff non-empty.
 -- `kw`   — kwargs list, present iff a `{kw: [...]}` envelope atom was seen.
 -- `blocks` — closure list, present iff a `{blocks: [...]}` envelope was seen.
 -- `l`    — line of the call site, from a sole-line meta between the method
@@ -199,9 +250,9 @@ local function collapse_call_row(v, fn, recv)
 		end
 	end
 
-	local call = {fn = fn, rc = recv}
+	local call = {fn = fn, rcvr = recv}
 
-	if #positionals > 0 then call.a = positionals end
+	if #positionals > 0 then call.args = positionals end
 	if kw_val ~= nil then call.kw = kw_val end
 	if blocks_val ~= nil then call.blocks = blocks_val end
 
@@ -290,6 +341,25 @@ normalize_atom = function(v)
 		-- Amp-call row: `[{amp: X}, ...args..., {kw:...}?, {blocks:...}?, {line:N}?]`
 		if type(v[1]) == "table" and v[1].amp ~= nil then
 			local amp = v[1]
+
+			-- `&` is a high-precedence sigil binding to its immediate
+			-- operand, so `&foo.bar.baz` is semantically `(&foo).bar.baz`,
+			-- not `&(foo.bar.baz)`. The transpiler emits the low-
+			-- precedence CaspJ (`{amp: <whole_dot_chain>}`); push the
+			-- amp down to the leftmost leaf of the dot chain and
+			-- re-normalize so `&foo.bar()` and `$foo.call().bar()`
+			-- produce identical CaspM.
+			if type(amp.amp) == "table" and amp.amp.op == "."
+					and amp.amp.left ~= nil and amp.amp.right ~= nil then
+				local rewritten_row = {push_amp_down_through_dots(amp.amp)}
+
+				for i = 2, #v do
+					table.insert(rewritten_row, v[i])
+				end
+
+				return normalize_atom(rewritten_row)
+			end
+
 			local recv
 
 			if type(amp.amp) == "string" then
@@ -309,15 +379,44 @@ normalize_atom = function(v)
 			return collapse_call_row(shim, "call", recv)
 		end
 
+		-- Bwc-call row: `[{bwc: NAME}, ...args..., {kw:...}?, {blocks:...}?, {line:N}?]`
+		-- Bareword calls (`foo`, `foo 1`, `foo(1, 2)`) and amp-calls
+		-- (`&foo`, `&foo()`) mean the same thing — both invoke the
+		-- callable named NAME. Collapse to the same method_call shape
+		-- so the engine sees one canonical form.
+		--
+		-- `documentation` / `vibecode` BWC rows were dropped earlier
+		-- via `is_dropped_bwc_row`, so anything reaching here is a
+		-- real bareword call.
+		if type(v[1]) == "table" and v[1].bwc ~= nil then
+			local bwc = v[1]
+			local recv = {var = bwc.bwc}
+
+			if bwc.line ~= nil then recv.l = bwc.line end
+
+			local shim = {recv, "call"}
+			for i = 2, #v do
+				table.insert(shim, v[i])
+			end
+
+			return collapse_call_row(shim, "call", recv)
+		end
+
 		-- Statement prefix collapse — setvar / setvar_op / setat.
 		if v[1] == "scope" then
 			if v[2] == "setvar" and type(v[3]) == "string" then
-				-- [scope, setvar, name, RHS, ...trailing metas]. Keep a
-				-- trailing sole-line meta iff the RHS's interior mentions
-				-- a different line (multi-line RHS like `$x = begin ...
-				-- end`); drop it for single-line RHS.
+				-- [scope, setvar, name, RHS, ...trailing metas]. Collapses
+				-- to a method_call on the current frame: fn='=', rc=current
+				-- frame (named via {sys: 'frame'}), args = [name, RHS].
+				-- Keep a trailing sole-line meta iff the RHS's interior
+				-- mentions a different line (multi-line RHS like `$x =
+				-- begin ... end`); drop it for single-line RHS.
 				local rhs = norm_sub(v[4])
-				local out = {{["cmd"] = "="}, v[3], rhs}
+				local envelope = {
+					fn = "=",
+					rcvr = {sys = "frame"},
+					args = {v[3], rhs},
+				}
 				local trailing = v[#v]
 
 				if #v >= 5 and is_line_meta(trailing) then
@@ -337,28 +436,33 @@ normalize_atom = function(v)
 					scan(v[4])
 
 					if saw_other then
-						table.insert(out, {["l"] = tline})
+						envelope.l = tline
 					end
 				end
 
-				return out
+				return {{["cmd"] = "mc"}, envelope}
 			end
 
 			if v[2] == "setvar_op" and type(v[3]) == "string"
 					and type(v[4]) == "string" then
 				-- [scope, setvar_op, OP, name, RHS, ...trailing metas]
-				-- Desugars to `name = OP(name, RHS)`.
+				-- Desugars to `name = OP(name, RHS)` — an outer assignment
+				-- method_call whose value slot is the inner OP method_call.
 				local op = v[3]
 				local name = v[4]
 				local rhs = norm_sub(v[5])
-				local call = {
+				local op_call = {
 					fn = op,
-					rc = {var = name},
-					a = {rhs},
+					rcvr = {var = name},
+					args = {rhs},
 				}
 				return {
-					{["cmd"] = "="}, name,
-					{{["cmd"] = "mc"}, call},
+					{["cmd"] = "mc"},
+					{
+						fn = "=",
+						rcvr = {sys = "frame"},
+						args = {name, {{["cmd"] = "mc"}, op_call}},
+					},
 				}
 			end
 
@@ -383,8 +487,8 @@ normalize_atom = function(v)
 					{["cmd"] = "mc"},
 					{
 						fn = "[]=",
-						rc = {sys = "bucket"},
-						a = {name_atom, rhs},
+						rcvr = {sys = "bucket"},
+						args = {name_atom, rhs},
 					},
 				}
 			end
@@ -594,10 +698,63 @@ normalize_atom = function(v)
 			{["cmd"] = "mc"},
 			{
 				fn = "[]",
-				rc = {sys = "bucket"},
-				a = {name_atom},
+				rcvr = {sys = "bucket"},
+				args = {name_atom},
 			},
 		}
+	end
+
+	-- Object-atom amp: `{amp: X, line?: N}` in an operand position
+	-- (not as a row head). Same "call this" semantics as the amp-call
+	-- row — collapse to `[{cmd:'mc'}, {fn:'call', rcvr: <resolved>}]`.
+	--
+	-- When the target is a dot expression, push amp down to the leftmost
+	-- leaf and let the dot handler take it from there (same rule as the
+	-- amp-row handler, needed here because a pushed-down amp can end up
+	-- as an operand atom during recursive normalization).
+	if v.amp ~= nil and v[1] == nil then
+		if type(v.amp) == "table" and v.amp.op == "."
+				and v.amp.left ~= nil and v.amp.right ~= nil then
+			return normalize_atom(push_amp_down_through_dots(v.amp))
+		end
+
+		local recv
+
+		if type(v.amp) == "string" then
+			recv = {var = v.amp}
+			if type(v.line) == "number" then recv.l = v.line end
+		else
+			recv = norm_sub(v.amp)
+		end
+
+		return {{["cmd"] = "mc"}, {fn = "call", rcvr = recv}}
+	end
+
+	-- Object-atom bwc: `{bwc: NAME, line?: N}` in an operand position
+	-- (not as a row head). Same "call NAME" semantics as the bwc-call
+	-- row — collapse to `[{cmd:'mc'}, {fn:'call', rcvr:{var: NAME}}]`.
+	if v.bwc ~= nil and v[1] == nil then
+		local recv = {var = v.bwc}
+
+		if type(v.line) == "number" then recv.l = v.line end
+
+		return {{["cmd"] = "mc"}, {fn = "call", rcvr = recv}}
+	end
+
+	-- Expression-position setvar `{setvar: {name, value}, line?: N}` —
+	-- assign-as-value, e.g. `$y = 2` inside `($y = 2) + 3`. Same
+	-- collapse as statement-position setvar: method_call on the
+	-- current frame with fn='=', args=[name, value].
+	if v.setvar ~= nil and v[1] == nil then
+		local inner = v.setvar
+		local envelope = {
+			fn = "=",
+			rcvr = {sys = "frame"},
+			args = {inner.name, norm_sub(inner.value)},
+		}
+		if type(v.line) == "number" then envelope.l = v.line end
+
+		return {{["cmd"] = "mc"}, envelope}
 	end
 
 	-- Pipe operator — desugar to nested call, then re-normalize so the
@@ -608,7 +765,7 @@ normalize_atom = function(v)
 
 	-- Dot-operator atom `{op: ".", left, right, args?, kw?, blocks?, line?}` —
 	-- the CaspianJ shape of every dot-method call. Rewrites to
-	-- `[{cmd: "mc"}, {fn, rc: NORM(left), a?, kw?, blocks?}]` — the standard
+	-- `[{cmd: "mc"}, {fn, rcvr: NORM(left), args?, kw?, blocks?}]` — the standard
 	-- norm call shape. `fn` is the bare string method name for bareword and
 	-- string-literal forms (`$foo.bar` and `$foo.'bar'` both collapse to
 	-- `fn: "bar"`); an atom for dynamic dispatch (`$foo.$var` -> `fn: {var:
@@ -625,15 +782,15 @@ normalize_atom = function(v)
 			fn = norm_sub(v.right)
 		end
 
-		local call = {fn = fn, rc = norm_sub(v.left)}
+		local call = {fn = fn, rcvr = norm_sub(v.left)}
 
 		if v.args then
-			local a = {}
+			local args = {}
 			for _, arg in ipairs(v.args) do
 				local n = norm_sub(arg)
-				if n ~= nil then table.insert(a, n) end
+				if n ~= nil then table.insert(args, n) end
 			end
-			if #a > 0 then call.a = a end
+			if #args > 0 then call.args = args end
 		end
 
 		if v.kw then
@@ -682,8 +839,8 @@ normalize_atom = function(v)
 		-- own `l:` fields.
 		local call = {
 			fn = v.op,
-			rc = norm_sub(v.left),
-			a = {norm_sub(v.right)},
+			rcvr = norm_sub(v.left),
+			args = {norm_sub(v.right)},
 		}
 		return {{["cmd"] = "mc"}, call}
 	end
@@ -719,6 +876,23 @@ function M.normalize(caspj)
 		local n = normalize_atom(stmt)
 
 		if n ~= nil then
+			-- Unwrap `[[{cmd:"mc"}, envelope]]` → `[{cmd:"mc"}, envelope]`.
+			-- Statement rows that contain a single method_call
+			-- expression (dot-method calls, binops, pipes) come out
+			-- of normalize_atom's array-recursion wrapped in an extra
+			-- outer array — a leftover of the source-position wrap.
+			-- Setvar rows already come out unwrapped because they
+			-- intercept at row level. Unwrap here so every statement
+			-- row has the same shape: `[HEAD, ENVELOPE]` with no
+			-- extra nesting. The walker and handlers then don't need
+			-- to case-split on shape.
+			if type(n) == 'table' and #n == 1
+				and type(n[1]) == 'table' and #n[1] >= 1
+				and type(n[1][1]) == 'table' and n[1][1].cmd == 'mc'
+			then
+				n = n[1]
+			end
+
 			table.insert(out, n)
 		end
 	end

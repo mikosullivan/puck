@@ -534,7 +534,7 @@ $local_var = 10
 		},
 		{
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "bare_call"
 			}
@@ -587,7 +587,7 @@ $local_var = 10
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "bare_call"
 			}
 		}
@@ -627,7 +627,7 @@ $local_var = 10
 		},
 		{
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "bare_call"
 			}
@@ -680,7 +680,7 @@ $local_var = 10
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "bare_call"
 			}
 		}
@@ -726,7 +726,7 @@ $obj.field_access
 			},
 			{
 				"fn": "field_access",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "obj"
 				}
@@ -777,7 +777,7 @@ foo.bar
 			},
 			{
 				"fn": "bar",
-				"rc": {
+				"rcvr": {
 					"bwc": "foo",
 					"l": 1
 				}
@@ -882,13 +882,13 @@ foo = 'bar'
 		},
 		{
 			"fn": "call",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
 				{
 					"fn": "bar",
-					"rc": {
+					"rcvr": {
 						"bwc": "foo",
 						"l": 1
 					}
@@ -941,13 +941,13 @@ foo = 'bar'
 		},
 		{
 			"fn": "call",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
 				{
 					"fn": "bar",
-					"rc": [
+					"rcvr": [
 						{
 							"cmd": "mc"
 						},
@@ -959,7 +959,7 @@ foo = 'bar'
 								}
 							],
 							"fn": "[]",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -1013,13 +1013,13 @@ foo = 'bar'
 		},
 		{
 			"fn": "call",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
 				{
 					"fn": "method",
-					"rc": {
+					"rcvr": {
 						"l": 1,
 						"var": "var"
 					}
@@ -1127,13 +1127,13 @@ $foo.&bar('a', 'b') 1, 2, 3
 							}
 						],
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "bar"
 						}
 					}
 				],
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -1239,13 +1239,13 @@ $foo.&bar('a', 'b')(1, 2, 3)
 							}
 						],
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "bar"
 						}
 					}
 				],
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -1343,7 +1343,7 @@ $foo.(&bar || 'gup') 1, 2, 3
 						},
 						{
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"l": 1,
 								"var": "bar"
 							}
@@ -1355,7 +1355,7 @@ $foo.(&bar || 'gup') 1, 2, 3
 						"v": "gup"
 					}
 				},
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -1410,7 +1410,7 @@ $foo.'bar'
 			},
 			{
 				"fn": "bar",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -1463,7 +1463,7 @@ $foo."bar"
 			},
 			{
 				"fn": "bar",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -3147,7 +3147,7 @@ $x += 1
 					}
 				],
 				"fn": "+",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3206,7 +3206,7 @@ $x -= 1
 					}
 				],
 				"fn": "-",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3265,7 +3265,7 @@ $x *= 2
 					}
 				],
 				"fn": "*",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3324,7 +3324,7 @@ $x /= 2
 					}
 				],
 				"fn": "/",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3383,7 +3383,7 @@ $x %= 3
 					}
 				],
 				"fn": "%",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3442,7 +3442,7 @@ $x **= 2
 					}
 				],
 				"fn": "**",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3501,7 +3501,7 @@ $x ||= 'default'
 					}
 				],
 				"fn": "||",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3560,7 +3560,7 @@ $x &&= 'guarded'
 					}
 				],
 				"fn": "&&",
-				"rc": {
+				"rcvr": {
 					"var": "x"
 				}
 			}
@@ -3626,7 +3626,7 @@ $hash['key'] = 'value'
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -3691,7 +3691,7 @@ $arr[0] = 99
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "arr"
 			}
 		}
@@ -3749,7 +3749,7 @@ $obj.name = 'alice'
 					}
 				],
 				"fn": "name=",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "obj"
 				}
@@ -4212,7 +4212,7 @@ $x = $foo++
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "fn"
 			}
 		}
@@ -4282,7 +4282,7 @@ $sum = 1 + 2
 					}
 				],
 				"fn": "+",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"v": 1
 				}
@@ -4349,7 +4349,7 @@ $diff = 10 - 3
 					}
 				],
 				"fn": "-",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"v": 10
 				}
@@ -4416,7 +4416,7 @@ $prod = 4 * 5
 					}
 				],
 				"fn": "*",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"v": 4
 				}
@@ -4483,7 +4483,7 @@ $quot = 20 / 4
 					}
 				],
 				"fn": "/",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"v": 20
 				}
@@ -4550,7 +4550,7 @@ $mod = 7 % 3
 					}
 				],
 				"fn": "%",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"v": 7
 				}
@@ -4617,7 +4617,7 @@ $pow = 2 ** 8
 					}
 				],
 				"fn": "**",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"v": 2
 				}
@@ -4684,7 +4684,7 @@ $eq = ($a == $b)
 					}
 				],
 				"fn": "==",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "a"
 				}
@@ -4751,7 +4751,7 @@ $ne = ($a != $b)
 					}
 				],
 				"fn": "!=",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "a"
 				}
@@ -4818,7 +4818,7 @@ $lt = ($a < $b)
 					}
 				],
 				"fn": "<",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "a"
 				}
@@ -4885,7 +4885,7 @@ $le = ($a <= $b)
 					}
 				],
 				"fn": "<=",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "a"
 				}
@@ -4952,7 +4952,7 @@ $gt = ($a > $b)
 					}
 				],
 				"fn": ">",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "a"
 				}
@@ -5019,7 +5019,7 @@ $ge = ($a >= $b)
 					}
 				],
 				"fn": ">=",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "a"
 				}
@@ -5450,7 +5450,7 @@ $ternary = ($x > 0) ? 'positive' : 'non-positive'
 									}
 								],
 								"fn": ">",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "x"
 								}
@@ -5681,7 +5681,7 @@ end
 											"l":8
 										}],
 									"fn":"call",
-									"rc":{
+									"rcvr":{
 										"var":"label"
 									}
 								}]],
@@ -5699,7 +5699,7 @@ end
 													"l":2
 												}],
 											"fn":"call",
-											"rc":{
+											"rcvr":{
 												"var":"label"
 											}
 										}]],
@@ -5714,7 +5714,7 @@ end
 										"l":1
 									}],
 								"fn":"<",
-								"rc":{
+								"rcvr":{
 									"var":"whole",
 									"l":1
 								}
@@ -5730,7 +5730,7 @@ end
 													"l":4
 												}],
 											"fn":"call",
-											"rc":{
+											"rcvr":{
 												"var":"label"
 											}
 										}]],
@@ -5745,7 +5745,7 @@ end
 										"l":3
 									}],
 								"fn":"<",
-								"rc":{
+								"rcvr":{
 									"var":"whole",
 									"l":3
 								}
@@ -5761,7 +5761,7 @@ end
 													"l":6
 												}],
 											"fn":"call",
-											"rc":{
+											"rcvr":{
 												"var":"label"
 											}
 										}]],
@@ -5778,7 +5778,7 @@ end
 											"l":5
 										}],
 									"fn":">=",
-									"rc":{
+									"rcvr":{
 										"var":"whole",
 										"l":5
 									}
@@ -5791,7 +5791,7 @@ end
 											"l":5
 										}],
 									"fn":"<",
-									"rc":{
+									"rcvr":{
 										"var":"whole",
 										"l":5
 									}
@@ -5904,7 +5904,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"primary",
 												"l":2
 											},
@@ -5921,7 +5921,7 @@ end
 										"l":1
 									}],
 								"fn":"==",
-								"rc":{
+								"rcvr":{
 									"var":"whole",
 									"l":1
 								}
@@ -5932,7 +5932,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"secondary",
 												"l":4
 											},
@@ -5949,7 +5949,7 @@ end
 										"l":3
 									}],
 								"fn":"==",
-								"rc":{
+								"rcvr":{
 									"var":"whole",
 									"l":3
 								}
@@ -6020,7 +6020,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"denied",
 												"l":2
 											},
@@ -6107,7 +6107,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"denied",
 												"l":3
 											},
@@ -6197,7 +6197,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"denied",
 												"l":3
 											},
@@ -6288,7 +6288,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"denied",
 												"l":3
 											},
@@ -6379,7 +6379,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"denied",
 												"l":3
 											},
@@ -6463,7 +6463,7 @@ end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"proceed",
 												"l":2
 											},
@@ -6558,7 +6558,7 @@ if &ok &yay else &nay end
 						"bd":[[{
 									"in":"mc"
 								},{
-									"rc":{
+									"rcvr":{
 										"var":"nay",
 										"l":1
 									},
@@ -6573,7 +6573,7 @@ if &ok &yay else &nay end
 								"bd":[[{
 											"in":"mc"
 										},{
-											"rc":{
+											"rcvr":{
 												"var":"yay",
 												"l":1
 											},
@@ -6585,7 +6585,7 @@ if &ok &yay else &nay end
 						"test":[{
 								"in":"mc"
 							},{
-								"rc":{
+								"rcvr":{
 									"var":"ok",
 									"l":1
 								},
@@ -6782,7 +6782,7 @@ while $foo > 1
 					}
 				],
 				"fn": ">",
-				"rc": {
+				"rcvr": {
 					"l": 10,
 					"var": "foo"
 				}
@@ -6802,7 +6802,7 @@ while $foo > 1
 							}
 						],
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"var": "emit"
 						}
 					}
@@ -6822,7 +6822,7 @@ while $foo > 1
 							}
 						],
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"var": "emit"
 						}
 					}
@@ -6841,7 +6841,7 @@ while $foo > 1
 							}
 						],
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"var": "emit"
 						}
 					}
@@ -6917,7 +6917,7 @@ while &foo while &bar end end
 			},
 			{
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -6934,7 +6934,7 @@ while &foo while &bar end end
 						},
 						{
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"l": 1,
 								"var": "bar"
 							}
@@ -7012,7 +7012,7 @@ while &foo begin while &bar end
 			},
 			{
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -7029,7 +7029,7 @@ while &foo begin while &bar end
 						},
 						{
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"l": 1,
 								"var": "bar"
 							}
@@ -7125,13 +7125,13 @@ while &foo == true begin while ! &bar end
 					}
 				],
 				"fn": "==",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "foo"
 						}
@@ -7153,7 +7153,7 @@ while &foo == true begin while ! &bar end
 							},
 							{
 								"fn": "call",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "bar"
 								}
@@ -7276,7 +7276,7 @@ end
 					}
 				],
 				"fn": "<",
-				"rc": {
+				"rcvr": {
 					"l": 3,
 					"var": "x"
 				}
@@ -7301,7 +7301,7 @@ end
 								}
 							],
 							"fn": "+",
-							"rc": {
+							"rcvr": {
 								"var": "x"
 							}
 						}
@@ -7377,7 +7377,7 @@ end
 					},
 					{
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"l": 2,
 							"var": "poll"
 						}
@@ -7535,7 +7535,7 @@ end
 			},
 			{
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 6,
 					"var": "bar"
 				}
@@ -7558,7 +7558,7 @@ end
 								}
 							],
 							"fn": "<",
-							"rc": {
+							"rcvr": {
 								"l": 5,
 								"var": "attempt"
 							}
@@ -7583,7 +7583,7 @@ end
 											}
 										],
 										"fn": "+",
-										"rc": {
+										"rcvr": {
 											"var": "attempt"
 										}
 									}
@@ -7595,7 +7595,7 @@ end
 								},
 								{
 									"fn": "call",
-									"rc": {
+									"rcvr": {
 										"l": 4,
 										"var": "try_connect"
 									}
@@ -7682,7 +7682,7 @@ end
 			},
 			{
 				"fn": "each",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "items"
 				}
@@ -7705,7 +7705,7 @@ end
 										}
 									],
 									"fn": "call",
-									"rc": {
+									"rcvr": {
 										"var": "handle"
 									}
 								}
@@ -7824,7 +7824,7 @@ end
 			},
 			{
 				"fn": "each",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "items"
 				}
@@ -7860,7 +7860,7 @@ end
 																}
 															],
 															"fn": "+",
-															"rc": {
+															"rcvr": {
 																"l": 2,
 																"v": ": "
 															}
@@ -7868,13 +7868,13 @@ end
 													]
 												],
 												"fn": "+",
-												"rc": [
+												"rcvr": [
 													{
 														"cmd": "mc"
 													},
 													{
 														"fn": "count",
-														"rc": {
+														"rcvr": {
 															"l": 2,
 															"var": "loop"
 														}
@@ -7884,7 +7884,7 @@ end
 										]
 									],
 									"fn": "call",
-									"rc": {
+									"rcvr": {
 										"var": "emit"
 									}
 								}
@@ -7975,7 +7975,7 @@ end
 					}
 				],
 				"fn": "<",
-				"rc": {
+				"rcvr": {
 					"l": 3,
 					"var": "x"
 				}
@@ -8001,7 +8001,7 @@ end
 								}
 							],
 							"fn": "+",
-							"rc": {
+							"rcvr": {
 								"var": "x"
 							}
 						}
@@ -8154,7 +8154,7 @@ end
 [[[{
 				"in":"mc"
 			},{
-				"rc":{
+				"rcvr":{
 					"var":"people",
 					"l":1
 				},
@@ -8166,10 +8166,10 @@ end
 						"bd":[[[{
 										"in":"mc"
 									},{
-										"rc":[{
+										"rcvr":[{
 												"in":"mc"
 											},{
-												"rc":{
+												"rcvr":{
 													"var":"person",
 													"l":2
 												},
@@ -8201,7 +8201,7 @@ end
 																						"l":3
 																					}],
 																				"fn":"matches",
-																				"rc":{
+																				"rcvr":{
 																					"var":"address",
 																					"l":3
 																				}
@@ -8468,7 +8468,7 @@ end
 									}
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 4,
 									"var": "a"
 								}
@@ -8561,7 +8561,7 @@ end
 									}
 								],
 								"fn": "return",
-								"rc": {
+								"rcvr": {
 									"var": "block"
 								}
 							}
@@ -8940,7 +8940,7 @@ end
 									}
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"v": "welcome, "
 								}
@@ -9099,7 +9099,7 @@ end
 									}
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"var": "a"
 								}
@@ -9192,7 +9192,7 @@ end
 									}
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"var": "prefix"
 								}
@@ -9478,7 +9478,7 @@ end
 										},
 										{
 											"fn": "to_s",
-											"rc": {
+											"rcvr": {
 												"l": 2,
 												"sys": "now"
 											}
@@ -9486,7 +9486,7 @@ end
 									]
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"v": "stardate "
 								}
@@ -9496,7 +9496,7 @@ end
 				],
 				"name": "log_entry",
 				"pm": [],
-				"rc": {
+				"rcvr": {
 					"var": "picard"
 				}
 			}
@@ -9555,7 +9555,7 @@ $x = @name
 					}
 				],
 				"fn": "[]",
-				"rc": {
+				"rcvr": {
 					"sys": "bucket"
 				}
 			}
@@ -9613,7 +9613,7 @@ $x = @name
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"sys": "bucket"
 			}
 		}
@@ -9684,7 +9684,7 @@ $x = @name
 							}
 						],
 						"fn": "+",
-						"rc": [
+						"rcvr": [
 							{
 								"cmd": "mc"
 							},
@@ -9696,7 +9696,7 @@ $x = @name
 									}
 								],
 								"fn": "[]",
-								"rc": {
+								"rcvr": {
 									"sys": "bucket"
 								}
 							}
@@ -9705,7 +9705,7 @@ $x = @name
 				]
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"sys": "bucket"
 			}
 		}
@@ -9766,7 +9766,7 @@ $x = @name
 				}
 			],
 			"fn": "[]",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
@@ -9778,7 +9778,7 @@ $x = @name
 						}
 					],
 					"fn": "[]",
-					"rc": {
+					"rcvr": {
 						"sys": "bucket"
 					}
 				}
@@ -9848,7 +9848,7 @@ $x = @name
 				}
 			],
 			"fn": "[]=",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
@@ -9859,7 +9859,7 @@ $x = @name
 						}
 					],
 					"fn": "[]",
-					"rc": {
+					"rcvr": {
 						"sys": "bucket"
 					}
 				}
@@ -9921,7 +9921,7 @@ $x = @name
 			},
 			{
 				"fn": "length",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
@@ -9933,7 +9933,7 @@ $x = @name
 							}
 						],
 						"fn": "[]",
-						"rc": [
+						"rcvr": [
 							{
 								"cmd": "mc"
 							},
@@ -9945,7 +9945,7 @@ $x = @name
 									}
 								],
 								"fn": "[]",
-								"rc": {
+								"rcvr": {
 									"sys": "bucket"
 								}
 							}
@@ -10036,7 +10036,7 @@ $x = @name
 					},
 					{
 						"fn": "length",
-						"rc": [
+						"rcvr": [
 							{
 								"cmd": "mc"
 							},
@@ -10048,7 +10048,7 @@ $x = @name
 									}
 								],
 								"fn": "[]",
-								"rc": [
+								"rcvr": [
 									{
 										"cmd": "mc"
 									},
@@ -10060,7 +10060,7 @@ $x = @name
 											}
 										],
 										"fn": "[]",
-										"rc": {
+										"rcvr": {
 											"sys": "bucket"
 										}
 									}
@@ -10071,7 +10071,7 @@ $x = @name
 				]
 			],
 			"fn": "[]=",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
@@ -10082,7 +10082,7 @@ $x = @name
 						}
 					],
 					"fn": "[]",
-					"rc": {
+					"rcvr": {
 						"sys": "bucket"
 					}
 				}
@@ -10167,7 +10167,7 @@ end
 								}
 							],
 							"fn": "[]=",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -10186,7 +10186,7 @@ end
 								}
 							],
 							"fn": "[]=",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -10280,7 +10280,7 @@ end
 								}
 							],
 							"fn": "[]=",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -10384,7 +10384,7 @@ end
 								}
 							],
 							"fn": "[]=",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -10500,7 +10500,7 @@ end
 								}
 							],
 							"fn": "[]=",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -10519,7 +10519,7 @@ end
 								}
 							],
 							"fn": "[]=",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -10624,7 +10624,7 @@ end
 								}
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"var": "get"
 							}
 						}
@@ -10845,7 +10845,7 @@ end
 									}
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"var": "prefix"
 								}
@@ -11459,7 +11459,7 @@ end
 									}
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"v": "hello, "
 								}
@@ -11562,7 +11562,7 @@ end
 									}
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"var": "prefix"
 								}
@@ -11682,7 +11682,7 @@ $greet.call('alice')
 					}
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "greet"
 				}
 			}
@@ -11748,7 +11748,7 @@ $obj.method_name(1, 2)
 					}
 				],
 				"fn": "method_name",
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -11814,7 +11814,7 @@ $obj.method_name 1, 2
 					}
 				],
 				"fn": "method_name",
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -11911,7 +11911,7 @@ $obj.method_name 1, 2
 		},
 		{
 			"fn": "call",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
@@ -11929,7 +11929,7 @@ $obj.method_name 1, 2
 									}
 								],
 								"fn": "call",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "bar"
 								}
@@ -11937,7 +11937,7 @@ $obj.method_name 1, 2
 						]
 					],
 					"fn": "call",
-					"rc": {
+					"rcvr": {
 						"var": "blah"
 					}
 				}
@@ -11950,7 +11950,7 @@ $obj.method_name 1, 2
 		},
 		{
 			"fn": "call",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
@@ -11968,7 +11968,7 @@ $obj.method_name 1, 2
 									}
 								],
 								"fn": "call",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"var": "bar"
 								}
@@ -11976,7 +11976,7 @@ $obj.method_name 1, 2
 						]
 					],
 					"fn": "call",
-					"rc": {
+					"rcvr": {
 						"var": "blah"
 					}
 				}
@@ -12029,7 +12029,7 @@ $obj.method_name 1, 2
 		},
 		{
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "foo"
 			}
@@ -12041,7 +12041,7 @@ $obj.method_name 1, 2
 		},
 		{
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 2,
 				"var": "bar"
 			}
@@ -12099,7 +12099,7 @@ $obj.method_name 1, 2
 					},
 					{
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "bar"
 						}
@@ -12107,7 +12107,7 @@ $obj.method_name 1, 2
 				]
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -12173,7 +12173,7 @@ $obj.method_name 1, 2
 					},
 					{
 						"fn": "call",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "bar"
 						}
@@ -12181,7 +12181,7 @@ $obj.method_name 1, 2
 				]
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -12316,7 +12316,7 @@ $obj.method(1 + 2)
 								}
 							],
 							"fn": "+",
-							"rc": {
+							"rcvr": {
 								"l": 1,
 								"v": 1
 							}
@@ -12324,7 +12324,7 @@ $obj.method(1 + 2)
 					]
 				],
 				"fn": "method",
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -12382,7 +12382,7 @@ $obj.method($x)
 					}
 				],
 				"fn": "method",
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -12490,7 +12490,7 @@ $obj.method('a', [1, 2], {k: 1})
 					}
 				],
 				"fn": "method",
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -12568,7 +12568,7 @@ $result = $obj.method_name(1, 2)
 					}
 				],
 				"fn": "method_name",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "obj"
 				}
@@ -12646,7 +12646,7 @@ $obj.fetch('https://x', timeout: 30)
 						}
 					]
 				],
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -12723,7 +12723,7 @@ $obj.fetch 'https://x', timeout: 30
 						}
 					]
 				],
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -12802,7 +12802,7 @@ $obj.config(mode: :strict, depth: 3)
 						}
 					]
 				],
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -12881,7 +12881,7 @@ $obj.run(*$args, **$opts)
 						}
 					}
 				],
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -12970,7 +12970,7 @@ $obj.run(*$args, **$opts)
 					}
 				]
 			],
-			"rc": {
+			"rcvr": {
 				"var": "fetch"
 			}
 		}
@@ -13028,7 +13028,7 @@ $obj.run(*$args, **$opts)
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "welcome"
 			}
 		}
@@ -13093,7 +13093,7 @@ $obj.run(*$args, **$opts)
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -13164,7 +13164,7 @@ $obj.run(*$args, **$opts)
 					}
 				}
 			],
-			"rc": {
+			"rcvr": {
 				"var": "fetch"
 			}
 		}
@@ -13240,7 +13240,7 @@ $obj.run(*$args, **$opts)
 					}
 				}
 			],
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -13316,7 +13316,7 @@ $obj.run(*$args, **$opts)
 					}
 				}
 			],
-			"rc": {
+			"rcvr": {
 				"var": "greet"
 			}
 		}
@@ -13437,7 +13437,7 @@ $foo = &bar
 			},
 			{
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "bar"
 				}
@@ -13504,7 +13504,7 @@ $greeting = &greet('alice')
 					}
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "greet"
 				}
@@ -13578,7 +13578,7 @@ $result = &compute(10, 20)
 					}
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "compute"
 				}
@@ -13663,7 +13663,7 @@ $resp = &fetch('https://x', timeout: 30)
 						}
 					]
 				],
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "fetch"
 				}
@@ -13795,7 +13795,7 @@ end
 											}
 										],
 										"fn": "return",
-										"rc": {
+										"rcvr": {
 											"sys": "call"
 										}
 									}
@@ -13807,7 +13807,7 @@ end
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "some_method"
 			}
@@ -13895,7 +13895,7 @@ end
 												},
 												{
 													"fn": "call",
-													"rc": {
+													"rcvr": {
 														"l": 2,
 														"var": "compute"
 													}
@@ -13903,7 +13903,7 @@ end
 											]
 										],
 										"fn": "return",
-										"rc": {
+										"rcvr": {
 											"sys": "call"
 										}
 									}
@@ -13915,7 +13915,7 @@ end
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "some_method"
 			}
@@ -14057,7 +14057,7 @@ end
 												},
 												{
 													"fn": "call",
-													"rc": {
+													"rcvr": {
 														"l": 2,
 														"var": "scenario_a"
 													}
@@ -14065,7 +14065,7 @@ end
 											]
 										],
 										"fn": "return",
-										"rc": {
+										"rcvr": {
 											"sys": "call"
 										}
 									}
@@ -14091,7 +14091,7 @@ end
 												},
 												{
 													"fn": "call",
-													"rc": {
+													"rcvr": {
 														"l": 4,
 														"var": "scenario_b"
 													}
@@ -14099,7 +14099,7 @@ end
 											]
 										],
 										"fn": "return",
-										"rc": {
+										"rcvr": {
 											"sys": "call"
 										}
 									}
@@ -14125,7 +14125,7 @@ end
 												},
 												{
 													"fn": "call",
-													"rc": {
+													"rcvr": {
 														"l": 6,
 														"var": "scenario_c"
 													}
@@ -14133,7 +14133,7 @@ end
 											]
 										],
 										"fn": "return",
-										"rc": {
+										"rcvr": {
 											"sys": "call"
 										}
 									}
@@ -14145,7 +14145,7 @@ end
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "run_scenarios"
 			}
@@ -14219,7 +14219,7 @@ end
 			},
 			{
 				"fn": "each",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "items"
 				}
@@ -14242,7 +14242,7 @@ end
 										}
 									],
 									"fn": "call",
-									"rc": {
+									"rcvr": {
 										"var": "handle"
 									}
 								}
@@ -14473,7 +14473,7 @@ return $x * 2
 					}
 				],
 				"fn": "*",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "x"
 				}
@@ -14569,7 +14569,7 @@ return &compute
 			},
 			{
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "compute"
 				}
@@ -14629,7 +14629,7 @@ return &compute
 					}
 				],
 				"fn": "return",
-				"rc": {
+				"rcvr": {
 					"sys": "call"
 				}
 			}
@@ -14678,7 +14678,7 @@ return &compute
 			},
 			{
 				"fn": "return",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"sys": "call"
 				}
@@ -14836,7 +14836,7 @@ end
 														"l":2
 													}],
 												"fn":"<",
-												"rc":{
+												"rcvr":{
 													"var":"x",
 													"l":2
 												}
@@ -14853,7 +14853,7 @@ end
 										"l":6
 									}],
 								"fn":"*",
-								"rc":{
+								"rcvr":{
 									"var":"x",
 									"l":6
 								}
@@ -14936,7 +14936,7 @@ end
 									}
 								],
 								"fn": "return",
-								"rc": {
+								"rcvr": {
 									"sys": "call"
 								}
 							}
@@ -15250,14 +15250,14 @@ end
 																}
 															],
 															"fn": "[]",
-															"rc": {
+															"rcvr": {
 																"sys": "bucket"
 															}
 														}
 													]
 												],
 												"fn": "+",
-												"rc": {
+												"rcvr": {
 													"l": 3,
 													"v": "farewell, "
 												}
@@ -15309,14 +15309,14 @@ end
 																}
 															],
 															"fn": "[]",
-															"rc": {
+															"rcvr": {
 																"sys": "bucket"
 															}
 														}
 													]
 												],
 												"fn": "+",
-												"rc": {
+												"rcvr": {
 													"l": 9,
 													"v": "farewell, "
 												}
@@ -16100,7 +16100,7 @@ end
 												}
 											],
 											"fn": "[]=",
-											"rc": {
+											"rcvr": {
 												"sys": "bucket"
 											}
 										}
@@ -16119,7 +16119,7 @@ end
 												}
 											],
 											"fn": "[]=",
-											"rc": {
+											"rcvr": {
 												"sys": "bucket"
 											}
 										}
@@ -16161,7 +16161,7 @@ end
 								}
 							],
 							"fn": "[]=",
-							"rc": {
+							"rcvr": {
 								"sys": "bucket"
 							}
 						}
@@ -16198,14 +16198,14 @@ end
 																			}
 																		],
 																		"fn": "[]",
-																		"rc": {
+																		"rcvr": {
 																			"sys": "bucket"
 																		}
 																	}
 																]
 															],
 															"fn": "+",
-															"rc": {
+															"rcvr": {
 																"l": 16,
 																"v": " "
 															}
@@ -16213,7 +16213,7 @@ end
 													]
 												],
 												"fn": "+",
-												"rc": [
+												"rcvr": [
 													{
 														"cmd": "mc"
 													},
@@ -16225,7 +16225,7 @@ end
 															}
 														],
 														"fn": "[]",
-														"rc": {
+														"rcvr": {
 															"sys": "bucket"
 														}
 													}
@@ -16265,7 +16265,7 @@ end
 													}
 												],
 												"fn": "[]",
-												"rc": {
+												"rcvr": {
 													"sys": "bucket"
 												}
 											}
@@ -16304,7 +16304,7 @@ end
 														}
 													],
 													"fn": "[]",
-													"rc": {
+													"rcvr": {
 														"sys": "bucket"
 													}
 												}
@@ -16350,7 +16350,7 @@ end
 															}
 														],
 														"fn": "[]",
-														"rc": {
+														"rcvr": {
 															"sys": "bucket"
 														}
 													}
@@ -16399,14 +16399,14 @@ end
 																			}
 																		],
 																		"fn": "[]",
-																		"rc": {
+																		"rcvr": {
 																			"sys": "bucket"
 																		}
 																	}
 																]
 															],
 															"fn": "+",
-															"rc": {
+															"rcvr": {
 																"l": 35,
 																"v": " "
 															}
@@ -16414,7 +16414,7 @@ end
 													]
 												],
 												"fn": "+",
-												"rc": [
+												"rcvr": [
 													{
 														"cmd": "mc"
 													},
@@ -16426,7 +16426,7 @@ end
 															}
 														],
 														"fn": "[]",
-														"rc": {
+														"rcvr": {
 															"sys": "bucket"
 														}
 													}
@@ -16473,7 +16473,7 @@ end
 													},
 													{
 														"fn": "call",
-														"rc": {
+														"rcvr": {
 															"l": 41,
 															"var": "baz"
 														}
@@ -16481,7 +16481,7 @@ end
 												]
 											],
 											"fn": "[]=",
-											"rc": {
+											"rcvr": {
 												"sys": "bucket"
 											}
 										}
@@ -16505,7 +16505,7 @@ end
 																}
 															],
 															"fn": "+",
-															"rc": [
+															"rcvr": [
 																{
 																	"cmd": "mc"
 																},
@@ -16517,7 +16517,7 @@ end
 																		}
 																	],
 																	"fn": "[]",
-																	"rc": {
+																	"rcvr": {
 																		"sys": "bucket"
 																	}
 																}
@@ -16526,7 +16526,7 @@ end
 													]
 												],
 												"fn": "emit",
-												"rc": {
+												"rcvr": {
 													"sys": "self"
 												}
 											}
@@ -16633,7 +16633,7 @@ $captain = $character.new('name': 'picard', "rank": 'captain')
 						}
 					]
 				],
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "character"
 				}
@@ -16725,7 +16725,7 @@ $picard = $character.new(name: 'picard', rank: 'captain')
 						}
 					]
 				],
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "character"
 				}
@@ -16815,7 +16815,7 @@ end
 										},
 										{
 											"fn": "to_s",
-											"rc": {
+											"rcvr": {
 												"l": 2,
 												"sys": "now"
 											}
@@ -16823,7 +16823,7 @@ end
 									]
 								],
 								"fn": "+",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"v": "stardate "
 								}
@@ -16833,7 +16833,7 @@ end
 				],
 				"name": "log_entry",
 				"pm": [],
-				"rc": {
+				"rcvr": {
 					"var": "picard"
 				}
 			}
@@ -16941,14 +16941,14 @@ end
 																}
 															],
 															"fn": "[]",
-															"rc": {
+															"rcvr": {
 																"sys": "bucket"
 															}
 														}
 													]
 												],
 												"fn": "+",
-												"rc": {
+												"rcvr": {
 													"l": 3,
 													"v": "farewell, "
 												}
@@ -17253,7 +17253,7 @@ $bucket_ref = %bucket
 					}
 				],
 				"fn": "puts",
-				"rc": {
+				"rcvr": {
 					"sys": "stdout"
 				}
 			}
@@ -17311,7 +17311,7 @@ $bucket_ref = %bucket
 					}
 				],
 				"fn": "puts",
-				"rc": {
+				"rcvr": {
 					"sys": "stderr"
 				}
 			}
@@ -17407,7 +17407,7 @@ puts(true)
 					}
 				],
 				"fn": "puts",
-				"rc": {
+				"rcvr": {
 					"sys": "stdout"
 				}
 			}
@@ -17420,7 +17420,7 @@ puts(true)
 			},
 			{
 				"fn": "puts",
-				"rc": {
+				"rcvr": {
 					"l": 2,
 					"sys": "stdout"
 				}
@@ -17486,7 +17486,7 @@ puts(true)
 			},
 			{
 				"fn": "read_line",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"sys": "stdin"
 				}
@@ -17544,7 +17544,7 @@ $input = %stdin.read_line
 			},
 			{
 				"fn": "read_line",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"sys": "stdin"
 				}
@@ -17660,7 +17660,7 @@ $noise = %random.bytes(16)
 					}
 				],
 				"fn": "bytes",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"sys": "random"
 				}
@@ -17791,13 +17791,13 @@ $banged = %stdin.read_line + '!'
 					}
 				],
 				"fn": "+",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "read_line",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"sys": "stdin"
 						}
@@ -17858,7 +17858,7 @@ $net = %chain.net
 			},
 			{
 				"fn": "net",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"sys": "chain"
 				}
@@ -17931,13 +17931,13 @@ $x = %stdin.read_line + '!'
 					}
 				],
 				"fn": "+",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "read_line",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"sys": "stdin"
 						}
@@ -18311,7 +18311,7 @@ end
 									},
 									{
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"l": 1,
 											"var": "foo"
 										}
@@ -18329,7 +18329,7 @@ end
 												},
 												{
 													"fn": "call",
-													"rc": {
+													"rcvr": {
 														"l": 1,
 														"var": "yeah"
 													}
@@ -18337,21 +18337,21 @@ end
 											]
 										],
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"var": "dude"
 										}
 									}
 								]
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"var": "bar"
 							}
 						}
 					]
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "gup"
 				}
 			}
@@ -18444,7 +18444,7 @@ end
 									},
 									{
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"l": 1,
 											"var": "foo"
 										}
@@ -18468,7 +18468,7 @@ end
 														}
 													],
 													"fn": "call",
-													"rc": {
+													"rcvr": {
 														"l": 1,
 														"var": "yeah"
 													}
@@ -18476,21 +18476,21 @@ end
 											]
 										],
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"var": "dude"
 										}
 									}
 								]
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"var": "bar"
 							}
 						}
 					]
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "gup"
 				}
 			}
@@ -18576,7 +18576,7 @@ end
 							},
 							{
 								"fn": "call",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "foo"
 								}
@@ -18594,7 +18594,7 @@ end
 										},
 										{
 											"fn": "call",
-											"rc": {
+											"rcvr": {
 												"l": 1,
 												"var": "yeah"
 											}
@@ -18602,14 +18602,14 @@ end
 									]
 								],
 								"fn": "call",
-								"rc": {
+								"rcvr": {
 									"var": "dude"
 								}
 							}
 						]
 					],
 					"fn": "call",
-					"rc": {
+					"rcvr": {
 						"var": "bar"
 					}
 				}
@@ -18621,7 +18621,7 @@ end
 				},
 				{
 					"fn": "call",
-					"rc": {
+					"rcvr": {
 						"l": 1,
 						"var": "gup"
 					}
@@ -18709,7 +18709,7 @@ end
 							},
 							{
 								"fn": "call",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "foo"
 								}
@@ -18727,7 +18727,7 @@ end
 										},
 										{
 											"fn": "call",
-											"rc": {
+											"rcvr": {
 												"l": 1,
 												"var": "yeah"
 											}
@@ -18735,14 +18735,14 @@ end
 									]
 								],
 								"fn": "call",
-								"rc": {
+								"rcvr": {
 									"var": "dude"
 								}
 							}
 						]
 					],
 					"fn": "call",
-					"rc": {
+					"rcvr": {
 						"var": "bar"
 					}
 				}
@@ -18754,7 +18754,7 @@ end
 				},
 				{
 					"fn": "call",
-					"rc": {
+					"rcvr": {
 						"l": 1,
 						"var": "gup"
 					}
@@ -18833,7 +18833,7 @@ $foo.bar(&gup | &baz)
 									},
 									{
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"l": 1,
 											"var": "gup"
 										}
@@ -18841,14 +18841,14 @@ $foo.bar(&gup | &baz)
 								]
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"var": "baz"
 							}
 						}
 					]
 				],
 				"fn": "bar",
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -18959,7 +18959,7 @@ $value = &get_key | &normalize | &fetch
 									},
 									{
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"l": 1,
 											"var": "get_key"
 										}
@@ -18967,14 +18967,14 @@ $value = &get_key | &normalize | &fetch
 								]
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"var": "normalize"
 							}
 						}
 					]
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "fetch"
 				}
 			}
@@ -19067,7 +19067,7 @@ $top10 = &fetch_records() | &sort 'asc' | &take 10
 									},
 									{
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"l": 1,
 											"var": "fetch_records"
 										}
@@ -19079,7 +19079,7 @@ $top10 = &fetch_records() | &sort 'asc' | &take 10
 								}
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"var": "sort"
 							}
 						}
@@ -19090,7 +19090,7 @@ $top10 = &fetch_records() | &sort 'asc' | &take 10
 					}
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "take"
 				}
 			}
@@ -19187,7 +19187,7 @@ $x = &foo | &(&bear | &baz) | &gup
 									},
 									{
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"l": 1,
 											"var": "foo"
 										}
@@ -19195,7 +19195,7 @@ $x = &foo | &(&bear | &baz) | &gup
 								]
 							],
 							"fn": "call",
-							"rc": [
+							"rcvr": [
 								{
 									"cmd": "mc"
 								},
@@ -19207,7 +19207,7 @@ $x = &foo | &(&bear | &baz) | &gup
 											},
 											{
 												"fn": "call",
-												"rc": {
+												"rcvr": {
 													"l": 1,
 													"var": "bear"
 												}
@@ -19215,7 +19215,7 @@ $x = &foo | &(&bear | &baz) | &gup
 										]
 									],
 									"fn": "call",
-									"rc": {
+									"rcvr": {
 										"var": "baz"
 									}
 								}
@@ -19224,7 +19224,7 @@ $x = &foo | &(&bear | &baz) | &gup
 					]
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "gup"
 				}
 			}
@@ -19317,7 +19317,7 @@ $foo.call('xyz')
 					}
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -19335,7 +19335,7 @@ $foo.call('xyz')
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -19352,7 +19352,7 @@ $foo.call('xyz')
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 3,
 				"var": "foo"
 			}
@@ -19433,7 +19433,7 @@ $html = &normalize($text) | $formatter.render
 								}
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"l": 1,
 								"var": "normalize"
 							}
@@ -19441,7 +19441,7 @@ $html = &normalize($text) | $formatter.render
 					]
 				],
 				"fn": "render",
-				"rc": {
+				"rcvr": {
 					"var": "formatter"
 				}
 			}
@@ -19524,7 +19524,7 @@ $foo.bar | $gup.zap | $bear.blah
 									},
 									{
 										"fn": "bar",
-										"rc": {
+										"rcvr": {
 											"l": 1,
 											"var": "foo"
 										}
@@ -19532,14 +19532,14 @@ $foo.bar | $gup.zap | $bear.blah
 								]
 							],
 							"fn": "zap",
-							"rc": {
+							"rcvr": {
 								"var": "gup"
 							}
 						}
 					]
 				],
 				"fn": "blah",
-				"rc": {
+				"rcvr": {
 					"var": "bear"
 				}
 			}
@@ -19651,7 +19651,7 @@ $saved = &get_record 42 |&
 														}
 													],
 													"fn": "call",
-													"rc": {
+													"rcvr": {
 														"l": 1,
 														"var": "get_record"
 													}
@@ -19659,21 +19659,21 @@ $saved = &get_record 42 |&
 											]
 										],
 										"fn": "call",
-										"rc": {
+										"rcvr": {
 											"var": "validate"
 										}
 									}
 								]
 							],
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"var": "transform"
 							}
 						}
 					]
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "save"
 				}
 			}
@@ -20156,7 +20156,7 @@ B
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "pair_of_bodies"
 			}
 		}
@@ -20273,7 +20273,7 @@ B
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -20481,7 +20481,7 @@ $hash['a']
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -20538,7 +20538,7 @@ $hash['b']
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -20595,7 +20595,7 @@ $hash[$key]
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -20664,7 +20664,7 @@ $item = $hash['a']
 					}
 				],
 				"fn": "[]",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "hash"
 				}
@@ -20731,7 +20731,7 @@ $hash['a'] = 2
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -20796,7 +20796,7 @@ $hash[$key] = 2
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -20861,7 +20861,7 @@ $hash[$key] = $val
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -20934,7 +20934,7 @@ $hash['a', 1, 'b']
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -21015,7 +21015,7 @@ $hash['a', $foo, 'b'] = 'bar'
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -21083,7 +21083,7 @@ $array[0]
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "array"
 			}
 		}
@@ -21140,7 +21140,7 @@ $array[-1]
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "array"
 			}
 		}
@@ -21200,7 +21200,7 @@ $array[-0]
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "array"
 			}
 		}
@@ -21270,7 +21270,7 @@ $first = $array[0]
 					}
 				],
 				"fn": "[]",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "array"
 				}
@@ -21337,7 +21337,7 @@ $array[0] = 2
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "array"
 			}
 		}
@@ -21402,7 +21402,7 @@ $array[-1] = 99
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "array"
 			}
 		}
@@ -21459,7 +21459,7 @@ $array.push 'bar'
 					}
 				],
 				"fn": "push",
-				"rc": {
+				"rcvr": {
 					"var": "array"
 				}
 			}
@@ -21654,7 +21654,7 @@ $j = foo + bar
 					}
 				],
 				"fn": "+",
-				"rc": {
+				"rcvr": {
 					"bwc": "foo",
 					"l": 1
 				}
@@ -21713,13 +21713,13 @@ $foo.bar.gup
 			},
 			{
 				"fn": "gup",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "bar",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "foo"
 						}
@@ -21779,19 +21779,19 @@ $foo.bar.gup.baz
 			},
 			{
 				"fn": "baz",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "gup",
-						"rc": [
+						"rcvr": [
 							{
 								"cmd": "mc"
 							},
 							{
 								"fn": "bar",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "foo"
 								}
@@ -21862,7 +21862,7 @@ $foo.bar()
 			},
 			{
 				"fn": "baz",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
@@ -21874,13 +21874,13 @@ $foo.bar()
 							}
 						],
 						"fn": "gup",
-						"rc": [
+						"rcvr": [
 							{
 								"cmd": "mc"
 							},
 							{
 								"fn": "bar",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "foo"
 								}
@@ -21948,13 +21948,13 @@ $x = $foo.bar.gup
 			},
 			{
 				"fn": "gup",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "bar",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "foo"
 						}
@@ -22016,7 +22016,7 @@ $obj.name = 'alice'
 					}
 				],
 				"fn": "name=",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "obj"
 				}
@@ -22086,19 +22086,19 @@ $foo.bar.gup.baz = 'bear'
 					}
 				],
 				"fn": "baz=",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "gup",
-						"rc": [
+						"rcvr": [
 							{
 								"cmd": "mc"
 							},
 							{
 								"fn": "bar",
-								"rc": {
+								"rcvr": {
 									"l": 1,
 									"var": "foo"
 								}
@@ -22167,13 +22167,13 @@ $foo.bar.gup = $value
 					}
 				],
 				"fn": "gup=",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "bar",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "foo"
 						}
@@ -22293,7 +22293,7 @@ $$foo.value = 'bar'
 					}
 				],
 				"fn": "value=",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"vo": "foo"
 				}
@@ -22341,7 +22341,7 @@ $$foo.value
 			},
 			{
 				"fn": "value",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"vo": "foo"
 				}
@@ -22444,7 +22444,7 @@ $v = $$foo.value
 			},
 			{
 				"fn": "value",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"vo": "foo"
 				}
@@ -22497,13 +22497,13 @@ $$foo.a.b
 			},
 			{
 				"fn": "b",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "a",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"vo": "foo"
 						}
@@ -22644,7 +22644,7 @@ $$foo.a.b
 		},
 		{
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "foo"
 			}
@@ -22656,7 +22656,7 @@ $$foo.a.b
 		},
 		{
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 2,
 				"var": "foo"
 			}
@@ -22674,7 +22674,7 @@ $$foo.a.b
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -22694,7 +22694,7 @@ $$foo.a.b
 					}
 				]
 			],
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -22714,7 +22714,7 @@ $$foo.a.b
 					}
 				]
 			],
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -22843,7 +22843,7 @@ end
 													}
 												],
 												"fn": "+",
-												"rc": {
+												"rcvr": {
 													"l": 3,
 													"v": "Hello, "
 												}
@@ -23051,14 +23051,14 @@ end
 																						}
 																					],
 																					"fn": "[]",
-																					"rc": {
+																					"rcvr": {
 																						"sys": "bucket"
 																					}
 																				}
 																			]
 																		],
 																		"fn": "+",
-																		"rc": {
+																		"rcvr": {
 																			"l": 6,
 																			"v": ":"
 																		}
@@ -23066,7 +23066,7 @@ end
 																]
 															],
 															"fn": "+",
-															"rc": [
+															"rcvr": [
 																{
 																	"cmd": "mc"
 																},
@@ -23078,7 +23078,7 @@ end
 																		}
 																	],
 																	"fn": "[]",
-																	"rc": {
+																	"rcvr": {
 																		"sys": "bucket"
 																	}
 																}
@@ -23087,7 +23087,7 @@ end
 													]
 												],
 												"fn": "+",
-												"rc": {
+												"rcvr": {
 													"l": 6,
 													"v": "tcp://"
 												}
@@ -23351,7 +23351,7 @@ end
 													}
 												],
 												"fn": "+",
-												"rc": {
+												"rcvr": {
 													"l": 2,
 													"v": "Hello, "
 												}
@@ -23470,7 +23470,7 @@ $greeter = instance method hello($name)return 'Hello, ' + $name end end
 													}
 												],
 												"fn": "+",
-												"rc": {
+												"rcvr": {
 													"l": 1,
 													"v": "Hello, "
 												}
@@ -24642,7 +24642,7 @@ $empty_rx = rx(//)
 			},
 			{
 				"fn": "new",
-				"rc": {
+				"rcvr": {
 					"ft": {
 						"a": [
 							{
@@ -24874,7 +24874,7 @@ $empty_rx = rx(//)
 			},
 			{
 				"fn": "new",
-				"rc": {
+				"rcvr": {
 					"ft": {
 						"a": [
 							{
@@ -24947,7 +24947,7 @@ $empty_rx = rx(//)
 			},
 			{
 				"fn": "new",
-				"rc": {
+				"rcvr": {
 					"ft": {
 						"a": [
 							{
@@ -25123,7 +25123,7 @@ $foo['bar', 2, $gup]
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -25205,7 +25205,7 @@ $foo['bar', 2, $gup] = 42
 				}
 			],
 			"fn": "[]=",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -25270,7 +25270,7 @@ $foo['bar', 2, $gup] = 42
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"sys": "bucket"
 			}
 		}
@@ -25328,7 +25328,7 @@ $hash['missing']?
 				}
 			],
 			"fn": "[]?",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -25402,7 +25402,7 @@ $hash['x', 'y', 'z']?
 				}
 			],
 			"fn": "[]?",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -25484,7 +25484,7 @@ $hash['x', 'y', 'z']? = 'foo'
 				}
 			],
 			"fn": "[]?=",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -25550,7 +25550,7 @@ $hash['k']? = 42
 				}
 			],
 			"fn": "[]?=",
-			"rc": {
+			"rcvr": {
 				"var": "hash"
 			}
 		}
@@ -25615,7 +25615,7 @@ $hash['k']? = 42
 				}
 			],
 			"fn": "[]?",
-			"rc": {
+			"rcvr": {
 				"sys": "bucket"
 			}
 		}
@@ -25692,7 +25692,7 @@ $result = $hash['a', 'b']?
 					}
 				],
 				"fn": "[]?",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "hash"
 				}
@@ -25785,7 +25785,7 @@ $foo.$myfunc 'bar'
 					"l": 1,
 					"var": "myfunc"
 				},
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -25848,7 +25848,7 @@ $foo.$myfunc('bar')
 					"l": 1,
 					"var": "myfunc"
 				},
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -25899,7 +25899,7 @@ $foo.$myfunc()
 					"l": 1,
 					"var": "myfunc"
 				},
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -25951,7 +25951,7 @@ $foo.$myfunc
 					"l": 1,
 					"var": "myfunc"
 				},
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -26023,7 +26023,7 @@ $foo.$myfunc 1, 2
 					"l": 1,
 					"var": "myfunc"
 				},
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -26086,7 +26086,7 @@ $foo.$myfunc 1, 2
 					"l": 1,
 					"var": "myfunc"
 				},
-				"rc": {
+				"rcvr": {
 					"sys": "bucket"
 				}
 			}
@@ -26161,7 +26161,7 @@ $result = $foo.$myfunc('bar')
 					"l": 1,
 					"var": "myfunc"
 				},
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -26251,7 +26251,7 @@ $arr <+ 'whatever'
 				}
 			],
 			"fn": "<+",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "arr"
 			}
@@ -26311,7 +26311,7 @@ $arr <+ $item
 				}
 			],
 			"fn": "<+",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "arr"
 			}
@@ -26384,7 +26384,7 @@ $arr <+ $x + 1
 							}
 						],
 						"fn": "+",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "x"
 						}
@@ -26392,7 +26392,7 @@ $arr <+ $x + 1
 				]
 			],
 			"fn": "<+",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "arr"
 			}
@@ -26463,7 +26463,7 @@ $hash['items'] <+ 'new'
 				}
 			],
 			"fn": "<+",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
@@ -26475,7 +26475,7 @@ $hash['items'] <+ 'new'
 						}
 					],
 					"fn": "[]",
-					"rc": {
+					"rcvr": {
 						"l": 1,
 						"var": "hash"
 					}
@@ -26541,13 +26541,13 @@ $obj.items <+ 'new'
 				}
 			],
 			"fn": "<+",
-			"rc": [
+			"rcvr": [
 				{
 					"cmd": "mc"
 				},
 				{
 					"fn": "items",
-					"rc": {
+					"rcvr": {
 						"l": 1,
 						"var": "obj"
 					}
@@ -26608,7 +26608,7 @@ $arr<+5
 				}
 			],
 			"fn": "<+",
-			"rc": {
+			"rcvr": {
 				"l": 1,
 				"var": "arr"
 			}
@@ -26733,13 +26733,13 @@ $caller.call 1
 			},
 			{
 				"fn": "new",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "caller",
-						"rc": {
+						"rcvr": {
 							"l": 1,
 							"var": "foo"
 						}
@@ -26761,7 +26761,7 @@ $caller.call 1
 					}
 				],
 				"fn": "controller=",
-				"rc": {
+				"rcvr": {
 					"l": 2,
 					"var": "caller"
 				}
@@ -26781,7 +26781,7 @@ $caller.call 1
 					}
 				],
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"var": "caller"
 				}
 			}
@@ -26906,10 +26906,10 @@ $caller.call 1
 		},"caller",[{
 				"in":"mc"
 			},{
-				"rc":[{
+				"rcvr":[{
 						"in":"mc"
 					},{
-						"rc":{
+						"rcvr":{
 							"var":"foo",
 							"l":1
 						},
@@ -26929,7 +26929,7 @@ $caller.call 1
 														"l":3
 													}],
 												"fn":"controller=",
-												"rc":{
+												"rcvr":{
 													"var":"caller",
 													"l":3
 												}
@@ -26940,7 +26940,7 @@ $caller.call 1
 						"test":[{
 								"in":"mc"
 							},{
-								"rc":{
+								"rcvr":{
 									"var":"caller",
 									"l":2
 								},
@@ -26958,7 +26958,7 @@ $caller.call 1
 						"l":5
 					}],
 				"fn":"call",
-				"rc":{
+				"rcvr":{
 					"var":"caller"
 				}
 			}]]]
@@ -27046,7 +27046,7 @@ end
 							},
 							{
 								"fn": "index",
-								"rc": {
+								"rcvr": {
 									"l": 2,
 									"var": "loop"
 								}
@@ -27210,7 +27210,7 @@ end # end of outer function
 						},
 						{
 							"fn": "call",
-							"rc": {
+							"rcvr": {
 								"l": 13,
 								"var": "myfunc"
 							}
@@ -27524,7 +27524,7 @@ $arr[0, 1, 2,]
 				}
 			],
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"var": "foo"
 			}
 		}
@@ -27546,7 +27546,7 @@ $arr[0, 1, 2,]
 					}
 				],
 				"fn": "method",
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -27575,7 +27575,7 @@ $arr[0, 1, 2,]
 						}
 					]
 				],
-				"rc": {
+				"rcvr": {
 					"var": "obj"
 				}
 			}
@@ -27601,7 +27601,7 @@ $arr[0, 1, 2,]
 				}
 			],
 			"fn": "[]",
-			"rc": {
+			"rcvr": {
 				"var": "arr"
 			}
 		}
@@ -27718,7 +27718,7 @@ end
 															}
 														],
 														"fn": "return",
-														"rc": {
+														"rcvr": {
 															"var": "block"
 														}
 													}
@@ -27813,7 +27813,7 @@ $foo.$method_name(1, 2, 3)
 			},
 			{
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "get_method_name"
 				}
@@ -27844,7 +27844,7 @@ $foo.$method_name(1, 2, 3)
 					"l": 2,
 					"var": "method_name"
 				},
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -27963,7 +27963,7 @@ $foo.$func(1, 2, 3)
 					"l": 4,
 					"var": "func"
 				},
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}
@@ -28128,7 +28128,7 @@ end
 		},
 		{
 			"fn": "call",
-			"rc": {
+			"rcvr": {
 				"l": 11,
 				"var": "cl"
 			}
@@ -28276,7 +28276,7 @@ $foo.if
 			},
 			{
 				"fn": "if",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -28438,13 +28438,13 @@ $caller.call
 			},
 			{
 				"fn": "new",
-				"rc": [
+				"rcvr": [
 					{
 						"cmd": "mc"
 					},
 					{
 						"fn": "caller",
-						"rc": {
+						"rcvr": {
 							"l": 5,
 							"var": "fn"
 						}
@@ -28470,7 +28470,7 @@ $caller.call
 					}
 				],
 				"fn": "dsl",
-				"rc": {
+				"rcvr": {
 					"var": "caller"
 				}
 			}
@@ -28483,7 +28483,7 @@ $caller.call
 			},
 			{
 				"fn": "call",
-				"rc": {
+				"rcvr": {
 					"l": 7,
 					"var": "caller"
 				}
@@ -28555,7 +28555,7 @@ $x = $foo + $bar
 					}
 				],
 				"fn": "+",
-				"rc": {
+				"rcvr": {
 					"l": 1,
 					"var": "foo"
 				}
@@ -28617,7 +28617,7 @@ $foo.zap $bar
 					}
 				],
 				"fn": "zap",
-				"rc": {
+				"rcvr": {
 					"var": "foo"
 				}
 			}

@@ -38,7 +38,7 @@ local function fresh_db()
 	current_process_pk.register(db, function() return nil end)
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, "schema apply failed: " .. tostring(db:errmsg()))
-	rc = db:exec(slurp(PREFLIGHT_PATH))
+	rcvr = db:exec(slurp(PREFLIGHT_PATH))
 	assert(rc == sqlite.OK, "preflight apply failed: " .. tostring(db:errmsg()))
 	return db
 end

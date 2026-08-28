@@ -28,7 +28,7 @@ Row-head dispatch — the function that turns "here's an array of handlers, plea
 
 Two-channel contract for handlers is enforced by this loop shape: the boolean return picks whether the loop advances or stops; a raise bypasses the loop entirely. Dispatch never overloads one channel to mean the other.
 
-**Typical caller.** The engine's `M:run_row` will call this with `dispatch(self.row_handlers, self, row)` — passing engine and row as the trailing args. Each handler's `:handle(engine, row)` then receives both. But dispatch itself doesn't know or care about that convention; it just forwards.
+**Typical caller.** `Frame:run_row` calls this with `dispatch(self.engine.row_handlers, self, row, restart)` — passing the currently-walking Frame, the row, and the restart flag as the trailing args. Each handler's `:handle(frame, row, restart)` then receives all three. But dispatch itself doesn't know or care about that convention; it just forwards.
 ]]
 local function dispatch(handlers, ...)
 	for _, handler in ipairs(handlers) do

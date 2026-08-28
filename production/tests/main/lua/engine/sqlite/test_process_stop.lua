@@ -10,7 +10,7 @@
 
 Assertions for the `%process.stop` primitive.
 
-`Engine:run_row` recognizes the `%process.stop` row shape and calls `Engine:process_stop` (a system primitive on the engine, not a pluggable handler). `Engine:process_stop` inserts a stop frame under the current frame, then raises the HALT sentinel via `halt.raise()`. HALT unwinds through `run_row` + `run_frame` + `restart_frame` back to `run`'s xpcall, which catches it and returns `{stopped = 1, cap_pk = <pk>}`.
+The `handlers.process-stop` core handler (registered ahead of `MainHandler` in the stock chain) claims the `%process.stop` row shape via the normal dispatch pipeline. On match it inserts a stop frame under the currently-walking frame, then raises the HALT sentinel via `halt.raise()`. HALT unwinds through `dispatch` → `Frame:run_row` → `Frame:run` back to `Engine:run`'s xpcall, which catches it and returns `{stopped = 1, cap_pk = <pk>}`.
 
 Post-halt: the stop frame is under whatever frame dispatched `%process.stop`; any state established by earlier statements in the same frame is preserved (variables bound before the halt are still walkable); a second `run` call resumes the process (see test_restart.lua).
 ]]

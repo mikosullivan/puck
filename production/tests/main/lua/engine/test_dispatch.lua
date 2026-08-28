@@ -24,6 +24,38 @@ local h        = require('helpers')
 local Handler  = require('handler')
 local dispatch = require('dispatch')
 local engine   = require('engine')
+local Frame    = require('frame')
+
+
+-- Helper: seed a real cap + frame_0 in the engine and construct a
+-- Frame object for frame_0. Returns the Frame; tests then call
+-- `frame:run_row(...)`. Needed because Frame's constructor fetches
+-- role_pk via role_by_pk unless the caller passes it in, and the
+-- easiest way to get a valid pk is to actually insert one.
+local function frame_for(e)
+	e:load('$dummy = 1')  -- Any program suffices; we won't run it.
+	local stmts = e.stmts
+
+	local user_pk
+	if stmts.get_user_role:step() == require('lsqlite3').ROW then
+		user_pk = stmts.get_user_role:get_value(0)
+	end
+	stmts.get_user_role:reset()
+
+	stmts.insert_cap:bind_values(user_pk)
+	stmts.insert_cap:step()
+	e.cap_pk = stmts.insert_cap:get_value(0)
+	stmts.insert_cap:reset()
+
+	local cjson = require('cjson')
+	stmts.insert_frame_0:bind_values(cjson.encode(e.caspm), e.cap_pk, user_pk)
+	stmts.insert_frame_0:step()
+	local frame_0_pk = stmts.insert_frame_0:get_value(0)
+	stmts.insert_frame_0:reset()
+	e.caspm = nil
+
+	return Frame.new(e, frame_0_pk)
+end
 
 -- ------------------------------------------------------------
 -- Test-support Handler subclasses — local to this test file.
@@ -38,7 +70,7 @@ function AlwaysTrue.new()
 	return setmetatable(Handler.new(), AlwaysTrue)
 end
 
-function AlwaysTrue:handle(engine, row)
+function AlwaysTrue:handle(frame, row, restart)
 	return true
 end
 
@@ -49,7 +81,7 @@ function AlwaysFalse.new()
 	return setmetatable(Handler.new(), AlwaysFalse)
 end
 
-function AlwaysFalse:handle(engine, row)
+function AlwaysFalse:handle(frame, row, restart)
 	return false
 end
 
@@ -60,7 +92,7 @@ function AlwaysRaise.new()
 	return setmetatable(Handler.new(), AlwaysRaise)
 end
 
-function AlwaysRaise:handle(engine, row)
+function AlwaysRaise:handle(frame, row, restart)
 	error("always_raise_fired: AlwaysRaise handler is configured to always raise")
 end
 
@@ -181,47 +213,51 @@ end)
 -- expected atom-keys re-raise while passing handler raises through.
 -- ==============================================================
 
-h.test("engine:run_row returns cleanly when a handler in row_handlers claims the row", function()
+h.test("frame:run_row returns cleanly when a handler in row_handlers claims the row", function()
 	local e = engine.new()
 	e:add_handler(AlwaysTrue.new())
+	local frame = frame_for(e)
 	-- AlwaysTrue ignores the row content; any row works.
-	e:run_row({{bwc = 'anything'}})
+	frame:run_row({{bwc = 'anything'}})
 end)
 
-h.test("engine:run_row raises unrecognized_caspm when row_handlers is empty", function()
+h.test("frame:run_row raises unrecognized_caspm when row_handlers is empty", function()
 	local e = engine.new()
 	-- Clear the stock chain to test the empty-chain fallback specifically.
 	e:clear_handlers()
+	local frame = frame_for(e)
 	assert_raises_matching(
-		function() e:run_row({{['cmd'] = '='}}) end,
+		function() frame:run_row({{['cmd'] = '='}}) end,
 		'unrecognized_caspm',
 		"empty row_handlers should raise unrecognized_caspm"
 	)
 end)
 
-h.test("engine:run_row's unrecognized_caspm raise includes the row-head atom-keys", function()
+h.test("frame:run_row's unrecognized_caspm raise includes the row-head atom-keys", function()
 	local e = engine.new()
 	-- Clear the stock chain so the empty-chain fallback fires and its
 	-- reshape logic surfaces the row-head atom-keys.
 	e:clear_handlers()
+	local frame = frame_for(e)
 	assert_raises_matching(
-		function() e:run_row({{['cmd'] = '='}}) end,
-		'in',
+		function() frame:run_row({{['cmd'] = '='}}) end,
+		'cmd',
 		"raise should surface the row-head atom-keys detail"
 	)
 end)
 
-h.test("engine:run_row propagates a handler's raise unchanged (no atom-keys re-wrap)", function()
+h.test("frame:run_row propagates a handler's raise unchanged (no atom-keys re-wrap)", function()
 	local e = engine.new()
 	-- Replace the stock chain with just AlwaysRaise so it's the first
-	-- (and only) handler consulted; if we appended, VariableScalar's
-	-- always-true stub would claim first and AlwaysRaise would never fire.
+	-- (and only) handler consulted; if we appended, MainHandler would
+	-- claim non-mc rows and AlwaysRaise would never fire.
 	e:clear_handlers():add_handler(AlwaysRaise.new())
-	-- AlwaysRaise's message contains "always_raise_fired". If M:run_row
+	local frame = frame_for(e)
+	-- AlwaysRaise's message contains "always_raise_fired". If run_row
 	-- accidentally caught it and re-shaped it as unrecognized_caspm,
 	-- the substring below wouldn't match.
 	assert_raises_matching(
-		function() e:run_row({{bwc = 'anything'}}) end,
+		function() frame:run_row({{bwc = 'anything'}}) end,
 		'always_raise_fired',
 		"handler's own raise should propagate as-is through run_row"
 	)
@@ -243,14 +279,15 @@ h.test("engine.new()'s row_handlers is exactly the stock roster, one of each", f
 	local handlers = require('handlers')
 
 	local expected_classes = {
+		ProcessStop = handlers.ProcessStop,
+		ScalarAtom  = handlers.ScalarAtom,
+		Plus        = handlers.Plus,
 		MainHandler = handlers.MainHandler,
 		-- add more here as new handler classes get registered:
 		--   NextHandler = handlers.NextHandler,
 		-- (VariableScalar exists but is not registered as a stock
 		-- handler for now — will re-appear as an optimization once
 		-- the main handler covers assignment via its general path.)
-		-- (%process.stop is not a handler; it's dispatched by
-		-- Engine:run_row to Engine:process_stop as a system primitive.)
 	}
 
 	local e = engine.new()

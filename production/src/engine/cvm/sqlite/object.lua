@@ -136,15 +136,15 @@ function object:bucket()
 	local bucket = self._bucket
 	if bucket then return bucket end
 
-	local engine = self.engine
-	local pk = self.bucket_pk
+	local cvm = self.engine.data
+	local pk  = self.bucket_pk
 
 	if not pk then
-		pk = engine:add_bucket(self.object_pk)
+		pk = cvm:add_bucket(self.object_pk)
 		self.bucket_pk = pk
 	end
 
-	bucket = engine:object_by_pk(pk)
+	bucket = cvm:object_by_pk(pk)
 	self._bucket = bucket
 	return bucket
 end
@@ -183,15 +183,15 @@ function object:stack()
 	local stack = self._stack
 	if stack then return stack end
 
-	local engine = self.engine
-	local pk = self.stack_pk
+	local cvm = self.engine.data
+	local pk  = self.stack_pk
 
 	if not pk then
-		pk = engine:add_stack(self.object_pk)
+		pk = cvm:add_stack(self.object_pk)
 		self.stack_pk = pk
 	end
 
-	stack = engine:object_by_pk(pk)
+	stack = cvm:object_by_pk(pk)
 	self._stack = stack
 	return stack
 end

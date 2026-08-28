@@ -106,7 +106,7 @@ Lvalue-shape dispatch is a stated design principle — the same `assign` primiti
 **Actual**: `$h['k'] = 42` produces a method_call routing through the receiver's `[]=` method:
 
 ~~~json
-[{"cmd": "mc"}, {"fn": "[]=", "rc": {"var": "h"}, "a": [{"v": "k"}, {"v": 42}]}]
+[{"cmd": "mc"}, {"fn": "[]=", "rcvr": {"var": "h"}, "args": [{"v": "k"}, {"v": 42}]}]
 ~~~
 
 Two different mechanisms for assignment (assign primitive for `$var = ...`, method dispatch for `$h[k] = ...`) instead of the spec's uniform `assign`-with-lvalue-dispatch.

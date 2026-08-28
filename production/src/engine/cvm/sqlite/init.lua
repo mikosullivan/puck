@@ -192,6 +192,24 @@ function cvm.new(db)
 		"values ('o', 'f', ?, 0, ?) returning object_pk"
 	)
 
+	-- add_child_frame: insert a frame with `frame_parent` set atomically.
+	-- Needed because `frame_parent` is immutable after INSERT — a plain
+	-- add_frame + follow-up UPDATE would trip the immutability trigger.
+	-- Used by handlers that spawn eval child frames (e.g. Plus during
+	-- receiver / arg evaluation).
+	self.stmt_add_child_frame = db:prepare(
+		"insert into objects (base, control, frame_ast, frame_stmt_idx, frame_parent, owner_role) " ..
+		"values ('o', 'f', ?, 0, ?, ?) returning object_pk"
+	)
+
+	-- get_scalar_number: read the scalar_number column for a given pk.
+	-- Returns nil if the row doesn't exist OR the scalar isn't a number
+	-- (the column is null for non-number scalars per the at-most-one-
+	-- scalar_column constraint). Callers use nil as "not a number, raise."
+	self.stmt_get_scalar_number = db:prepare(
+		"select scalar_number from objects where object_pk = ?"
+	)
+
 	self.stmt_add_ref = db:prepare(
 		"insert into refs (parent, child, key, idx) " ..
 		"values (?1, ?2, ?3, coalesce((select max(idx) + 1 from refs where parent = ?1), 0)) " ..
@@ -283,7 +301,10 @@ function cvm:object_by_pk(pk)
 		return nil
 	end
 
-	return object.new(self, row)
+	-- `self.engine` is the top-level Engine (set by Engine.new right
+	-- after `Cvm.new(db)`); object.lua's methods reach CVM back
+	-- through `self.engine.data`.
+	return object.new(self.engine, row)
 end
 
 --[[
@@ -531,6 +552,42 @@ function cvm:add_frame(frame_ast, owner_role_pk)
 	local frame_pk = stmt:get_value(0)
 	stmt:reset()
 	return frame_pk
+end
+
+--[[
+## `add_child_frame` — INSERT a frame with `frame_parent` set
+
+Same as `add_frame` but sets `frame_parent` atomically at INSERT — required because `frame_parent` is immutable after insert (a follow-up UPDATE would trip `objects_frame_parent_immutable`).
+
+Used by handlers that spawn eval child frames — e.g. `Plus` during its receiver / arg_0 evaluation phases inserts a child eval frame whose `frame_parent` is the currently-walking Plus frame's pk.
+]]
+function cvm:add_child_frame(frame_ast, parent_pk, owner_role_pk)
+	local stmt = self.stmt_add_child_frame
+	stmt:bind_values(frame_ast, parent_pk, owner_role_pk)
+	stmt:step()
+	local frame_pk = stmt:get_value(0)
+	stmt:reset()
+	return frame_pk
+end
+
+--[[
+## `get_scalar_number` — read the scalar_number column for a pk
+
+Returns the numeric payload of the scalar object at `pk`, or nil if the row doesn't exist or the scalar isn't a number (the column is null for string/bool/null-flavored scalars). Callers treat nil as "not a number" and raise a handler-specific error id.
+]]
+function cvm:get_scalar_number(pk)
+	local stmt = self.stmt_get_scalar_number
+	stmt:bind_values(pk)
+
+	local val
+
+	if stmt:step() == SQLITE_ROW then
+		val = stmt:get_value(0)
+	end
+
+	stmt:reset()
+
+	return val
 end
 
 --[[

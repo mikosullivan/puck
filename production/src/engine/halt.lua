@@ -3,7 +3,7 @@
 	"module": "halt",
 	"role": "The HALT sentinel used by the %process.stop primitive to signal a halt via Lua's error() mechanism. Exports a unique table identity that anyone can raise via `halt.raise()` and that Engine:run's xpcall catches via `halt.is_halt(err)`. Identity-comparing the sentinel (rather than shape-matching a field) means no intermediate error handler can accidentally construct-and-catch a fake halt.",
 	"exports": {
-		"raise":    "() -> never returns — raises the HALT sentinel via error(). Called by Engine:process_stop after the stop frame is inserted.",
+		"raise":    "() -> never returns — raises the HALT sentinel via error(). Called by handlers.process-stop after the stop frame is inserted.",
 		"is_halt":  "(err) -> bool — true iff the caught error is our HALT sentinel. Intermediate pcall sites use this to distinguish halts from other errors so they can re-raise the halt while handling their own expected errors."
 	}
 }
@@ -14,12 +14,13 @@
 
 Lua-side halt-signaling sentinel for `%process.stop`.
 
-**The mechanism.** `Engine:process_stop`, after inserting the stop
-frame, raises a sentinel via `error()`. Every intermediate Lua frame
-between the handler and `Engine:run`'s xpcall unwinds normally. The
-top-level `xpcall` catches the raise, checks whether it's our
-sentinel via `is_halt`, and returns the appropriate result hash to
-the host. Anything that isn't our sentinel gets re-raised.
+**The mechanism.** The `handlers.process-stop` core handler, after
+inserting the stop frame, raises a sentinel via `error()`. Every
+intermediate Lua frame between the handler and `Engine:run`'s xpcall
+unwinds normally. The top-level `xpcall` catches the raise, checks
+whether it's our sentinel via `is_halt`, and returns the appropriate
+result hash to the host. Anything that isn't our sentinel gets
+re-raised.
 
 **Why identity, not shape.** The sentinel is a unique table. Callers
 compare via `err.__signal == halt.SENTINEL` — table-identity check.

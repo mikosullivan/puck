@@ -80,7 +80,6 @@ Compared to CaspJ:
 | `line` | `l` | 3 |
 | `function` | `fn` | 6 |
 | `receiver` | `rc` | 6 |
-| `args` | `a` | 3 |
 | `opts` | `o` | 3 |
 | `blocks` | `b` | 5 |
 | `value` | `v` | 4 |
@@ -549,9 +548,9 @@ Source `$x += 5`, `$x -= 5`, `$x *= 2`, `$x /= 2`, `$x %= 3`, `$x **= 2` are sug
     {"cmd": "="},
     "x",
     [{"cmd": "mc"}, {
-        "rc": {"var": "x"},
+        "rcvr": {"var": "x"},
         "fn": "+",
-        "a": [{"v": 1}]
+        "args": [{"v": 1}]
     }]
 ]
 ~~~
@@ -622,10 +621,10 @@ which is a single `method_call` on `String`'s `+` method. In JSON:
 
 ~~~json
 [{"cmd": "mc"}, {
-    "rc": {"v": "total is "},
+    "rcvr": {"v": "total is "},
     "fn": "+",
-    "a": [
-        [{"cmd": "mc"}, {"rc": {"var": "whole"}, "fn": "+", "a": [{"var": "frac"}]}]
+    "args": [
+        [{"cmd": "mc"}, {"rcvr": {"var": "whole"}, "fn": "+", "args": [{"var": "frac"}]}]
     ]
 }]
 ~~~
@@ -767,7 +766,7 @@ CaspM:
 {"if": {
     "conditions": [
         {
-            "test": [{"cmd": "mc"}, {"rc": {"var": "x"}, "fn": ">", "a": [{"v": 0}]}],
+            "test": [{"cmd": "mc"}, {"rcvr": {"var": "x"}, "fn": ">", "args": [{"v": 0}]}],
             "action": [{"v": "positive"}]
         }
     ],
@@ -827,7 +826,7 @@ CaspM:
 ["scope", "while_end",
     {"op": "!", "operand": {"var": "ready"}},
     {"bd": [
-        [{"cmd": "mc"}, {"rc": {"var": "poll"}, "fn": "call"}]
+        [{"cmd": "mc"}, {"rcvr": {"var": "poll"}, "fn": "call"}]
     ]}
 ]
 ~~~

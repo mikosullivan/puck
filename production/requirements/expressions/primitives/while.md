@@ -48,7 +48,7 @@ The current transpiler emits a `while_end` atom in a positional-array shape:
 The normalizer's job is to rewrite that atom into an `fc` call to engine.while:
 
     [{"cmd": "mc"}, {
-        "rc": {"var": "engine"},
+        "rcvr": {"var": "engine"},
         "fn": "while",
         "a": [
             <test_closure>,

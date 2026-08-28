@@ -34,7 +34,7 @@ local function fresh_cvm()
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'schema apply failed: ' .. tostring(db:errmsg()))
 
-	rc = db:exec(slurp(PREFLIGHT_PATH))
+	rcvr = db:exec(slurp(PREFLIGHT_PATH))
 	assert(rc == sqlite.OK, 'preflight apply failed: ' .. tostring(db:errmsg()))
 
 	return Cvm.new(db), db
