@@ -6,13 +6,13 @@
 	"role": "Schema tests for the b/p/s object-property shape landed by the object sprint. Loads production schema + preflight into a fresh in-memory SQLite, then walks each invariant with a positive case (accept) and a negative case (raise, expected trigger name in the error string). Ported from sprints/object/src/test_bps.lua at object-sprint integration; adapted to use the shared helpers.test harness.",
 	"invariants_covered": [
 		"key='b' from 'o'-parent → target must be base='h' (bucket is a hash)",
-		"key='p' from 'o'-parent → target must be base='a' (platters is an array)",
+		"key='p' from 'o'-parent → target must be base='a' (stack is an array)",
 		"key='s' from 'o'-parent → target must be base='h' (shadow is a hash)",
 		"refs from 'o'-parent — key must be in {b, p, s} (no null, no other value)",
 		"unique(parent, key) caps each of b/p/s at one per parent",
 		"bucket and shadow can coexist on the same parent (two 'h'-based targets, distinguished by key)",
 		"container-parent rules survive: 'h'-parent still requires non-null key; 'a'-parent still forbids key",
-		"object_bucket / object_platters / object_shadow views return the right slots"
+		"object_bucket / object_stack / object_shadow views return the right slots"
 	]
 }
 ]]
@@ -265,17 +265,17 @@ test("bucket + shadow coexist on the same 'o'-parent (both hashes, different key
 	db:close()
 end)
 
-test("bucket + platters + shadow all coexist on the same 'o'-parent", function()
+test("bucket + stack + shadow all coexist on the same 'o'-parent", function()
 	local db       = fresh_db()
 	local user_pk  = seed_user_pk(db)
 	local owner    = insert_object(db, 'o', user_pk)
 	local bucket   = insert_object(db, 'h', user_pk)
-	local platters = insert_object(db, 'a', user_pk)
+	local stack = insert_object(db, 'a', user_pk)
 	local shadow   = insert_object(db, 'h', user_pk)
 
 	local ok, err = try_insert_ref(db, owner, bucket,   'b', 0)
 	h.assert_true(ok, 'key=b: ' .. tostring(err))
-	ok, err = try_insert_ref(db, owner, platters, 'p', 1)
+	ok, err = try_insert_ref(db, owner, stack, 'p', 1)
 	h.assert_true(ok, 'key=p: ' .. tostring(err))
 	ok, err = try_insert_ref(db, owner, shadow,   's', 2)
 	h.assert_true(ok, 'key=s: ' .. tostring(err))
@@ -368,12 +368,12 @@ test("object_bucket view returns null before ref exists", function()
 	db:close()
 end)
 
-test("object_bucket / object_platters / object_shadow return the wired slots", function()
+test("object_bucket / object_stack / object_shadow return the wired slots", function()
 	local db       = fresh_db()
 	local user_pk  = seed_user_pk(db)
 	local owner    = insert_object(db, 'o', user_pk)
 	local bucket   = insert_object(db, 'h', user_pk)
-	local platters = insert_object(db, 'a', user_pk)
+	local stack = insert_object(db, 'a', user_pk)
 	local shadow   = insert_object(db, 'h', user_pk)
 
 	local function slot(view_name, col)
@@ -387,11 +387,11 @@ test("object_bucket / object_platters / object_shadow return the wired slots", f
 	end
 
 	h.assert_true(try_insert_ref(db, owner, bucket,   'b', 0))
-	h.assert_true(try_insert_ref(db, owner, platters, 'p', 1))
+	h.assert_true(try_insert_ref(db, owner, stack, 'p', 1))
 	h.assert_true(try_insert_ref(db, owner, shadow,   's', 2))
 
 	h.assert_eq(slot('object_bucket',   'bucket_pk'),   bucket,   'object_bucket returns bucket')
-	h.assert_eq(slot('object_platters', 'platters_pk'), platters, 'object_platters returns platters')
+	h.assert_eq(slot('object_stack', 'stack_pk'), stack, 'object_stack returns stack')
 	h.assert_eq(slot('object_shadow',   'shadow_pk'),   shadow,   'object_shadow returns shadow')
 	db:close()
 end)

@@ -5,7 +5,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_method_resolution",
-	"role": "spec for how Caspian resolves a method call at runtime. Two distinct mechanisms: (1) instance dispatch walks the platter stack top-to-bottom, and for each class-carrying platter walks that class's inheritance graph depth-first with a per-dispatch seen-set; (2) super() is class-level — it walks the current class's inherits array (the classes named in the defining class's `inherits` clause), using the class of the defining method as context, not the object. Search happens fresh on every call — no cache, no pre-linearization. Classes and objects are mutable in V1, so a resolution cache would need invalidation logic that's more costly than the walk it replaces.",
+	"role": "spec for how Caspian resolves a method call at runtime. Two distinct mechanisms: (1) instance dispatch walks the stack stack top-to-bottom, and for each class-carrying stack walks that class's inheritance graph depth-first with a per-dispatch seen-set; (2) super() is class-level — it walks the current class's inherits array (the classes named in the defining class's `inherits` clause), using the class of the defining method as context, not the object. Search happens fresh on every call — no cache, no pre-linearization. Classes and objects are mutable in V1, so a resolution cache would need invalidation logic that's more costly than the walk it replaces.",
 	"status": "spec — runtime graph search and super() semantics settled; no-cache decision locked",
 	"audience": "engine implementers building the dispatcher; developers reasoning about MI and super()",
 	"related": []
@@ -16,24 +16,24 @@ Caspian resolves a method call by **searching the class graph at call time.** Th
 
 Two mechanisms cooperate:
 
-- **Instance dispatch** — the normal `$obj.method()` case. Walks the platter stack, and inside each class-carrying platter, walks the class's inheritance graph.
-- **`super()`** — invoked from inside a method body. A class-level lookup that walks the defining class's inherits array. Ignores the platter stack.
+- **Instance dispatch** — the normal `$obj.method()` case. Walks the stack stack, and inside each class-carrying stack, walks the class's inheritance graph.
+- **`super()`** — invoked from inside a method body. A class-level lookup that walks the defining class's inherits array. Ignores the stack stack.
 
 Both are spec'd below.
 
 ## Instance dispatch
 
-The platter stack, and the "top is index 0, dispatch walks top-to-bottom" ordering, are spec'd on [object structure § Stack](https://puck.uno/requirements/built-in-classes/object/structure/#stack). This page adds the rule for what happens inside each platter.
+The stack stack, and the "top is index 0, dispatch walks top-to-bottom" ordering, are spec'd on [object structure § Stack](https://puck.uno/requirements/built-in-classes/object/structure/#stack). This page adds the rule for what happens inside each stack.
 
 **The algorithm:**
 
-1. Start at the top platter (index 0).
-2. If the platter carries no `class` (warning-only, nested-link, standalone-vibecode), skip it.
+1. Start at the top stack (index 0).
+2. If the stack carries no `class` (warning-only, nested-link, standalone-vibecode), skip it.
 3. Otherwise, search that class's inheritance graph depth-first:
 	- Check the class itself for the method name.
 	- If not found, walk into each class in the `inherits` array, in declaration order.
 	- Recurse the same rule on each parent.
-4. If nothing matches, move to the next platter down and repeat.
+4. If nothing matches, move to the next stack down and repeat.
 5. If the bottom of the stack is reached with no match, raise method-not-found.
 
 **Seen-set.** During a single dispatch, a class visited once is not visited again. This handles diamond inheritance and any accidental cycles without special-casing either.
@@ -138,13 +138,13 @@ Consequences worth calling out:
 
 ## super()
 
-`super()` is a **class-level** lookup, entirely separate from the platter stack.
+`super()` is a **class-level** lookup, entirely separate from the stack stack.
 
-Every class carries an **inherits array** — the classes named in its `inherits` clause when the class was defined. Plain declaration-order list; not a stack, not a platter.
+Every class carries an **inherits array** — the classes named in its `inherits` clause when the class was defined. Plain declaration-order list; not a stack, not a stack.
 
 When a method body invokes `super()`:
 
-- The "current class" is the class that **defined the method being executed** — not `%self`'s class, not the top of the platter stack.
+- The "current class" is the class that **defined the method being executed** — not `%self`'s class, not the top of the stack stack.
 - `super()` walks the current class's inherits array top-to-bottom, looking for the same method name.
 - Each parent is searched depth-first through its own inherits array, same shape as instance dispatch.
 - The first match is called.
@@ -175,7 +175,7 @@ Method resolution happens **fresh on every call.** The engine does not cache res
 
 - A method is added to or removed from any class.
 - A class's `inherits` array is altered.
-- A platter is added to, removed from, or reordered in an instance's stack.
+- A stack is added to, removed from, or reordered in an instance's stack.
 - The shadow gains a new singleton method.
 - An `amend` block adds a method to a class.
 
@@ -187,7 +187,7 @@ Adding a cache later is a strictly local optimization if actual profiling ever d
 
 ## Interactions worth noting
 
-- **Shadow platter.** Spec'd on [object structure § shadow](https://puck.uno/requirements/built-in-classes/object/structure/#shadow). The shadow sits at position 0 by convention and participates in dispatch like any other class-carrying platter — no MI-specific rule.
+- **Shadow stack.** Spec'd on [object structure § shadow](https://puck.uno/requirements/built-in-classes/object/structure/#shadow). The shadow sits at position 0 by convention and participates in dispatch like any other class-carrying stack — no MI-specific rule.
 - **`%self`.** Binds to the instance receiving the call, regardless of which class defines the method that runs. Not affected by MI.
 - **Field storage.** This page specs method dispatch only. Bucket and field storage are spec'd on [object structure](https://puck.uno/requirements/built-in-classes/object/structure/); field-name ownership across MI is a separate concern.
 
@@ -198,7 +198,7 @@ Adding a cache later is a strictly local optimization if actual profiling ever d
 - **MI depth-first: first-declared parent's chain resolves first.** `C inherits A, B`, both `A.foo` and `B.foo` defined — `$c.foo` dispatches to `A`.
 - **MI diamond: shared ancestor reached via first-declared path.** With the camera_phone example above: `$cp.capture()` → `camera`; `$cp.call('555-1234')` → `phone`; `$cp.describe()` → `device`, reached through `camera`.
 - **Seen-set prevents revisit.** A class with instrumented method lookup (counter incremented on every `has-method` check) reports one visit per dispatch even in a diamond.
-- **`super()` walks the current class's inherits array.** From a method defined on class C, `super()` looks in C's declared parents, not in `%self`'s platter stack. The instance's actual class doesn't affect the lookup.
+- **`super()` walks the current class's inherits array.** From a method defined on class C, `super()` looks in C's declared parents, not in `%self`'s stack stack. The instance's actual class doesn't affect the lookup.
 - **`super()` uses the defining class as context.** For a method inherited by many subclasses, calling `super()` inside that method always consults the SAME class's inherits array — the one that defined the method — regardless of `%self`'s class.
 - **`super()` on a class with no parents raises.** Calling `super()` from a class whose inherits array is empty raises method-not-found.
 - **No cache.** Add a method to a class after an instance was constructed; a call on that instance sees the new method immediately.

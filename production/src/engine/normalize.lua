@@ -1,7 +1,7 @@
 --[[
 {
 	"module":  "normalize",
-	"role":    "full CaspianJ -> norm CaspianJ. Rewrites the transpiler's self-documenting form into the compact shape the engine walks: EVERY command collapses to the method_call shape `[{cmd: 'mc'}, {fn, rcvr, args?, kw?, blocks?}]`. Assignment is a method_call with `fn: '='` and `rcvr: {sys: 'frame'}` (implicit receiver — the current frame); dot-method calls carry the source-level receiver; binops are `fn: OP, rcvr: left, args: [right]`. Both statement-position setvar (`[scope, setvar, name, RHS]`) and expression-position setvar (`{setvar: {name, value}}`) collapse to the same method_call envelope. Compact key rewrites (line -> l, value -> v, body -> bd, params -> pm, closure -> cl, fetch -> ft, array -> ar, varobj -> vo, begin_end -> be). Drops comment atoms, documentation / vibecode BWC rows, cosmetic `base` / `dq` flags, and trailing sole-`line` statement-position line metas. Pipe operators (`{op: '|'}` / `{op: '|&'}`) desugar to nested calls first. Bareword-command atoms (`{bwc: name}`) pass through unchanged in V1.",
+	"role":    "full CaspianJ -> norm CaspianJ. Rewrites the transpiler's self-documenting form into the compact shape the engine walks: EVERY command collapses to the method_call shape `[{cmd: 'mc'}, {fn, rcvr, args?, kw?, blocks?, syn?}]`. Assignment is a method_call with `fn: '='` and `rcvr: {sys: 'frame'}` (implicit receiver — the current frame); dot-method calls carry the source-level receiver; binops are `fn: OP, rcvr: left, args: [right]`; unary ops are `fn: OP, rcvr: operand`. The envelope's `syn: true` marker records that the mc came from syntactic sugar (operator forms, setvar, setat, amp / bwc, @-read) rather than a directly-written `.method()` call — readers use it for source-aware error messages and pretty-printing. Bareword-command atoms (`{bwc: name}`) collapse to `{fn:'call', rcvr:{var:name}, syn:true}`. Amp atoms (`{amp: X}`) do too; when the amp target is a dot chain, the sigil pushes down to the leftmost leaf so `&foo.bar` normalizes as `(&foo).bar`. Compact key rewrites (line -> l, value -> v, body -> bd, params -> pm, closure -> cl, fetch -> ft, array -> ar, varobj -> vo, begin_end -> be). Drops comment atoms, documentation / vibecode BWC rows, cosmetic `base` / `dq` flags, and trailing sole-`line` statement-position line metas. Pipe operators (`{op: '|'}` / `{op: '|&'}`) desugar to nested calls first.",
 	"exports": {
 		"normalize": "CaspianJ (Lua table) -> CaspianJ (Lua table) — norm variant. Input is not mutated; output is a fresh table."
 	}
@@ -371,19 +371,25 @@ normalize_atom = function(v)
 
 			-- Reuse collapse_call_row by pretending pos [2] is the method
 			-- name — write a shim row [recv, "call", ...rest_of_v...].
+			-- Stamp `syn=true` on the resulting envelope: the user wrote
+			-- `&NAME`, not a literal `.call()`; the `.call()` was added
+			-- by normalization.
 			local shim = {recv, "call"}
 			for i = 2, #v do
 				table.insert(shim, v[i])
 			end
 
-			return collapse_call_row(shim, "call", recv)
+			local mc = collapse_call_row(shim, "call", recv)
+			mc[2].syn = true
+			return mc
 		end
 
 		-- Bwc-call row: `[{bwc: NAME}, ...args..., {kw:...}?, {blocks:...}?, {line:N}?]`
 		-- Bareword calls (`foo`, `foo 1`, `foo(1, 2)`) and amp-calls
 		-- (`&foo`, `&foo()`) mean the same thing — both invoke the
 		-- callable named NAME. Collapse to the same method_call shape
-		-- so the engine sees one canonical form.
+		-- so the engine sees one canonical form. `syn=true` because the
+		-- user wrote a bareword, not `.call()`.
 		--
 		-- `documentation` / `vibecode` BWC rows were dropped earlier
 		-- via `is_dropped_bwc_row`, so anything reaching here is a
@@ -399,7 +405,9 @@ normalize_atom = function(v)
 				table.insert(shim, v[i])
 			end
 
-			return collapse_call_row(shim, "call", recv)
+			local mc = collapse_call_row(shim, "call", recv)
+			mc[2].syn = true
+			return mc
 		end
 
 		-- Statement prefix collapse — setvar / setvar_op / setat.
@@ -410,12 +418,15 @@ normalize_atom = function(v)
 				-- frame (named via {sys: 'frame'}), args = [name, RHS].
 				-- Keep a trailing sole-line meta iff the RHS's interior
 				-- mentions a different line (multi-line RHS like `$x =
-				-- begin ... end`); drop it for single-line RHS.
+				-- begin ... end`); drop it for single-line RHS. `syn=true`
+				-- because `$x = 1` is sugar for the mc; the user didn't
+				-- write `.=('x', 1)` literally.
 				local rhs = norm_sub(v[4])
 				local envelope = {
 					fn = "=",
 					rcvr = {sys = "frame"},
 					args = {v[3], rhs},
+					syn = true,
 				}
 				local trailing = v[#v]
 
@@ -448,6 +459,8 @@ normalize_atom = function(v)
 				-- [scope, setvar_op, OP, name, RHS, ...trailing metas]
 				-- Desugars to `name = OP(name, RHS)` — an outer assignment
 				-- method_call whose value slot is the inner OP method_call.
+				-- Both mc rows carry `syn=true`; the outer `=` is
+				-- setvar-sugar, the inner OP is binop-sugar.
 				local op = v[3]
 				local name = v[4]
 				local rhs = norm_sub(v[5])
@@ -455,6 +468,7 @@ normalize_atom = function(v)
 					fn = op,
 					rcvr = {var = name},
 					args = {rhs},
+					syn = true,
 				}
 				return {
 					{["cmd"] = "mc"},
@@ -462,6 +476,7 @@ normalize_atom = function(v)
 						fn = "=",
 						rcvr = {sys = "frame"},
 						args = {name, {{["cmd"] = "mc"}, op_call}},
+						syn = true,
 					},
 				}
 			end
@@ -469,7 +484,8 @@ normalize_atom = function(v)
 			if v[2] == "setat" and type(v[3]) == "string" then
 				-- [scope, setat, name, RHS, ...trailing metas]. `@name = X`
 				-- is sugar for `%bucket[name] = X`; norm rewrites to the
-				-- corresponding `[]=` call on the sys bucket.
+				-- corresponding `[]=` call on the sys bucket. `syn=true`
+				-- records the setat-sugar origin.
 				local name = v[3]
 				local rhs = norm_sub(v[4])
 				local line
@@ -489,6 +505,7 @@ normalize_atom = function(v)
 						fn = "[]=",
 						rcvr = {sys = "bucket"},
 						args = {name_atom, rhs},
+						syn = true,
 					},
 				}
 			end
@@ -690,6 +707,7 @@ normalize_atom = function(v)
 	-- `%bucket['name']`; norm rewrites to the corresponding `[]` (get)
 	-- call on the sys bucket. Fires for read positions; the write case
 	-- (`@name = X`) is handled at the row-level setat collapse.
+	-- `syn=true` on the envelope (@-sigil is sugar for the `[]` call).
 	if v.at ~= nil and v[1] == nil then
 		local name_atom = {v = v.at}
 		if type(v.line) == "number" then name_atom.l = v.line end
@@ -700,6 +718,7 @@ normalize_atom = function(v)
 				fn = "[]",
 				rcvr = {sys = "bucket"},
 				args = {name_atom},
+				syn = true,
 			},
 		}
 	end
@@ -707,6 +726,7 @@ normalize_atom = function(v)
 	-- Object-atom amp: `{amp: X, line?: N}` in an operand position
 	-- (not as a row head). Same "call this" semantics as the amp-call
 	-- row — collapse to `[{cmd:'mc'}, {fn:'call', rcvr: <resolved>}]`.
+	-- `syn=true` records the amp-sigil sugar.
 	--
 	-- When the target is a dot expression, push amp down to the leftmost
 	-- leaf and let the dot handler take it from there (same rule as the
@@ -727,30 +747,33 @@ normalize_atom = function(v)
 			recv = norm_sub(v.amp)
 		end
 
-		return {{["cmd"] = "mc"}, {fn = "call", rcvr = recv}}
+		return {{["cmd"] = "mc"}, {fn = "call", rcvr = recv, syn = true}}
 	end
 
 	-- Object-atom bwc: `{bwc: NAME, line?: N}` in an operand position
 	-- (not as a row head). Same "call NAME" semantics as the bwc-call
 	-- row — collapse to `[{cmd:'mc'}, {fn:'call', rcvr:{var: NAME}}]`.
+	-- `syn=true` records the bareword-sugar origin.
 	if v.bwc ~= nil and v[1] == nil then
 		local recv = {var = v.bwc}
 
 		if type(v.line) == "number" then recv.l = v.line end
 
-		return {{["cmd"] = "mc"}, {fn = "call", rcvr = recv}}
+		return {{["cmd"] = "mc"}, {fn = "call", rcvr = recv, syn = true}}
 	end
 
 	-- Expression-position setvar `{setvar: {name, value}, line?: N}` —
 	-- assign-as-value, e.g. `$y = 2` inside `($y = 2) + 3`. Same
 	-- collapse as statement-position setvar: method_call on the
-	-- current frame with fn='=', args=[name, value].
+	-- current frame with fn='=', args=[name, value]. `syn=true` — the
+	-- `=` symbol is sugar, not a literal `.=(...)` call.
 	if v.setvar ~= nil and v[1] == nil then
 		local inner = v.setvar
 		local envelope = {
 			fn = "=",
 			rcvr = {sys = "frame"},
 			args = {inner.name, norm_sub(inner.value)},
+			syn = true,
 		}
 		if type(v.line) == "number" then envelope.l = v.line end
 
@@ -825,24 +848,36 @@ normalize_atom = function(v)
 		}
 	end
 
-	-- Short-circuit binop atoms (`and`, `or`, `&&`, `||`) stay in
-	-- `{op, left, right}` shape — they need runtime short-circuit dispatch
-	-- and can't be modeled as ordinary calls. Fall through to generic
-	-- object recursion so keys inside `left` / `right` still get renamed.
-	if (v.op == "and" or v.op == "or" or v.op == "&&" or v.op == "||")
-			and v.left ~= nil and v.right ~= nil then
-		-- fall through
-	elseif v.op ~= nil and v.left ~= nil and v.right ~= nil and v.op ~= "." then
-		-- General binop atom — rewrite as a call row. `1 + 2` becomes
-		-- `[{cmd: "mc"}, {fn: "+", rc: NORM(left), a: [NORM(right)]}]`. Line
-		-- info on the binop atom itself is dropped; the operands keep their
-		-- own `l:` fields.
+	-- Binop atom `{op: OP, left, right}` — rewrite as a method_call row.
+	-- Under Caspian's semantic model the only binary operator is `.`;
+	-- every other operator symbol (`+`, `-`, `*`, `/`, `%`, `**`,
+	-- `||`, `&&`, `and`, `or`, `==`, `<`, etc.) is a method NAME
+	-- dispatched on the left operand with the right operand as the
+	-- single arg. Short-circuit operators like `||` and `&&` are no
+	-- different at the CaspM layer — they're methods whose Lua
+	-- implementation happens to defer evaluating its arg; that laziness
+	-- is the method's concern, not the engine's dispatch shape.
+	-- Line info on the binop atom itself is dropped; the operands keep
+	-- their own `l:` fields. The envelope's `syn = true` marker records
+	-- that this mc came from syntactic sugar (an operator form), not
+	-- from a user-written `.method()` call.
+	if v.op ~= nil and v.left ~= nil and v.right ~= nil and v.op ~= "." then
 		local call = {
 			fn = v.op,
 			rcvr = norm_sub(v.left),
 			args = {norm_sub(v.right)},
+			syn = true,
 		}
 		return {{["cmd"] = "mc"}, call}
+	end
+
+	-- Unary op atom `{op: OP, operand: X}` — rewrite as a receiver-only
+	-- method_call. Same semantic model as binops: `!X` is a method call
+	-- with fn `!` on receiver X, no args. `syn = true` records the
+	-- syntactic origin.
+	if v.op ~= nil and v.operand ~= nil
+			and v.left == nil and v.right == nil then
+		return {{["cmd"] = "mc"}, {fn = v.op, rcvr = norm_sub(v.operand), syn = true}}
 	end
 
 	-- Generic object atom: recurse into fields, drop cosmetic flags, rename

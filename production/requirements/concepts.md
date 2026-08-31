@@ -93,7 +93,7 @@ This is deliberately unlike languages such as Ruby (which has classes, modules, 
 
 The class model is flexible enough to cover every case those languages use different mechanisms for:
 
-- **An object can carry any number of classes.** Its stack of platters holds them in dispatch order; each contributes methods.
+- **An object can carry any number of classes.** Its stack of stack holds them in dispatch order; each contributes methods.
 - **A class can inherit any number of classes.** Multiple inheritance is a normal class-definition feature, not an add-on.
 - **Each instance has a shadow class.** When code defines a method on a single specific instance, the method lives on that instance's shadow class — which is still a class. Nothing special about the mechanism; it's just a class that happens to have one instance.
 
@@ -215,7 +215,7 @@ Failure mode if the check is skipped: features accumulate, each adding "a little
 - **No nanny opt-out is honored** — the named opt-out flag for a warn-by-default check disables the warning and does not raise, without any second layer of paternalistic filtering.
 - **Classes are the only method carrier** — attaching a method by any mechanism other than a class definition (module, mixin, per-instance dictionary, prototype patch) fails or has no equivalent syntax.
 - **Instance-level method lives on the shadow class** — a method defined on a specific instance is dispatched via that instance's shadow class and is not visible on other instances of the same underlying class.
-- **Multiple inheritance dispatches through the class stack** — a class inheriting from two parents resolves methods by walking the platter stack in declared order.
+- **Multiple inheritance dispatches through the class stack** — a class inheriting from two parents resolves methods by walking the stack stack in declared order.
 - **Each `%fetch` call produces a fresh object** — two successive `%fetch(url)` calls with the same URL return two distinct objects; developers wanting shared identity fetch once and pass the reference around.
 - **`%engine.manifest.downloads` tracks each URL separately** — two `%fetch` calls of two URLs produce two distinct entries under `downloads`; nothing groups them under a "library" identity.
 - **`obj.destroy` marks the object dead** — after `.destroy`, `.destroyed?` returns true.

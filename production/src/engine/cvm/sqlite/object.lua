@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "object",
-	"role": "Root wrapper class in the frames-as-objects design. Every `objects` row loaded via engine:object_by_pk gets wrapped through here: `control = 'f'` rows wrap as `frame` (which inherits from `object`); every other row wraps as `object` itself. Provides the `bucket` and `stack` accessors that lazily materialize the owner's bucket / stack on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
+	"role": "Root wrapper class in the frames-as-objects design. Every `objects` row loaded via engine:object_by_pk gets wrapped through here: `control = 'f'` rows wrap as `Frame` (which inherits from `Object`); every other row wraps as `Object` itself. Provides the `bucket` and `stack` accessors that lazily materialize the owner's bucket / stack on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
 	"exports": {
 		"new":    "(engine, row) -> object — constructor; stamps the metatable on the row table itself (row-as-instance)",
 		"bucket": "() -> object — the object's bucket, lazily created on first call",
@@ -16,7 +16,7 @@
 
 The root class in the frames-as-objects design. Anything that
 participates in the object graph — hash primitives, array primitives,
-scalars, frames — inherits from `object`.
+scalars, frames — inherits from `Object`.
 
 **Composes on the engine.** No direct DB access. Every read or write
 routes through cached prepared-statement methods on the engine
@@ -24,13 +24,13 @@ routes through cached prepared-statement methods on the engine
 pure "wrap a row + expose methods on it" and the engine owns the SQL.
 ]]
 
-local object = {}
-object.__index = object
+local Object = {}
+Object.__index = Object
 
 --[[
 ## Constructing an object
 
-`object.new(engine, row)` takes the engine that owns this object and
+`Object.new(engine, row)` takes the engine that owns this object and
 the `objects` row it wraps (a Lua table with columns as fields). The
 row table itself becomes the instance — `_wrap` stamps the metatable
 directly on it — so every column is reachable as `self.<column>`
@@ -41,9 +41,9 @@ Callers get one via `engine:object_by_pk(pk)`, which fetches the row
 and passes it here.
 
 **Class dispatch is on `row.control`.** `control = 'f'` wraps as
-`frame`; every other row (including functions and closures,
+`Frame`; every other row (including functions and closures,
 which are plain `'o'` objects with their CaspM in the bucket) wraps
-as a plain `object`. The schema's `frame_ast` column is biconditional with
+as a plain `Object`. The schema's `frame_ast` column is biconditional with
 `control = 'f'`, so "is this a frame?" and "does this row carry
 executable code" are the same structural question — answered at
 row-write time, not inferred by the wrapper. What distinguishes an
@@ -67,20 +67,20 @@ local function _wrap(mt, engine, row)
 	return setmetatable(row, mt)
 end
 
--- Every row wraps as a plain `object`. There used to be a
+-- Every row wraps as a plain `Object`. There used to be a
 -- control-based dispatch branch that wrapped `control='f'` rows as a
--- `frame` subclass, but the frame class ended up carrying no
+-- `Frame` subclass, but the frame class ended up carrying no
 -- frame-specific behavior (its methods moved to CVM as plain
 -- functions taking pks). A frame subclass gets re-introduced when
 -- frame-specific wrapper behavior actually earns it — memoization
 -- keyed on frame identity, say. Until then, one wrapper class.
-function object.new(engine, row)
-	return _wrap(object, engine, row)
+function Object.new(engine, row)
+	return _wrap(Object, engine, row)
 end
 
 -- Expose the internal helper so any future subclass can build the
--- wrapped object without re-entering `object.new`.
-object._wrap = _wrap
+-- wrapped object without re-entering `Object.new`.
+Object._wrap = _wrap
 
 --[[
 ## `bucket` — the object's bucket, lazily created
@@ -105,7 +105,7 @@ The whole flow composes on two engine methods:
 identity — same pk forever, and there's no operation that reassigns
 a target's bucket. So the wrapper is cached on `self._bucket` on the
 first call, and every subsequent call short-circuits to a single
-field lookup + return. Skips the SELECT, skips `object.new`, skips
+field lookup + return. Skips the SELECT, skips `Object.new`, skips
 `_wrap`'s column-lift loop — this is the hot-path win.
 
 **No writes on the memoized path.** After first materialization
@@ -132,7 +132,7 @@ you're allowed to have it. Whether you're allowed lives in Caspian's
 access-control layer, not here. This method assumes permission has
 already been granted.
 ]]
-function object:bucket()
+function Object:bucket()
 	local bucket = self._bucket
 	if bucket then return bucket end
 
@@ -179,7 +179,7 @@ loop rather than calling `.stack` every iteration.
 **Access is gated elsewhere.** Same discipline as `bucket` — this
 method assumes permission has already been granted.
 ]]
-function object:stack()
+function Object:stack()
 	local stack = self._stack
 	if stack then return stack end
 
@@ -196,4 +196,4 @@ function object:stack()
 	return stack
 end
 
-return object
+return Object

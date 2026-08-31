@@ -279,7 +279,6 @@ h.test("engine.new()'s row_handlers is exactly the stock roster, one of each", f
 	local handlers = require('handlers')
 
 	local expected_classes = {
-		ProcessStop = handlers.ProcessStop,
 		ScalarAtom  = handlers.ScalarAtom,
 		Plus        = handlers.Plus,
 		MainHandler = handlers.MainHandler,
@@ -288,6 +287,9 @@ h.test("engine.new()'s row_handlers is exactly the stock roster, one of each", f
 		-- (VariableScalar exists but is not registered as a stock
 		-- handler for now — will re-appear as an optimization once
 		-- the main handler covers assignment via its general path.)
+		-- (ProcessStop was removed — %process.stop will return as
+		-- a method on the process object under the core-method
+		-- registry, not as a standalone Handler subclass.)
 	}
 
 	local e = engine.new()

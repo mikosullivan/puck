@@ -70,9 +70,9 @@ puts 'error'.$colorize.methods['red']
 ## What's actually happening
 
 1. `%('core:string').inherited` is the live inheritance array on the built-in `String` class. Any class can be added to it; instances of the class immediately see the new parent's methods via normal method resolution.
-2. `.ensure($colorize)` (block form) — if `$colorize` isn't already a parent, adds it, runs the block, and removes exactly that platter at block exit. Identity-tracked cleanup: the engine remembers which platter it added and removes only that one.
+2. `.ensure($colorize)` (block form) — if `$colorize` isn't already a parent, adds it, runs the block, and removes exactly that stack at block exit. Identity-tracked cleanup: the engine remembers which stack it added and removes only that one.
 3. Inside the block, calling `'error'.red` dispatches through method resolution. `String` doesn't have `.red`, but its inheritance graph now includes `$colorize`, which does. The dispatch finds `.red` there, invokes it with `%self` bound to `'error'`, gets back the wrapped string.
-4. On block exit, `.ensure`'s cleanup removes the `$colorize` platter. Subsequent `.red` on any String raises method-not-found.
+4. On block exit, `.ensure`'s cleanup removes the `$colorize` stack. Subsequent `.red` on any String raises method-not-found.
 
 ## Spec surfaces this example depends on
 

@@ -29,7 +29,7 @@ Core handler for scalar-value atoms.
 
 **Why the savepoint.** Four separate writes; if any raises mid-sequence the savepoint rolls back the partial state, leaving the frame either fully-bound or untouched.
 
-**Position in the stock chain.** After `ProcessStop` and before/after `MainHandler` — the row shapes don't overlap at `row[1]` (value atoms have `row[1].v`, method_calls have `row[1].cmd == 'mc'`), so ordering is cosmetic. Registered after `ProcessStop` in stock order (see [handlers/init.lua](init.lua)).
+**Position in the stock chain.** First — before `Plus` and `MainHandler`. Row shapes don't overlap at `row[1]` (value atoms have `row[1].v`, method_calls have `row[1].cmd == 'mc'`), so ordering vs the method_call handlers is cosmetic. See [handlers/init.lua](init.lua).
 ]]
 local Handler = require('handler')
 

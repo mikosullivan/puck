@@ -21,7 +21,7 @@ object IDs, reference IDs, hash-element IDs, src keys, ast keys. First
 `:next()` returns `"1"`; subsequent calls return `"2"`, `"3"`, and so on
 without ever repeating within a program's lifetime.
 
-Nested-object platter IDs are the one exception — they use UUIDs
+Nested-object stack IDs are the one exception — they use UUIDs
 because they appear as keys inside user buckets where integer-strings
 could collide with user-chosen field names. See the `object_pk`
 description in [cvm](https://puck.uno/requirements/cvm/sqlite/) for

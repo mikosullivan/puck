@@ -45,7 +45,7 @@ The design intent is **as many actual build-verification tests as is practical**
 
 ## How errors are reported
 
-Bryton produces per-test [Xeme](../../bryton/xeme/) records. `--self-test` renders those into **human-readable output** — no splatter of stack traces, no wall of unfiltered technical data. Each check reports one line describing what was tested and the outcome.
+Bryton produces per-test [Xeme](../../bryton/xeme/) records. `--self-test` renders those into **human-readable output** — no sstack of stack traces, no wall of unfiltered technical data. Each check reports one line describing what was tested and the outcome.
 
 Two severity levels:
 

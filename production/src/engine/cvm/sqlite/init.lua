@@ -71,7 +71,7 @@ That skips the per-row table lsqlite3's `nrows()` allocates, plus the
 string-keyed column lookup, on every call. Full-row reads like
 `object_by_pk` stay on `nrows()` because the wrapper wants every
 column at once and the row table becomes the wrapper's own storage
-via `object._wrap`.
+via `Object._wrap`.
 
 **Every method on this page must be as efficient as possible.** Once
 the dispatch loop lands (see the open questions above), most of these
@@ -80,7 +80,7 @@ across the whole running program.
 ]]
 
 local sqlite = require("lsqlite3")
-local object = require("cvm.sqlite.object")
+local Object = require("cvm.sqlite.object")
 
 -- Cache the ROW status constant into a local. Compared against
 -- inside every single-column read path (`stmt:step()` returns
@@ -136,12 +136,12 @@ function cvm.new(db)
 	)
 
 	-- Existing-child lookups for add_bucket / add_stack — if the owner
-	-- already has a bucket (ref keyed 'b') or a platters (ref keyed 'p')
+	-- already has a bucket (ref keyed 'b') or a stack (ref keyed 'p')
 	-- we return that rather than inserting a duplicate (which the
 	-- unique(parent, key) constraint on refs would reject anyway).
 	-- Under the b/p/s object-property shape, the bucket target is
 	-- guaranteed base='h' by refs_key_b_target_must_be_hash and the
-	-- platters target is guaranteed base='a' by
+	-- stack target is guaranteed base='a' by
 	-- refs_key_p_target_must_be_array. Filter by key rather than target
 	-- base — one indexed lookup, no join through objects.
 	self.stmt_find_hash_child = db:prepare(
@@ -208,6 +208,21 @@ function cvm.new(db)
 	-- scalar_column constraint). Callers use nil as "not a number, raise."
 	self.stmt_get_scalar_number = db:prepare(
 		"select scalar_number from objects where object_pk = ?"
+	)
+
+	-- Peer getters for the other three scalar_* columns. Same nil-means-
+	-- "not this type" convention as get_scalar_number. Together with
+	-- get_scalar_number they cover the four primitive kinds — used by
+	-- the primitive class methods (Number:==, String:==, Boolean:==,
+	-- Null:==, and each class's to_s) to read the scalar payload.
+	self.stmt_get_scalar_string = db:prepare(
+		"select scalar_string from objects where object_pk = ?"
+	)
+	self.stmt_get_scalar_bool = db:prepare(
+		"select scalar_bool from objects where object_pk = ?"
+	)
+	self.stmt_get_scalar_null = db:prepare(
+		"select scalar_null from objects where object_pk = ?"
 	)
 
 	self.stmt_add_ref = db:prepare(
@@ -279,7 +294,7 @@ Caller-side:
 prepared statements; without it the next `bind_values` on the same
 handle raises.
 
-`object.new(self, row)` wraps the row as an object instance. Class
+`Object.new(self, row)` wraps the row as an object instance. Class
 dispatch is control-based: `row.control == 'f'` wraps as `frame`;
 every other row wraps as a plain `object`. No per-pk cache — a
 fresh wrapper is built each call. Per-instance memoization for the
@@ -304,7 +319,7 @@ function cvm:object_by_pk(pk)
 	-- `self.engine` is the top-level Engine (set by Engine.new right
 	-- after `Cvm.new(db)`); object.lua's methods reach CVM back
 	-- through `self.engine.data`.
-	return object.new(self.engine, row)
+	return Object.new(self.engine, row)
 end
 
 --[[
@@ -377,7 +392,7 @@ add a `refs` row linking owner → bucket (key null; the child's
 base disambiguates bucket from stack), return the new pk.
 
 Ownership under the b/p/s object-property shape is a keyed refs row
-from owner to collection — the bucket ref uses `key='b'`, the platters
+from owner to collection — the bucket ref uses `key='b'`, the stack
 ref uses `key='p'`. No dedicated columns; unique(parent, key) caps
 each slot at one per owner. See
 [ownership](https://puck.uno/requirements/cvm/sqlite/ownership).
@@ -438,7 +453,7 @@ function cvm:add_stack(for_object_pk)
 	local stack_pk = insert:get_value(0)
 	insert:reset()
 
-	-- Under the b/p/s shape, the owner-to-platters ref is keyed 'p'.
+	-- Under the b/p/s shape, the owner-to-stack ref is keyed 'p'.
 	self:add_ref(for_object_pk, 'p', stack_pk)
 
 	return stack_pk
@@ -577,6 +592,66 @@ Returns the numeric payload of the scalar object at `pk`, or nil if the row does
 ]]
 function cvm:get_scalar_number(pk)
 	local stmt = self.stmt_get_scalar_number
+	stmt:bind_values(pk)
+
+	local val
+
+	if stmt:step() == SQLITE_ROW then
+		val = stmt:get_value(0)
+	end
+
+	stmt:reset()
+
+	return val
+end
+
+--[[
+## `get_scalar_string` — read the scalar_string column for a pk
+
+Peer of `get_scalar_number`. Returns the string payload or nil if the row isn't a string scalar.
+]]
+function cvm:get_scalar_string(pk)
+	local stmt = self.stmt_get_scalar_string
+	stmt:bind_values(pk)
+
+	local val
+
+	if stmt:step() == SQLITE_ROW then
+		val = stmt:get_value(0)
+	end
+
+	stmt:reset()
+
+	return val
+end
+
+--[[
+## `get_scalar_bool` — read the scalar_bool column for a pk
+
+Peer of `get_scalar_number`. Returns 1 / 0 as an integer, or nil if the row isn't a bool scalar. Callers interpret 1 as true and 0 as false.
+]]
+function cvm:get_scalar_bool(pk)
+	local stmt = self.stmt_get_scalar_bool
+	stmt:bind_values(pk)
+
+	local val
+
+	if stmt:step() == SQLITE_ROW then
+		val = stmt:get_value(0)
+	end
+
+	stmt:reset()
+
+	return val
+end
+
+--[[
+## `get_scalar_null` — check whether pk is a null scalar
+
+Peer of `get_scalar_number`. Returns 1 if the row is a null scalar (the schema marks null scalars with `scalar_null = 1`), nil otherwise. Callers use non-nil as "yes, this is a null."
+]]
+function cvm:get_scalar_null(pk)
+	local stmt = self.stmt_get_scalar_null
 	stmt:bind_values(pk)
 
 	local val

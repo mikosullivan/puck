@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "cheat_sheets_global_methods",
-	"role": "one-view reference table for every %X-prefixed global — the standalone system namespaces (%self, %bucket, %platter, %call, %chain, %engine, %fs) and the bare-%X chain-mediated shortcuts (%import, %stdout, %stderr, %stdin). Each row links to the canonical spec and calls out where the surface is available and any role/grant constraint. Clock and randomness are downloadable core objects, not globals — see the 'not global methods' section. Not spec-authoritative — see the linked docs for the full surface of each global.",
+	"role": "one-view reference table for every %X-prefixed global — the standalone system namespaces (%self, %bucket, %stack, %call, %chain, %engine, %fs) and the bare-%X chain-mediated shortcuts (%import, %stdout, %stderr, %stdin). Each row links to the canonical spec and calls out where the surface is available and any role/grant constraint. Clock and randomness are downloadable core objects, not globals — see the 'not global methods' section. Not spec-authoritative — see the linked docs for the full surface of each global.",
 	"status": "cheat sheet — table plus short prose; canonical spec lives per-global on the linked pages",
 	"audience": "developers writing Caspian who want a single-page answer to 'what are all the % globals?'"
 }}
@@ -23,7 +23,7 @@ Sorted alphabetically.
 | [`%engine`](https://puck.uno/requirements/engine/) | Anywhere | **User role only** | Host-resource gateway. Non-user code raises on any `%engine` access. Populates the chain slots at bootstrap. |
 | [`%import`](https://puck.uno/requirements/import) | Anywhere | Yes | Object download by URL. `%(url)` is the further shorthand. <!-- STALE: %chain.X syntax being reworked --> |
 | [`%fs`](https://puck.uno/requirements/global-methods/fs) | Anywhere | **User role only** | Filesystem namespace. `%fs.root` returns the root dir handle (a dirjail). Non-user code has NO `%fs` — a role-level hard rule, not chain-mediated. |
-| [`%platter`](https://puck.uno/requirements/built-in-classes/object/structure/) | Method body (platter-scoped) | — | The current platter's own bucket. No `@`-style shorthand; write `%platter['foo']` explicitly. |
+| [`%stack`](https://puck.uno/requirements/built-in-classes/object/structure/) | Method body (stack-scoped) | — | The current stack's own bucket. No `@`-style shorthand; write `%stack['foo']` explicitly. |
 | [`%self`](https://puck.uno/requirements/global-methods/#self) | Method body | — | The current object instance. Bare `self` is shorthand. Not available in bare functions, closures, or top-level code (unless a closure captures an enclosing method's `%self`). |
 | [`%stderr`](https://puck.uno/requirements/chain/methods/stdout-and-stderr) | Anywhere | No | Diagnostic-output channel. Grant to non-user code with `%chain.grant :stderr`. <!-- STALE: %chain.X syntax being reworked --> |
 | [`%stdin`](https://puck.uno/requirements/chain/methods/stdin) | Anywhere | No | Input channel. Grant to non-user code with `%chain.grant :stdin`. <!-- STALE: %chain.X syntax being reworked --> |

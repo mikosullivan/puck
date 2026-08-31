@@ -6,7 +6,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_built_in_object_methods",
-	"role": "spec for the `obj` method namespace on every Caspian value — including how the namespace itself works (inherited automatically from Object, dispatched as normal methods on the receiver, not an isolation boundary, cannot be overridden — engine hardcodes the name; no user-facing final-method facility in V1) plus the full method catalog. Methods spec'd: `.pk` (returns the receiver's identity as a string — the receiver's object_pk, a UUID assigned by CVM at construction; immutable; survives serialization; opaque — the format is CVM's concern; was previously called `.id`), `.truthy?` (returns truthiness derived from the receiver's primitive field: false/null primitive → false; anything else or no primitive field → true; immutable per instance), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes in top-to-bottom order, with `.ensure($class)`, `.add_unconditionally($class)`, and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.add_unconditionally($class)` always pushes a new platter regardless of existing membership — verbose name deliberately since the always-push case is rare — and has the same bare/block form pair with the block form always adding and always removing at exit; both add methods place the new platter on TOP of the stack (just below the shadow if one exists), so its methods win at dispatch — same shape as Ruby's `obj.extend(Module)`; the stack is walked top-to-bottom / first-to-last for method lookup; `.shadow` accepts `ensure: true` to create the shadow if missing), `.methods` (returns a lazy methods object that behaves like a Hash for all non-mutating operations — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests; per-lookup walk of the class graph so single-method access doesn't materialize the whole set; `.keys` returns a fresh array on each call and can differ between calls if the class was mutated; nested namespaces surface as single entries — `.methods.keys` includes `'obj'` and other nested-namespace names but not the nested members underneath; mutating operations like `[:name] = value` and `.delete` raise; access-scoped so private methods surface when called from inside the class body via %self.obj.methods but not from outside; composes with the caller pattern), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's LIVE stack array — the returned reference IS the object's stack, not a snapshot, so pushing/splicing/reordering/deleting entries or editing platter fields mutates the object directly; `.classes.ensure` and `.classes.add_unconditionally` are convenience wrappers on top of this raw access; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg; framing: stack is mutable from outside but bucket has no external-mutation surface at all, an intentional asymmetry treating bucket as encapsulated state and stack as extendable-behavior surface, gated to user + owning role), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — two independent object-level immutability axes plus a shortcut that locks both; each with permanent and block-scoped forms; `.freeze_bucket` is top-level-only on the receiver's own bucket, does not cascade into nested structures; freezing primitive-value contents like Hash keys or Array elements is NOT covered here — that's a direct `.freeze` method on the primitive itself) and the companion frozen-predicate surface (`.bucket_frozen?`, `.stack_frozen?`, `.frozen?` — each returns true iff the corresponding freeze method has been called; `.frozen?` returns true iff both axis predicates return true; reflect the CURRENT freeze state so block-form freezes return true DURING the block and false again after); all freeze methods are idempotent (freezing already-frozen axes is a no-op), `.destroy` (terminates the receiver: calls `.close` if defined, then clears the bucket AND drops every platter from the stack; result is a destroyed object whose only useful surface is `.obj.pk` and `.obj.destroyed?`; every other dispatch raises; the engine special-cases those two on destroyed objects since there's no class stack left to dispatch through; `.close` failures do not stop the destroy; idempotent; holding-is-access), and `.destroyed?` (returns true iff `.destroy` has been called on the receiver; callable on destroyed objects; one of only two methods that remain usable after destroy). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
+	"role": "spec for the `obj` method namespace on every Caspian value — including how the namespace itself works (inherited automatically from Object, dispatched as normal methods on the receiver, not an isolation boundary, cannot be overridden — engine hardcodes the name; no user-facing final-method facility in V1) plus the full method catalog. Methods spec'd: `.pk` (returns the receiver's identity as a string — the receiver's object_pk, a UUID assigned by CVM at construction; immutable; survives serialization; opaque — the format is CVM's concern; was previously called `.id`), `.truthy?` (returns truthiness derived from the receiver's primitive field: false/null primitive → false; anything else or no primitive field → true; immutable per instance), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes in top-to-bottom order, with `.ensure($class)`, `.add_unconditionally($class)`, and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.add_unconditionally($class)` always pushes a new stack regardless of existing membership — verbose name deliberately since the always-push case is rare — and has the same bare/block form pair with the block form always adding and always removing at exit; both add methods place the new stack on TOP of the stack (just below the shadow if one exists), so its methods win at dispatch — same shape as Ruby's `obj.extend(Module)`; the stack is walked top-to-bottom / first-to-last for method lookup; `.shadow` accepts `ensure: true` to create the shadow if missing), `.methods` (returns a lazy methods object that behaves like a Hash for all non-mutating operations — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests; per-lookup walk of the class graph so single-method access doesn't materialize the whole set; `.keys` returns a fresh array on each call and can differ between calls if the class was mutated; nested namespaces surface as single entries — `.methods.keys` includes `'obj'` and other nested-namespace names but not the nested members underneath; mutating operations like `[:name] = value` and `.delete` raise; access-scoped so private methods surface when called from inside the class body via %self.obj.methods but not from outside; composes with the caller pattern), `.warn($message)` (attaches a warning-only stack to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's LIVE stack array — the returned reference IS the object's stack, not a snapshot, so pushing/splicing/reordering/deleting entries or editing stack fields mutates the object directly; `.classes.ensure` and `.classes.add_unconditionally` are convenience wrappers on top of this raw access; user- and owner-only; carries a `.shadow` sub-method that returns the shadow stack, with the same `ensure: true` kwarg; framing: stack is mutable from outside but bucket has no external-mutation surface at all, an intentional asymmetry treating bucket as encapsulated state and stack as extendable-behavior surface, gated to user + owning role), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — two independent object-level immutability axes plus a shortcut that locks both; each with permanent and block-scoped forms; `.freeze_bucket` is top-level-only on the receiver's own bucket, does not cascade into nested structures; freezing primitive-value contents like Hash keys or Array elements is NOT covered here — that's a direct `.freeze` method on the primitive itself) and the companion frozen-predicate surface (`.bucket_frozen?`, `.stack_frozen?`, `.frozen?` — each returns true iff the corresponding freeze method has been called; `.frozen?` returns true iff both axis predicates return true; reflect the CURRENT freeze state so block-form freezes return true DURING the block and false again after); all freeze methods are idempotent (freezing already-frozen axes is a no-op), `.destroy` (terminates the receiver: calls `.close` if defined, then clears the bucket AND drops every stack from the stack; result is a destroyed object whose only useful surface is `.obj.pk` and `.obj.destroyed?`; every other dispatch raises; the engine special-cases those two on destroyed objects since there's no class stack left to dispatch through; `.close` failures do not stop the destroy; idempotent; holding-is-access), and `.destroyed?` (returns true iff `.destroy` has been called on the receiver; callable on destroyed objects; one of only two methods that remain usable after destroy). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
 	"status": "stub — starter methods spec'd (id, truthy?, isa?, null?, defined?, jail, tap, classes/ensure/shadow, methods, warn, freeze_bucket/freeze_stack/freeze, bucket_frozen?/stack_frozen?/frozen?, destroy, destroyed?); more to come",
 	"audience": "developers writing Caspian; engine implementers"
 }}
@@ -77,24 +77,24 @@ $widget.obj.classes                          # e.g. [Widget]
 
 #### `.classes.ensure($class)`
 
-Guarantees at least one platter in the stack carries `$class` exactly. Two forms:
+Guarantees at least one stack in the stack carries `$class` exactly. Two forms:
 
-- **Bare call** — permanent. If the class is already in the stack, no-op. If not, a new platter with the class is inserted at the **top** of the stack (just below the shadow platter if one exists) and stays there.
+- **Bare call** — permanent. If the class is already in the stack, no-op. If not, a new stack with the class is inserted at the **top** of the stack (just below the shadow stack if one exists) and stays there.
 - **Block call** — the class is present for the block's duration. Behavior at call time depends on whether the class was already in the stack:
   - **Already present** — nothing is added; the block runs; **nothing is removed at block exit.** The stack ends the block exactly as it started. The engine only removes what it added, and it added nothing.
-  - **Not present** — a new platter is added at the top (just below the shadow if one exists), the block runs, and that specific platter is removed at block exit (or if the block raises).
+  - **Not present** — a new stack is added at the top (just below the shadow if one exists), the block runs, and that specific stack is removed at block exit (or if the block raises).
 
-**New platters go on top so their methods win.** The stack is walked top-to-bottom (first-to-last in the `.classes` array) for method lookup, so a platter added by `.ensure` overrides any same-named method on classes already in the stack — same shape as Ruby's `obj.extend(Module)`. The shadow platter, when present, always stays at position 0; `.ensure`'d platters land at position 1 in that case, ahead of the original class platters but below the singleton-method holder.
+**New stack go on top so their methods win.** The stack is walked top-to-bottom (first-to-last in the `.classes` array) for method lookup, so a stack added by `.ensure` overrides any same-named method on classes already in the stack — same shape as Ruby's `obj.extend(Module)`. The shadow stack, when present, always stays at position 0; `.ensure`'d stack land at position 1 in that case, ahead of the original class stack but below the singleton-method holder.
 
 **Access is restricted to `user` and the receiver's owning role** — same rule as [`.stack`](#stack). Adding a class to another object's stack is a stack mutation, and stack mutations are gated. Other roles that hold a reference to the object can call its class-defined methods but cannot bolt on new classes.
 
-**Exact-class match, not `.isa?`.** Subclasses in the stack do NOT count as "the class is there." If the stack has `Hex` and you call `.classes.ensure(Number)`, a new `Number` platter is still added — even though `Hex` extends `Number`. Class-hierarchy queries walk inheritance; stack membership is class-identity equality only.
+**Exact-class match, not `.isa?`.** Subclasses in the stack do NOT count as "the class is there." If the stack has `Hex` and you call `.classes.ensure(Number)`, a new `Number` stack is still added — even though `Hex` extends `Number`. Class-hierarchy queries walk inheritance; stack membership is class-identity equality only.
 
 ~~~caspian
 $widget = Widget.new()
 $widget.obj.classes                          # e.g. [Widget]
 
-# Bare form — new platter lands on top:
+# Bare form — new stack lands on top:
 $widget.obj.classes.ensure(Serializable)     # Serializable goes to the top
 $widget.obj.classes                          # [Serializable, Widget]
 
@@ -106,7 +106,7 @@ $widget.obj.classes.ensure(Renderer) do
 	# Renderer is in $widget's stack for the block's duration
 	$widget.render()
 end
-# Renderer platter removed on block exit; $widget's stack is back to what it was
+# Renderer stack removed on block exit; $widget's stack is back to what it was
 
 # Subclass caveat:
 $hex = 0xff                                  # Hex instance; stack has Hex
@@ -114,10 +114,10 @@ $hex.obj.classes.ensure(Number)              # adds Number on top, even though H
 $hex.obj.classes                             # [Number, Hex]
 ~~~
 
-**Cleanup is identity-tracked, not class-name-tracked.** The engine remembers the specific platter it created for a block-form `.ensure` call and removes exactly that platter at block exit. It doesn't scan the stack for "any platter carrying this class" and remove the first match — user code inside the block might have added its own platter with the same class through a different path, and that platter must be left alone. Two consequences fall out:
+**Cleanup is identity-tracked, not class-name-tracked.** The engine remembers the specific stack it created for a block-form `.ensure` call and removes exactly that stack at block exit. It doesn't scan the stack for "any stack carrying this class" and remove the first match — user code inside the block might have added its own stack with the same class through a different path, and that stack must be left alone. Two consequences fall out:
 
-- **Nested calls compose cleanly.** An outer block-`.ensure($class) do ... end` can contain an inner bare-`.ensure($class)`. The inner sees the class present (added by the outer) and is a no-op; when the outer exits, it removes exactly its own platter.
-- **Concurrent structural writes are safe.** If the block does something like `$widget.obj.classes.ensure($other_class)` or any other stack modification, those platters aren't candidates for the outer's cleanup — the outer only removes its own.
+- **Nested calls compose cleanly.** An outer block-`.ensure($class) do ... end` can contain an inner bare-`.ensure($class)`. The inner sees the class present (added by the outer) and is a no-op; when the outer exits, it removes exactly its own stack.
+- **Concurrent structural writes are safe.** If the block does something like `$widget.obj.classes.ensure($other_class)` or any other stack modification, those stack aren't candidates for the outer's cleanup — the outer only removes its own.
 
 The block form's return value is the block's value (matching Ruby-style use-block semantics):
 
@@ -125,28 +125,28 @@ The block form's return value is the block's value (matching Ruby-style use-bloc
 $xml = $widget.obj.classes.ensure(XmlSerializer) do
 	return $widget.to_xml()
 end
-# $xml holds whatever the block returned; the XmlSerializer platter is already gone
+# $xml holds whatever the block returned; the XmlSerializer stack is already gone
 ~~~
 
-Removing the ensured platter explicitly from inside the block (e.g. via a hypothetical `.classes.remove(...)`) breaks the outer's cleanup contract; that case raises when the outer tries to remove its now-missing platter.
+Removing the ensured stack explicitly from inside the block (e.g. via a hypothetical `.classes.remove(...)`) breaks the outer's cleanup contract; that case raises when the outer tries to remove its now-missing stack.
 
 **Access.** Restricted to `user` and the receiver's owning role. Untrusted callers raise. Stack mutation is not part of the public interface exposed to arbitrary holders.
 
 #### `.classes.add_unconditionally($class)`
 
-Always pushes a new platter carrying `$class` at the top of the stack (just below the shadow platter if one exists), regardless of whether the class is already present. Unlike `.ensure`, this is not idempotent — calling it twice adds two platters. Two forms:
+Always pushes a new stack carrying `$class` at the top of the stack (just below the shadow stack if one exists), regardless of whether the class is already present. Unlike `.ensure`, this is not idempotent — calling it twice adds two stack. Two forms:
 
-- **Bare call** — permanent. A new platter is pushed at the top and stays there.
-- **Block call** — scoped. A new platter is pushed for the block's duration, then removed at block exit (or on raise). Same identity-tracked cleanup as `.ensure`'s block form — the engine removes the specific platter it added, not just "any platter carrying this class."
+- **Bare call** — permanent. A new stack is pushed at the top and stays there.
+- **Block call** — scoped. A new stack is pushed for the block's duration, then removed at block exit (or on raise). Same identity-tracked cleanup as `.ensure`'s block form — the engine removes the specific stack it added, not just "any stack carrying this class."
 
-Same top-of-stack placement as `.ensure` — new platters win at method lookup because the stack is walked top-to-bottom. Same access rule too: **`user` and the receiver's owning role only**; other roles raise.
+Same top-of-stack placement as `.ensure` — new stack win at method lookup because the stack is walked top-to-bottom. Same access rule too: **`user` and the receiver's owning role only**; other roles raise.
 
 ~~~caspian
 $widget = Widget.new()
 $widget.obj.classes                                     # [Widget]
 
 # Bare form — permanent, always adds on top:
-$widget.obj.classes.add_unconditionally(Widget)         # adds another Widget platter on top
+$widget.obj.classes.add_unconditionally(Widget)         # adds another Widget stack on top
 $widget.obj.classes                                     # [Widget, Widget]
 
 $widget.obj.classes.add_unconditionally(Serializable)
@@ -154,21 +154,21 @@ $widget.obj.classes                                     # [Serializable, Widget,
 
 # Block form — scoped, always adds during the block:
 $widget.obj.classes.add_unconditionally(Renderer) do
-	# a new Renderer platter is in $widget's stack for the block's duration
+	# a new Renderer stack is in $widget's stack for the block's duration
 	$widget.render()
 end
-# the Renderer platter added by this call is removed on block exit
+# the Renderer stack added by this call is removed on block exit
 ~~~
 
-**The verbose name is deliberate.** `.ensure` is what code should reach for by default; adding a duplicate platter is rare and usually a mistake. The long name is a speed bump that makes the reader (and reviewer) pause on the unusual choice. See [long descriptive names for rarely-used methods](https://puck.uno/requirements/concepts) — same rationale.
+**The verbose name is deliberate.** `.ensure` is what code should reach for by default; adding a duplicate stack is rare and usually a mistake. The long name is a speed bump that makes the reader (and reviewer) pause on the unusual choice. See [long descriptive names for rarely-used methods](https://puck.uno/requirements/concepts) — same rationale.
 
-**Legitimate use cases** are rare but exist: classes that carry per-platter state (`bucket` per platter, see [object structure § bucket (per-platter)](https://puck.uno/requirements/built-in-classes/object/structure/#bucket-per-platter)) may want multiple independent platters of the same class on one object. Most classes don't; hence the speed bump.
+**Legitimate use cases** are rare but exist: classes that carry per-stack state (`bucket` per stack, see [object structure § bucket (per-stack)](https://puck.uno/requirements/built-in-classes/object/structure/#bucket-per-stack)) may want multiple independent stack of the same class on one object. Most classes don't; hence the speed bump.
 
 **Access.** Same as `.classes.ensure` — restricted to `user` and the receiver's owning role. Untrusted callers raise.
 
 #### `.classes.shadow`
 
-Returns the shadow platter's class (the per-instance class populated with singleton methods), or `null` if the object has no shadow platter yet. This is a **query only** — calling it doesn't create a shadow.
+Returns the shadow stack's class (the per-instance class populated with singleton methods), or `null` if the object has no shadow stack yet. This is a **query only** — calling it doesn't create a shadow.
 
 Pass `ensure: true` to get the shadow class AND create the shadow if it doesn't already exist:
 
@@ -200,7 +200,7 @@ $widget.obj.classes.shadow      # the shadow class — implicitly created by the
 
 ### `.destroy`
 
-Terminates the receiver: calls its `.close` method if one exists, then clears every entry in its bucket AND drops every platter from its stack. The object holds no references to anything else once destroy returns. The result is a **destroyed** object — a shell whose only useful surface is `.obj.pk` (still its original identity) and `.obj.destroyed?` (returns `true`). Every other dispatch on the destroyed object raises.
+Terminates the receiver: calls its `.close` method if one exists, then clears every entry in its bucket AND drops every stack from its stack. The object holds no references to anything else once destroy returns. The result is a **destroyed** object — a shell whose only useful surface is `.obj.pk` (still its original identity) and `.obj.destroyed?` (returns `true`). Every other dispatch on the destroyed object raises.
 
 Use when code needs to guarantee that an object doesn't survive past a certain point — a session that must not leak beyond its scope, a file handle that must not stay open, a credential that must not linger in memory. Destroy is stronger than letting the object go out of scope, which leaves the object alive until CVM's next GC pass; `.destroy` runs synchronously and leaves the observable behavior right there.
 
@@ -218,9 +218,9 @@ $session.execute($other)     # raises — the session is destroyed
 
 1. **Close call.** If the receiver has a `.close` method (defined on its class or reachable through its stack), `.destroy` calls it. `.close` is the object's chance to run any orderly-shutdown logic — flush a buffer, release a lock, unregister from an event source, etc. If the object has no `.close`, this step is skipped.
 2. **Bucket clear.** Every entry in `%bucket` is removed.
-3. **Stack clear.** Every platter is dropped from the stack — class platters, the shadow (if any), nested-link platters, warning platters. The object's class stack ends up empty. Anything the stack was holding onto — singleton-method closures, warnings, nested-object markers — is released with it.
+3. **Stack clear.** Every stack is dropped from the stack — class stack, the shadow (if any), nested-link stack, warning stack. The object's class stack ends up empty. Anything the stack was holding onto — singleton-method closures, warnings, nested-object markers — is released with it.
 
-Nested objects that were reachable only through the destroyed receiver (via its bucket entries, shadow closures, or nested-link platters) lose their last root and become eligible for cleanup on CVM's next pass.
+Nested objects that were reachable only through the destroyed receiver (via its bucket entries, shadow closures, or nested-link stack) lose their last root and become eligible for cleanup on CVM's next pass.
 
 **Post-destroy behavior — only two methods remain usable:**
 
@@ -349,7 +349,7 @@ Design rationale for top-level-only: bucket freeze is a single-object statement 
 
 ### `.freeze_stack`
 
-Locks the receiver's stack against modification. No platter can be added, removed, or reordered. Defining a singleton method (which would grow the shadow) is blocked; adding a class via `.classes.ensure(...)` or `.classes.add_unconditionally(...)` is blocked; nothing about the stack shape can change. The methods the object has at freeze time are the methods it will always have.
+Locks the receiver's stack against modification. No stack can be added, removed, or reordered. Defining a singleton method (which would grow the shadow) is blocked; adding a class via `.classes.ensure(...)` or `.classes.add_unconditionally(...)` is blocked; nothing about the stack shape can change. The methods the object has at freeze time are the methods it will always have.
 
 **Two forms:**
 
@@ -520,7 +520,7 @@ Successive calls re-walk the graph. If the class was mutated between two `.keys`
 
 **Downloaded methods excluded.** Ad-hoc method application via `$foo.$fn` ([downloaded-methods](https://puck.uno/requirements/classes/downloaded-methods)) is a call-site application, not a class-level attachment. Such applications do not appear in `.methods` — the class is the source of truth, and downloaded methods never modify the class.
 
-**All visible top-level methods.** Every method reachable through the receiver's platter stack and inheritance graph is a candidate. Includes inherited methods, methods added via amendments, and shadow methods (singleton methods on this specific object). Method-resolution rules from [method resolution](tag:method-resolution) determine which class's version wins on collision — the methods object reflects what would be dispatched, not every candidate.
+**All visible top-level methods.** Every method reachable through the receiver's stack stack and inheritance graph is a candidate. Includes inherited methods, methods added via amendments, and shadow methods (singleton methods on this specific object). Method-resolution rules from [method resolution](tag:method-resolution) determine which class's version wins on collision — the methods object reflects what would be dispatched, not every candidate.
 
 **Nested namespaces surface as single entries.** A nested method namespace (defined via [nested](https://puck.uno/requirements/classes/nested), including the cross-cutting `obj` namespace every value carries) appears as one entry keyed by the namespace name. Its members do not get flattened into the top-level methods list. To enumerate a nested namespace's methods, access the namespace and query its own `.methods`:
 
@@ -612,14 +612,14 @@ Note the distinction from `.truthy?`: `false.obj.truthy?` is `false`, but `false
 
 ### `.stack`
 
-Returns the **live** stack array — the ordered sequence of platters described in [object structure § Stack](../structure/#stack). The array returned IS the object's stack, not a snapshot: pushing, splicing, reordering, or deleting entries mutates the object directly. The full serialized shape is available on every platter — `class`, `shadow` flag, `nested` UUID link, `warning`, per-platter `bucket`, and per-platter `vibecode` all show through, and any of them can be edited in place.
+Returns the **live** stack array — the ordered sequence of stack described in [object structure § Stack](../structure/#stack). The array returned IS the object's stack, not a snapshot: pushing, splicing, reordering, or deleting entries mutates the object directly. The full serialized shape is available on every stack — `class`, `shadow` flag, `nested` UUID link, `warning`, per-stack `bucket`, and per-stack `vibecode` all show through, and any of them can be edited in place.
 
-`.classes.ensure` and `.classes.add_unconditionally` are convenience wrappers on top of this raw access; anything they can't express (reorder existing platters, remove a specific class, splice a platter into a specific position, patch a platter's `vibecode`, etc.) is available by manipulating the array directly:
+`.classes.ensure` and `.classes.add_unconditionally` are convenience wrappers on top of this raw access; anything they can't express (reorder existing stack, remove a specific class, splice a stack into a specific position, patch a stack's `vibecode`, etc.) is available by manipulating the array directly:
 
 ~~~caspian
 $widget.obj.stack.push {class: %('caspian.uno/renderer')}
 $widget.obj.stack.reverse                  # invert dispatch precedence
-$widget.obj.stack.delete_at(2)             # remove the third platter
+$widget.obj.stack.delete_at(2)             # remove the third stack
 ~~~
 
 **Access is restricted to `user` and the receiver's owning role.** Every other role gets a raised error on the call. This is a departure from the general holding-is-access rule; class-defined dispatch on the receiver still follows holding-is-access, but `.stack` is gated because reading it exposes every object nested inside AND lets the caller rewrite the object's dispatch surface — each nested object could carry credentials, tokens, or other state its owner would not want handed to arbitrary callers, and untrusted stack rewrites could silently hijack every subsequent method call.
@@ -644,18 +644,18 @@ If a class wants to expose limited structural information across role boundaries
 
 #### `.stack.shadow`
 
-Returns the shadow **platter** if one exists (or `null` if the object has no shadow yet).
+Returns the shadow **stack** if one exists (or `null` if the object has no shadow yet).
 
-Where [`.classes.shadow`](#classes-shadow) returns the shadow's class object, `.stack.shadow` returns the whole shadow platter — the hash that carries `shadow: true`, its `class` field, and any `bucket` / `vibecode` fields the shadow platter happens to have.
+Where [`.classes.shadow`](#classes-shadow) returns the shadow's class object, `.stack.shadow` returns the whole shadow stack — the hash that carries `shadow: true`, its `class` field, and any `bucket` / `vibecode` fields the shadow stack happens to have.
 
-Bare call is **query only** — never creates a shadow. Pass `ensure: true` to get the shadow platter AND create it if needed, matching the pattern used by `.classes.shadow(ensure: true)` and `.classes.ensure($class)`.
+Bare call is **query only** — never creates a shadow. Pass `ensure: true` to get the shadow stack AND create it if needed, matching the pattern used by `.classes.shadow(ensure: true)` and `.classes.ensure($class)`.
 
 ~~~caspian
 $widget.obj.stack.shadow                  # null — no shadow yet
-$widget.obj.stack.shadow(ensure: true)    # creates the shadow, returns the platter
+$widget.obj.stack.shadow(ensure: true)    # creates the shadow, returns the stack
 
 # Once the shadow exists:
-$widget.obj.stack.shadow                  # the shadow platter hash
+$widget.obj.stack.shadow                  # the shadow stack hash
 ~~~
 
 **Access.** Same as `.stack` — restricted to `user` and the receiver's owning role. Untrusted callers raise.
@@ -734,7 +734,7 @@ The value follows the general [truthy/falsy rule](https://puck.uno/requirements/
 
 ### `.warn($message)`
 
-Attaches a warning to the receiver by pushing a new **warning-only platter** onto the stack. The platter carries `warning: <the created warning object>` — a Warning-class instance wrapping `$message`. The warning-platter form is spec'd in [object/structure § warning](../structure/#warning).
+Attaches a warning to the receiver by pushing a new **warning-only stack** onto the stack. The stack carries `warning: <the created warning object>` — a Warning-class instance wrapping `$message`. The warning-stack form is spec'd in [object/structure § warning](../structure/#warning).
 
 **Never raises.** `.warn` is purely observational — nothing about control flow changes. The receiver keeps running as it was; the warning just sits attached to it for whoever cares to inspect the stack later.
 
@@ -747,7 +747,7 @@ $parsed_date.obj.warn('parsed leniently; source string was ambiguous')
              .obj.warn('century inferred from context')
 ~~~
 
-Both warnings land as separate warning-only platters on `$parsed_date`. The stack after the two calls has two warning platters; neither affects dispatch (no `class` field) and both travel with the value as it's passed, stored, or serialized.
+Both warnings land as separate warning-only stack on `$parsed_date`. The stack after the two calls has two warning stack; neither affects dispatch (no `class` field) and both travel with the value as it's passed, stored, or serialized.
 
 Typical use cases:
 
@@ -755,7 +755,7 @@ Typical use cases:
 - A validator that noticed something suspicious but didn't want to reject: "this user record's timezone is unusual for their region."
 - An engine-internal signal about a stored value whose class disagrees with its declared schema at deserialization time.
 
-Any code — engine, library, or application — can call `.warn`. The inspection API (walking warning platters, reading their `warning` field) is spec'd elsewhere as it grows.
+Any code — engine, library, or application — can call `.warn`. The inspection API (walking warning stack, reading their `warning` field) is spec'd elsewhere as it grows.
 
 
 **Access.** Callable from any role. Warnings are observational metadata; attaching one doesn't grant any capability.
@@ -855,44 +855,44 @@ Any code — engine, library, or application — can call `.warn`. The inspectio
 ### `.classes.ensure` (bare form)
 
 - **Adds class when absent** — after `$w.obj.classes.ensure(Some_class)`, `$w.obj.isa?(Some_class)` is `true`.
-- **New platter goes on top** — the newly added class appears at the front of `.obj.classes` (position 0 when no shadow, position 1 when a shadow exists).
-- **Methods on the new platter win over existing same-named methods** — because the stack is walked top-to-bottom, `.ensure`'ing a class that defines `.foo` makes `.foo` on the receiver dispatch to the new class's version.
-- **No-op when class already present** — after two successive `.ensure(Some_class)` calls, only one Some_class platter exists.
-- **Exact-class match, not `.isa?`** — with `$hex = 0xff` (Hex extends Number), `$hex.obj.classes.ensure(Number)` adds a Number platter even though Hex is in the stack.
+- **New stack goes on top** — the newly added class appears at the front of `.obj.classes` (position 0 when no shadow, position 1 when a shadow exists).
+- **Methods on the new stack win over existing same-named methods** — because the stack is walked top-to-bottom, `.ensure`'ing a class that defines `.foo` makes `.foo` on the receiver dispatch to the new class's version.
+- **No-op when class already present** — after two successive `.ensure(Some_class)` calls, only one Some_class stack exists.
+- **Exact-class match, not `.isa?`** — with `$hex = 0xff` (Hex extends Number), `$hex.obj.classes.ensure(Number)` adds a Number stack even though Hex is in the stack.
 - **Bare form is permanent** — a class added by bare `.ensure` stays after the enclosing block/method exits.
 
 ### `.classes.ensure` (block form)
 
 - **Class present for block duration** — inside `$w.obj.classes.ensure(Serializable) do ... end`, `$w.obj.isa?(Serializable)` is `true`.
-- **Not present after block exit when added** — after the block exits (class was not there before), the added platter is gone.
+- **Not present after block exit when added** — after the block exits (class was not there before), the added stack is gone.
 - **Not removed after block exit when already present** — if Serializable was already in the stack before the block, it is still there after the block exits.
-- **Cleanup runs on raise** — if the block raises, the platter added by this call is still removed.
-- **Cleanup is identity-tracked** — if user code inside the block adds its own platter of the same class through a separate path, only the outer's added platter is removed on exit.
+- **Cleanup runs on raise** — if the block raises, the stack added by this call is still removed.
+- **Cleanup is identity-tracked** — if user code inside the block adds its own stack of the same class through a separate path, only the outer's added stack is removed on exit.
 - **Nested block-forms compose** — an outer `ensure($cls)` block containing an inner `ensure($cls)` block leaves the object exactly as it started after both exit.
 - **Block's return value is the block's return** — `$x = $w.obj.classes.ensure(Cls) do 42 end` sets `$x` to `42`.
 
 ### `.classes.add_unconditionally` (bare form)
 
-- **Adds a platter carrying the class** — after `$w.obj.classes.add_unconditionally(Serializable)`, `$w.obj.classes` includes `Serializable`.
+- **Adds a stack carrying the class** — after `$w.obj.classes.add_unconditionally(Serializable)`, `$w.obj.classes` includes `Serializable`.
 - **Duplicates when class already present** — calling `.add_unconditionally(Widget)` on an object whose stack already has Widget results in two Widget entries in `$w.obj.classes`.
-- **Multiple calls add multiple platters** — calling `.add_unconditionally(Cls)` twice adds two platters, both carrying `Cls`.
-- **New platter lands on top of stack** — a fresh `.add_unconditionally(Cls)` platter appears at the front of `.obj.classes` (position 0 when no shadow, position 1 when a shadow exists), same as `.ensure`.
+- **Multiple calls add multiple stack** — calling `.add_unconditionally(Cls)` twice adds two stack, both carrying `Cls`.
+- **New stack lands on top of stack** — a fresh `.add_unconditionally(Cls)` stack appears at the front of `.obj.classes` (position 0 when no shadow, position 1 when a shadow exists), same as `.ensure`.
 
 ### `.classes.add_unconditionally` (block form)
 
-- **Platter present for block duration** — inside `$w.obj.classes.add_unconditionally(Cls) do ... end`, `$w.obj.classes` has a platter carrying `Cls`.
-- **Platter removed at block exit** — after the block exits, the added platter is gone.
-- **Cleanup runs on raise** — if the block raises, the added platter is still removed.
-- **Cleanup is identity-tracked** — if user code inside the block adds its own platter through a separate call, only the outer's added platter is removed on exit.
-- **Always adds regardless of existing membership** — even when `Cls` is already in the stack before the block, a new platter is still added for the block's duration and removed on exit.
-- **Nested block-forms compose** — two nested `.add_unconditionally(Cls) do ... end` calls each add and remove their own platter; the stack ends both blocks exactly as it started.
+- **Stack present for block duration** — inside `$w.obj.classes.add_unconditionally(Cls) do ... end`, `$w.obj.classes` has a stack carrying `Cls`.
+- **Stack removed at block exit** — after the block exits, the added stack is gone.
+- **Cleanup runs on raise** — if the block raises, the added stack is still removed.
+- **Cleanup is identity-tracked** — if user code inside the block adds its own stack through a separate call, only the outer's added stack is removed on exit.
+- **Always adds regardless of existing membership** — even when `Cls` is already in the stack before the block, a new stack is still added for the block's duration and removed on exit.
+- **Nested block-forms compose** — two nested `.add_unconditionally(Cls) do ... end` calls each add and remove their own stack; the stack ends both blocks exactly as it started.
 - **Block's return value is the block's return** — `$x = $w.obj.classes.add_unconditionally(Cls) do 42 end` sets `$x` to `42`.
 
 ### `.classes.shadow`
 
 - **Bare call returns null when no shadow exists** — a freshly constructed object with no singleton methods has `.obj.classes.shadow` equal to null.
 - **Bare call returns the shadow class when it exists** — after `.classes.shadow(ensure: true)`, a subsequent bare `.classes.shadow` returns the shadow class.
-- **`ensure: true` creates the shadow if missing** — the shadow platter exists after `.classes.shadow(ensure: true)` even though the object had none before.
+- **`ensure: true` creates the shadow if missing** — the shadow stack exists after `.classes.shadow(ensure: true)` even though the object had none before.
 - **`ensure: true` returns the shadow class** — always returns a class value, never null.
 - **Defining a singleton method implicitly creates the shadow** — after `method $o.foo() ... end` on a bare object, `.classes.shadow` (bare form) returns a non-null class.
 
@@ -929,8 +929,8 @@ Any code — engine, library, or application — can call `.warn`. The inspectio
 - **Returns the receiver** — `$w.obj.warn('msg')` returns `$w`.
 - **Never raises** — calling `.warn` with any string message does not raise.
 - **Never propagates up the chain** — a `.warn` call in a called method does not affect the caller's control flow.
-- **Adds a warning-only platter** — after `.warn('msg')`, the receiver's stack has an added platter carrying `warning` and no `class`.
-- **Multiple warnings stack independently** — `$w.obj.warn('a').obj.warn('b')` results in two warning platters on the stack; both messages are recoverable via stack inspection.
+- **Adds a warning-only stack** — after `.warn('msg')`, the receiver's stack has an added stack carrying `warning` and no `class`.
+- **Multiple warnings stack independently** — `$w.obj.warn('a').obj.warn('b')` results in two warning stack on the stack; both messages are recoverable via stack inspection.
 - **Warnings don't affect dispatch** — a method call on the receiver after `.warn` resolves against the same class it would have without the warning.
 - **Any role can call `.warn`** — code holding the object under a role other than the owner can call `.warn` without raising.
 
@@ -939,18 +939,18 @@ Any code — engine, library, or application — can call `.warn`. The inspectio
 - **User role can read the stack** — `.obj.stack` returns the stack array when called from user code.
 - **Owning role can read the stack** — code running as the receiver's owning role can call `.stack`.
 - **Non-owner non-user role raises** — a downloaded method running as a foreign role raises when calling `.stack` on a receiver it doesn't own.
-- **Serialized shape preserved** — the returned platters carry the same `class`, `shadow`, `nested`, `warning`, `bucket`, and `vibecode` fields the object's stack has.
-- **Returned array IS the live stack** — mutations to the returned array (push, splice, reverse, delete, direct field edits on a platter) modify the object's actual stack; subsequent method dispatch on the object reflects the changes.
-- **Push affects dispatch** — appending a platter carrying a class that defines `.foo` via `$w.obj.stack.push(...)` makes `$w.foo` dispatch to that class's version on the next call.
-- **Delete affects dispatch** — removing a platter that carried the class defining `.foo` makes `$w.foo` raise (or fall through to a lower-precedence class) on the next call.
+- **Serialized shape preserved** — the returned stack carry the same `class`, `shadow`, `nested`, `warning`, `bucket`, and `vibecode` fields the object's stack has.
+- **Returned array IS the live stack** — mutations to the returned array (push, splice, reverse, delete, direct field edits on a stack) modify the object's actual stack; subsequent method dispatch on the object reflects the changes.
+- **Push affects dispatch** — appending a stack carrying a class that defines `.foo` via `$w.obj.stack.push(...)` makes `$w.foo` dispatch to that class's version on the next call.
+- **Delete affects dispatch** — removing a stack that carried the class defining `.foo` makes `$w.foo` raise (or fall through to a lower-precedence class) on the next call.
 - **Reorder affects dispatch precedence** — since the stack is walked top-to-bottom, mutating the order via `$w.obj.stack.reverse` (or any positional edit) reorders which same-named method wins.
 - **Two `.stack` calls return the same array identity** — the returned reference is the object's stack; two successive `.stack` calls return arrays that compare identity-equal.
 
 ### `.stack.shadow`
 
 - **Bare call returns null when no shadow exists** — same access rules apply as `.stack`.
-- **Bare call returns the shadow platter when it exists** — the returned value is a platter hash with `shadow: true`.
-- **`ensure: true` creates the shadow if missing** — the shadow platter exists after `.stack.shadow(ensure: true)`.
+- **Bare call returns the shadow stack when it exists** — the returned value is a stack hash with `shadow: true`.
+- **`ensure: true` creates the shadow if missing** — the shadow stack exists after `.stack.shadow(ensure: true)`.
 - **Non-owner non-user role raises** — same access restriction as `.stack`.
 
 ### `.classes.ensure` (access)
@@ -993,12 +993,12 @@ Any code — engine, library, or application — can call `.warn`. The inspectio
 - **Calls `.close` when defined** — if the receiver's class provides a `.close` method, `.destroy` invokes it before clearing the bucket.
 - **Skips `.close` when not defined** — an object with no `.close` still destroys cleanly.
 - **Clears the bucket** — after `.destroy`, `%bucket` on the receiver is empty.
-- **Clears the stack** — after `.destroy`, every platter is gone from the receiver's stack (class platters, shadow, warning platters, nested-link platters).
+- **Clears the stack** — after `.destroy`, every stack is gone from the receiver's stack (class stack, shadow, warning stack, nested-link stack).
 - **`.obj.pk` still works post-destroy** — returns the same id the object had before destroy, even though the class stack is empty.
 - **`.obj.destroyed?` returns `true` post-destroy**.
 - **Other method calls raise post-destroy** — class-defined methods, other `.obj.X` methods, freeze operations, and downloaded methods all raise "destroyed object" on the destroyed receiver.
 - **Bucket reads raise post-destroy** — `$foo.@field` on a destroyed object raises.
-- **Singleton methods gone post-destroy** — a method defined via `method $foo.bar() ... end` no longer dispatches after `$foo.obj.destroy` (the shadow platter carrying it is gone).
+- **Singleton methods gone post-destroy** — a method defined via `method $foo.bar() ... end` no longer dispatches after `$foo.obj.destroy` (the shadow stack carrying it is gone).
 - **`.close` raise does not stop destroy** — if `.close` raises during the destroy, the bucket AND stack are still cleared and the object is still destroyed.
 - **Idempotent** — a second `.destroy` call is a no-op that returns cleanly.
 - **Anyone holding can destroy** — follows holding-is-access; no role restriction.

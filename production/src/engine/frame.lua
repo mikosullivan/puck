@@ -16,14 +16,14 @@
 --[[
 # `Frame`
 
-Wrapper class for `control='f'` rows — a frame IS an object. Frame is a subclass of [`object`](cvm/sqlite/object.lua); a Frame instance carries every column from the `objects` row directly on `self` (`self.object_pk`, `self.owner_role`, `self.frame_ast`, `self.control`, `self.frame_process_cap`, `self.frame_parent`, etc.) plus adds the walker behavior a frame needs.
+Wrapper class for `control='f'` rows — a frame IS an object. Frame is a subclass of [`Object`](cvm/sqlite/object.lua); a Frame instance carries every column from the `objects` row directly on `self` (`self.object_pk`, `self.owner_role`, `self.frame_ast`, `self.control`, `self.frame_process_cap`, `self.frame_parent`, etc.) plus adds the walker behavior a frame needs.
 
 **Why a class.** Under the frames-as-objects design, each frame's context lives on a Lua object. Handlers receive the Frame as the dispatch context and reach into `frame.object_pk`, `frame.owner_role`, `frame.engine.data` — no ambient `engine.current_frame_pk` field to consult, no state to save/restore on recursion (each nested walk constructs its own Frame; the outer frame's `self` binding is a lexical local and survives untouched).
 
 **Method inventory** (Frame-specific — inherited object methods like `bucket()` come along for the ride):
 
 - `run(restart)` — the single walker entry point. Truthy `restart` triggers a resume prelude: descend into any child frame recursively (each recursion also passes `true`), then if this frame's `frame_gc = 1`, run gc + advance stmt_idx. Whether the prelude ran or not, then walks the frame's ast statement-by-statement: dispatch via `run_row`, run gc, advance stmt_idx. Reaps at terminal.
-- `run_row(row, restart)` — dispatches through `engine.row_handlers`, passing `self` as the frame context and forwarding the `restart` flag. No special-case branches — every row goes through the same handler chain. `%process.stop` is claimed by the [`process-stop`](handlers/process-stop.lua) core handler ahead of MainHandler in the stock chain.
+- `run_row(row, restart)` — dispatches through `engine.row_handlers`, passing `self` as the frame context and forwarding the `restart` flag. No special-case branches — every row goes through the same handler chain.
 
 **Live vs snapshot fields.** The row columns are captured on wrapper construction. Immutable ones (`object_pk`, `owner_role`, `frame_ast`) are always current. Mutable ones (`frame_stmt_idx`, `frame_gc`) are captured at construction and go stale as the walker advances them — the methods below (`get_stmt_idx`, `get_frame_gc`, `get_engine_class`) do a live DB re-fetch when the current value matters.
 
@@ -32,12 +32,12 @@ Wrapper class for `control='f'` rows — a frame IS an object. Frame is a subcla
 local cjson    = require('cjson')
 local sqlite   = require('lsqlite3')
 local dispatch = require('dispatch')
-local object   = require('cvm.sqlite.object')
+local Object   = require('cvm.sqlite.object')
 
 local SQLITE_ROW = sqlite.ROW
 
 
-local Frame = setmetatable({}, {__index = object})
+local Frame = setmetatable({}, {__index = Object})
 Frame.__index = Frame
 
 
@@ -46,7 +46,7 @@ Frame.__index = Frame
 
 Fetches the row for `pk` via `engine.data:object_by_pk`, upgrades the returned object wrapper to Frame's metatable, returns it. Raises `frame_new_no_row` if the pk doesn't resolve; raises `frame_new_not_a_frame` if the row's control isn't `'f'`.
 
-The instance's engine field is the top-level Engine (set by `object.new` when `cvm:object_by_pk` calls it, per the Engine's `data.engine = engine` back-reference at construction).
+The instance's engine field is the top-level Engine (set by `Object.new` when `cvm:object_by_pk` calls it, per the Engine's `data.engine = engine` back-reference at construction).
 ]]
 function Frame.new(engine, pk)
 	local obj = engine.data:object_by_pk(pk)
@@ -254,7 +254,7 @@ end
 --[[
 ## `Frame:run_row` — dispatch a CaspM row
 
-Every row goes through `dispatch` with `self` and the `restart` flag as the trailing args — handlers receive `(frame, row, restart)`. No shape special-cases here; system primitives like `%process.stop` are core handlers registered ahead of the general dispatcher in the stock chain (see [handlers/init.lua](handlers/init.lua)).
+Every row goes through `dispatch` with `self` and the `restart` flag as the trailing args — handlers receive `(frame, row, restart)`. No shape special-cases here; the handler chain decides. See [handlers/init.lua](handlers/init.lua) for the stock roster and its order.
 
 Raises `unrecognized_caspm` with the row-head atom's key set appended when no handler claims the row.
 ]]

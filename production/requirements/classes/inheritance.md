@@ -29,7 +29,7 @@ $widget.inherited            # [displayable, serializable, $extra_class]
 
 Because it's a live view (not a snapshot), holding `$arr = $widget.inherited` gives you a reference to the same underlying array — subsequent mutations show up when you read `$arr` again.
 
-**Contrast with `$obj.obj.classes`.** The per-instance surface at [object/methods § `.classes`](https://puck.uno/requirements/built-in-classes/object/methods/#classes--classesensureclass--classesaddunconditionallyclass--classesshadow) mutates the platter stack of a single instance. `.inherited` on the class mutates the class itself, affecting every instance. Pick the one that matches your scope.
+**Contrast with `$obj.obj.classes`.** The per-instance surface at [object/methods § `.classes`](https://puck.uno/requirements/built-in-classes/object/methods/#classes--classesensureclass--classesaddunconditionallyclass--classesshadow) mutates the stack stack of a single instance. `.inherited` on the class mutates the class itself, affecting every instance. Pick the one that matches your scope.
 
 ## Mutation methods
 
@@ -39,7 +39,7 @@ Because it's a live view (not a snapshot), holding `$arr = $widget.inherited` gi
 |---|---|
 | `.push($parent)` | Always add `$parent` as a new parent at the end of the array. |
 | `.ensure($parent)` | Add `$parent` if not already present (identity match); no-op otherwise. |
-| `.ensure($parent) do ... end` | **Block form.** Add `$parent` for the block's duration (only if not already present); remove exactly the platter this call added at block exit or on raise. |
+| `.ensure($parent) do ... end` | **Block form.** Add `$parent` for the block's duration (only if not already present); remove exactly the stack this call added at block exit or on raise. |
 | `.pop` | Remove the last parent. |
 | `.delete($parent)` | Remove `$parent` from the array if present. |
 

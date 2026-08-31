@@ -51,6 +51,11 @@ local Cvm                = require('cvm.sqlite')
 local handlers           = require('handlers')
 local halt               = require('halt')
 local Frame              = require('frame')
+local ObjectClass        = require('classes.object')
+local NumberClass        = require('classes.number')
+local StringClass        = require('classes.string')
+local BooleanClass       = require('classes.boolean')
+local NullClass          = require('classes.null')
 
 -- Cached at module load; avoids per-call global lookups.
 local SQLITE_ROW = sqlite.ROW
@@ -175,6 +180,16 @@ function M.new(opts)
 		cap_pk              = nil,
 		caspm               = nil,
 		row_handlers        = {},
+		-- Caspian class registry. Keyed by class name; each value is the
+		-- shared class descriptor from the `classes.` module tree (see
+		-- `production/src/engine/classes/object.lua` for the shape).
+		-- Populated below the setmetatable call. Registry is Lua-side
+		-- only — primitive classes don't get corresponding `objects`
+		-- rows; the row classifier infers class from `scalar_*` columns
+		-- on primitive instances. The general mc dispatcher (not yet
+		-- built) consults this table to resolve `(class_name, fn) → lua_fn`
+		-- and walks parent chains up to Object.
+		classes             = {},
 	}, M)
 
 	-- Back-reference: `cvm:object_by_pk` calls `object.new(self.engine, row)`
@@ -223,6 +238,17 @@ function M.new(opts)
 		get_frame_gc      = db:prepare('select frame_gc from objects where object_pk = ?'),
 		get_engine_class  = db:prepare('select engine_class from objects where object_pk = ?'),
 	}
+
+	-- Populate the Caspian class registry (Lua-side only). Core-primitive
+	-- classes don't get corresponding `objects` rows — primitives are
+	-- inferred from `scalar_*` columns on their instances (see the row
+	-- classifier), so seeding a placeholder row per class would just
+	-- clutter the DB. When user-defined classes land (with methods that
+	-- live as Caspian closures, not Lua functions), those will need real
+	-- DB rows; primitive classes probably won't ever.
+	for _, cls in ipairs({ObjectClass, NumberClass, StringClass, BooleanClass, NullClass}) do
+		engine.classes[cls.name] = cls
+	end
 
 	-- Wire the stock handler roster through the public API so even the
 	-- engine's own constructor self-hosts on add_handler.

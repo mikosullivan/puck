@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_schema",
-	"role": "Schema tests for `src/engine/cvm/sqlite/schema.sql`. Exercises the load-bearing invariants: the `frame_gc` column and its four frame_gc-cycle rules (advance-couples-with-frame_gc, frame_gc-set-cascade-deletes-children, child-delete-requires-parent-frame_gc, frame_gc-reset-requires-no-children), the frame_parent / frame_process_cap immutability triggers, the cap-as-frame design (a frame with `frame_process_cap=1` and `frame_ast='[]'` sits atop each call stack), refs-based ownership under the b/p/s object-property shape, the scopes convention (bucket → 'scopes' → array of hashes), the hash-key identifier rule, and the frame_scoped_vars / object_bucket / object_platters / object_shadow views."
+	"role": "Schema tests for `src/engine/cvm/sqlite/schema.sql`. Exercises the load-bearing invariants: the `frame_gc` column and its four frame_gc-cycle rules (advance-couples-with-frame_gc, frame_gc-set-cascade-deletes-children, child-delete-requires-parent-frame_gc, frame_gc-reset-requires-no-children), the frame_parent / frame_process_cap immutability triggers, the cap-as-frame design (a frame with `frame_process_cap=1` and `frame_ast='[]'` sits atop each call stack), refs-based ownership under the b/p/s object-property shape, the scopes convention (bucket → 'scopes' → array of hashes), the hash-key identifier rule, and the frame_scoped_vars / object_bucket / object_stack / object_shadow views."
 }
 ]]
 
@@ -1197,7 +1197,7 @@ end)
 
 
 -- ============================================================
--- object_bucket / object_platters / object_shadow views
+-- object_bucket / object_stack / object_shadow views
 -- ============================================================
 
 test('object_bucket: returns null for an object with no bucket', function()
@@ -1240,18 +1240,18 @@ test('object_bucket: array-child does not count as bucket', function()
 	db:close()
 end)
 
-test('object_platters: returns null for an object with no stack', function()
+test('object_stack: returns null for an object with no stack', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local obj = insert_object(db, user_pk, 'o')
 
-	local row = first(db, "select platters_pk from object_platters "
+	local row = first(db, "select stack_pk from object_stack "
 		.. "where object_pk = '" .. obj .. "'")
-	assert(row.platters_pk == nil, 'platters_pk should be null (no stack)')
+	assert(row.stack_pk == nil, 'stack_pk should be null (no stack)')
 	db:close()
 end)
 
-test('object_platters: returns the platters_pk when the object has an array-child', function()
+test('object_stack: returns the stack_pk when the object has an array-child', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local obj = insert_object(db, user_pk, 'o')
@@ -1259,13 +1259,13 @@ test('object_platters: returns the platters_pk when the object has an array-chil
 	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
 		.. obj .. "', '" .. stack .. "', 'p', 0)"), db)
 
-	local row = first(db, "select platters_pk from object_platters "
+	local row = first(db, "select stack_pk from object_stack "
 		.. "where object_pk = '" .. obj .. "'")
-	assert(row.platters_pk == stack, 'platters_pk should match the linked array')
+	assert(row.stack_pk == stack, 'stack_pk should match the linked array')
 	db:close()
 end)
 
-test('object_bucket / object_platters: frames are included (non-container)', function()
+test('object_bucket / object_stack: frames are included (non-container)', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
@@ -1282,13 +1282,13 @@ test('object_bucket / object_platters: frames are included (non-container)', fun
 		.. "where object_pk = '" .. frame_pk .. "'")
 	assert(b.bucket_pk == bucket, 'frame bucket found')
 
-	local s = first(db, "select platters_pk from object_platters "
+	local s = first(db, "select stack_pk from object_stack "
 		.. "where object_pk = '" .. frame_pk .. "'")
-	assert(s.platters_pk == stack, 'frame platters found')
+	assert(s.stack_pk == stack, 'frame stack found')
 	db:close()
 end)
 
-test('object_bucket / object_platters: containers do not appear (out of scope)', function()
+test('object_bucket / object_stack: containers do not appear (out of scope)', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local hash = insert_hash(db, user_pk)
@@ -1297,9 +1297,9 @@ test('object_bucket / object_platters: containers do not appear (out of scope)',
 		.. "where object_pk = '" .. hash .. "'")
 	assert(row == nil, 'hash should not appear in object_bucket')
 
-	row = first(db, "select object_pk from object_platters "
+	row = first(db, "select object_pk from object_stack "
 		.. "where object_pk = '" .. hash .. "'")
-	assert(row == nil, 'hash should not appear in object_platters')
+	assert(row == nil, 'hash should not appear in object_stack')
 	db:close()
 end)
 

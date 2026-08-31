@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_built_in_object_structure",
-	"role": "spec for how every Caspian value is structured at the object level — bucket (data hash), stack (ordered array of platters carrying class identity and other per-slot metadata), shadow (per-instance class for singleton methods), nested objects (UUID-linked sub-objects sitting inside the parent's bucket), and the primitive field (optional engine-managed slot holding a JSON primitive — string, number, boolean, null, array, hash — set at construction and immutable; determines the object's truthiness: primitive false or null → falsy, anything else or no primitive field → truthy). Also spec's the serialized JSON form the object round-trips to at every persistence or protocol boundary.",
-	"status": "draft — structural fields, platter types, shadow lazy-creation, nested-UUID mechanism, primitive-field truthiness derivation, and JSON serialization form all spec'd; a few narrower rules (borrow, warning platter conventions, freeze axes) still to grow their own methods pages under object/methods/",
+	"role": "spec for how every Caspian value is structured at the object level — bucket (data hash), stack (ordered array of stack carrying class identity and other per-slot metadata), shadow (per-instance class for singleton methods), nested objects (UUID-linked sub-objects sitting inside the parent's bucket), and the primitive field (optional engine-managed slot holding a JSON primitive — string, number, boolean, null, array, hash — set at construction and immutable; determines the object's truthiness: primitive false or null → falsy, anything else or no primitive field → truthy). Also spec's the serialized JSON form the object round-trips to at every persistence or protocol boundary.",
+	"status": "draft — structural fields, stack types, shadow lazy-creation, nested-UUID mechanism, primitive-field truthiness derivation, and JSON serialization form all spec'd; a few narrower rules (borrow, warning stack conventions, freeze axes) still to grow their own methods pages under object/methods/",
 	"audience": "developers writing Caspian; engine implementers building the object runtime; class authors reasoning about what data structures they're working with; anyone reading serialized worldlet / Mikobase / Puck-protocol payloads and needing to know the shape"
 }}
 ~~~
@@ -17,7 +17,7 @@ Every Caspian value has the same underlying shape. This page describes the field
 Every value is composed of these parts:
 
 - **bucket** — a hash holding the object's data. Free-form; no reserved keys.
-- **stack** — an ordered array of platters carrying class identity and per-platter metadata. Some platters have special purposes (the shadow, nested-object markers); see [Stack](#stack) below for the full list.
+- **stack** — an ordered array of stack carrying class identity and per-stack metadata. Some stack have special purposes (the shadow, nested-object markers); see [Stack](#stack) below for the full list.
 - **[primitive field](#primitive-field)** (optional) — an internal, engine-managed slot holding a JSON primitive value (string, number, boolean, null, array, hash). Set at construction and immutable. Not exposed at the Caspian level; engine-level methods reach it directly. Its presence and value determine the object's truthiness — see [§ Truthiness](#truthiness).
 
 The bucket and stack are visible at the Caspian level via the `obj` namespace (`$foo.obj.bucket`, `$foo.obj.stack`). Truthiness is exposed via `$foo.obj.truthy?`. The primitive field is deliberately not directly inspectable — it's how the engine represents primitives, not something Caspian code manipulates directly.
@@ -26,7 +26,7 @@ The bucket and stack are visible at the Caspian level via the `obj` namespace (`
 
 **The structure shown throughout this doc is the serialized form** — what an object looks like as JSON, whether stored in a [worldlet](https://puck.uno/requirements/mikobase/worldlets), written to a Mikobase record, or carried in a Puck-protocol message. <!-- outbound-link-allowed --> Caspian's in-memory representation has some differences (engine-internal references, per-object identity slots, the actual sodium_malloc / vault pointers backing protected values). Those differences don't change the contract: the object round-trips to this JSON shape on every serialization boundary, and a JSON value in this shape rehydrates to a full Caspian object on every deserialization.
 
-The minimum object — empty bucket, no platters:
+The minimum object — empty bucket, no stack:
 
 ~~~json
 {
@@ -39,7 +39,7 @@ In practice either field may be absent — for example, when importing from a pl
 
 ### How class references are shown in these examples
 
-In Caspian, the `class` field on a platter is always an **actual class object** — the class itself, embedded in the platter, never a string that names it and never a lookup key waiting to be resolved. Every class reference — the color class, the string class, the shadow class, everything — is a full class object serialized inline in the JSON.
+In Caspian, the `class` field on a stack is always an **actual class object** — the class itself, embedded in the stack, never a string that names it and never a lookup key waiting to be resolved. Every class reference — the color class, the string class, the shadow class, everything — is a full class object serialized inline in the JSON.
 
 To keep the examples readable without inlining a full class-object definition every time, they use an italic-gray placeholder like `color-class-object` in place of the embedded class. In a real serialized object each placeholder would be that class's own JSON serialization (an inline hash carrying methods, fields, and the class's own identity).
 
@@ -56,7 +56,7 @@ A small worked example — a color object — looks like this:
 }
 ~~~
 
-One field of data, one class platter. No shadow (nothing to put on one).
+One field of data, one class stack. No shadow (nothing to put on one).
 
 A composite object exercising every feature — a text object with a foreground color as a nested object, a runtime warning, and a singleton `shout()` method (which forced the shadow to exist):
 
@@ -93,44 +93,44 @@ The bucket holds the object's data — the state that describes what this object
 
 ## Stack
 
-`stack` is an **ordered array**. Each element is a **platter** — a hash holding some subset of the engine-recognized fields below. The platter at index 0 is the top; method dispatch walks from top to bottom.
+`stack` is an **ordered array**. Each element is a **stack** — a hash holding some subset of the engine-recognized fields below. The stack at index 0 is the top; method dispatch walks from top to bottom.
 
-A platter can carry any of:
+A stack can carry any of:
 
-- **`class`** — the class this platter contributes to the object's identity.
-- **`shadow: true`** — flags this platter as the object's shadow (zero or one platter per stack carries this).
-- **`nested: <UUID>`** — links this platter to a nested object whose data sits at the matching UUID-keyed entry in the bucket.
-- **`warning`** — a warning object attached to this platter; observational, never raises.
-- **`bucket`** — a private per-platter hash for classes that need state separate from the host object's shared bucket.
+- **`class`** — the class this stack contributes to the object's identity.
+- **`shadow: true`** — flags this stack as the object's shadow (zero or one stack per stack carries this).
+- **`nested: <UUID>`** — links this stack to a nested object whose data sits at the matching UUID-keyed entry in the bucket.
+- **`warning`** — a warning object attached to this stack; observational, never raises.
+- **`bucket`** — a private per-stack hash for classes that need state separate from the host object's shared bucket.
 - **`vibecode`** — an AI-readable annotation block.
 
-A platter can also carry additional fields a specific class uses for its own purposes; the six above are the ones the engine itself recognizes. Order of fields within a platter is irrelevant — these are just keys on a hash.
+A stack can also carry additional fields a specific class uses for its own purposes; the six above are the ones the engine itself recognizes. Order of fields within a stack is irrelevant — these are just keys on a hash.
 
 ### class
 
-The class this platter contributes to the object's identity. Method dispatch consults `class`. In Caspian, **when present, `class` is always a class object** — a runtime instance with its own methods, fields, and identity. There is no other form: not a URL, not a string identifier, not an inline hash-of-fields waiting to be resolved into a class. If the platter carries `class`, that value is a full class object, serialized inline in the JSON.
+The class this stack contributes to the object's identity. Method dispatch consults `class`. In Caspian, **when present, `class` is always a class object** — a runtime instance with its own methods, fields, and identity. There is no other form: not a URL, not a string identifier, not an inline hash-of-fields waiting to be resolved into a class. If the stack carries `class`, that value is a full class object, serialized inline in the JSON.
 
-The one time `class` is absent: platters whose purpose is something other than carrying class identity (warning-only platters, nested-link platters that point at another object's data, standalone vibecode platters). Dispatch skips platters that have no class.
+The one time `class` is absent: stack whose purpose is something other than carrying class identity (warning-only stack, nested-link stack that point at another object's data, standalone vibecode stack). Dispatch skips stack that have no class.
 
-(Other Puck systems — notably Mikobase — allow string identifiers or lookup references for a class field, resolved against a registry at read time. Caspian doesn't do that: the class either IS embedded in the platter, or the platter has no class. The tighter rule keeps runtime dispatch from ever having to fault-in a class definition to answer a method call.)
+(Other Puck systems — notably Mikobase — allow string identifiers or lookup references for a class field, resolved against a registry at read time. Caspian doesn't do that: the class either IS embedded in the stack, or the stack has no class. The tighter rule keeps runtime dispatch from ever having to fault-in a class definition to answer a method call.)
 
 ### shadow
 
-A platter carrying `shadow: true` is the object's **shadow** — the home for singleton methods defined on this one specific object. The shadow is optional. A stack with no shadow platter is fully legal and is the common case; most objects never need singleton methods.
+A stack carrying `shadow: true` is the object's **shadow** — the home for singleton methods defined on this one specific object. The shadow is optional. A stack with no shadow stack is fully legal and is the common case; most objects never need singleton methods.
 
-**The shadow is lazy.** It comes into existence only when code defines a singleton method on the object. At that moment, if no shadow platter exists, the engine creates one and inserts it at position 0 (the top of the stack).
+**The shadow is lazy.** It comes into existence only when code defines a singleton method on the object. At that moment, if no shadow stack exists, the engine creates one and inserts it at position 0 (the top of the stack).
 
-**Convention: the shadow sits at position 0.** New class platters added via `.obj.classes.ensure` (see [object/methods/](../methods/)) land at the bottom of the stack, leaving the shadow undisturbed at the top. That's the convention every well-behaved piece of code follows.
+**Convention: the shadow sits at position 0.** New class stack added via `.obj.classes.ensure` (see [object/methods/](../methods/)) land at the bottom of the stack, leaving the shadow undisturbed at the top. That's the convention every well-behaved piece of code follows.
 
-**The convention is not enforced.** User (or the object's owning role) can manually place the shadow anywhere in the stack — the engine doesn't (and practically can't) prevent it. Doing so is bad practice: dispatch walks top-to-bottom, so a shadow buried mid-stack loses its "override everything else" semantics for any platter above it. The rule is a spec-level convention, not a runtime guard. Code that moves the shadow deliberately owns the consequences.
+**The convention is not enforced.** User (or the object's owning role) can manually place the shadow anywhere in the stack — the engine doesn't (and practically can't) prevent it. Doing so is bad practice: dispatch walks top-to-bottom, so a shadow buried mid-stack loses its "override everything else" semantics for any stack above it. The rule is a spec-level convention, not a runtime guard. Code that moves the shadow deliberately owns the consequences.
 
 The shadow's class is a per-instance class (`class: {}` when empty), populated with whatever singleton methods get attached to it — same class-object rule as everywhere else in the stack, just unique to this one object rather than shared with other instances.
 
-**At most one platter in the stack carries `shadow: true`.** Two shadows would be ambiguous; the engine treats that as malformed data.
+**At most one stack in the stack carries `shadow: true`.** Two shadows would be ambiguous; the engine treats that as malformed data.
 
 ### nested
 
-A platter carrying `nested: <UUID>` declares that the object has a nested object whose data sits at the matching UUID-keyed entry somewhere in the bucket. The platter's `class` field carries the nested object's class; its presence here is what causes the engine to interpret the matching UUID-keyed bucket entry as a nested object rather than as ordinary bucket data.
+A stack carrying `nested: <UUID>` declares that the object has a nested object whose data sits at the matching UUID-keyed entry somewhere in the bucket. The stack's `class` field carries the nested object's class; its presence here is what causes the engine to interpret the matching UUID-keyed bucket entry as a nested object rather than as ordinary bucket data.
 
 This mechanism keeps the bucket's no-reserved-keys guarantee intact: the bucket itself never has to declare "this entry is a nested object" via a reserved key like `class` or `stack`. The declaration always lives in the stack; the bucket carries only the data and the UUID marker.
 
@@ -138,23 +138,23 @@ See [Nested objects](#nested-objects) below for the full mechanism.
 
 ### warning
 
-Carries a warning object attached to this platter. Any code — engine, framework, or application — can attach a warning to an object when it detects a condition worth surfacing without interrupting execution. A canonical engine case is a stored value whose class disagrees with its declared schema at deserialization time, but application code uses the same mechanism: "this user record looks suspicious," "this date value was parsed leniently and may not be what the source intended," anything worth noting alongside the value but not worth raising.
+Carries a warning object attached to this stack. Any code — engine, framework, or application — can attach a warning to an object when it detects a condition worth surfacing without interrupting execution. A canonical engine case is a stored value whose class disagrees with its declared schema at deserialization time, but application code uses the same mechanism: "this user record looks suspicious," "this date value was parsed leniently and may not be what the source intended," anything worth noting alongside the value but not worth raising.
 
 Letting warnings ride on the object itself means they travel with the data: a value loaded from a database, passed through several scopes, and inspected hours later still carries any warning attached when the condition was first noticed. Observational rather than control-flow; the warning never raises, it just sits there for code that cares to look.
 
 The contents of the `warning` field are themselves an object — typically a Warning-class instance — describing the condition.
 
-**A warning-only platter is fine.** A platter that carries just `warning` (no `class`, no `nested`, no `shadow`) is a pure annotation. Dispatch walks past it (no class → no methods to find); it sits in the stack until something inspects it.
+**A warning-only stack is fine.** A stack that carries just `warning` (no `class`, no `nested`, no `shadow`) is a pure annotation. Dispatch walks past it (no class → no methods to find); it sits in the stack until something inspects it.
 
-### bucket (per-platter)
+### bucket (per-stack)
 
-A platter can have its own private bucket — a hash for state that belongs to this platter's class, separate from the object's shared top-level bucket.
+A stack can have its own private bucket — a hash for state that belongs to this stack's class, separate from the object's shared top-level bucket.
 
-The shared object bucket holds data that's "what this object is." The platter bucket holds data that's "what this class needs to remember about its participation in this object." For most platters the distinction doesn't matter — the platter is just contributing methods to a host object, and any data lives on the shared bucket. For classes that get **added to many different host objects with their own unrelated data**, the distinction matters a lot: such a class can't safely store state on the host's bucket because key names would collide with whatever the host is doing. Its own platter bucket gives it a private namespace.
+The shared object bucket holds data that's "what this object is." The stack bucket holds data that's "what this class needs to remember about its participation in this object." For most stack the distinction doesn't matter — the stack is just contributing methods to a host object, and any data lives on the shared bucket. For classes that get **added to many different host objects with their own unrelated data**, the distinction matters a lot: such a class can't safely store state on the host's bucket because key names would collide with whatever the host is doing. Its own stack bucket gives it a private namespace.
 
-Inside methods running under this platter, `%platter` is the in-method accessor for the platter's own bucket; `%bucket` continues to be the accessor for the object's shared top-level bucket. `@foo` remains shorthand for `%bucket['foo']` (the shared bucket); there is no `@`-style shorthand for the platter bucket — `%platter['foo']` is always explicit. Method dispatch tracks which platter is currently dispatching automatically, so `%platter` resolves without ambiguity.
+Inside methods running under this stack, `%stack` is the in-method accessor for the stack's own bucket; `%bucket` continues to be the accessor for the object's shared top-level bucket. `@foo` remains shorthand for `%bucket['foo']` (the shared bucket); there is no `@`-style shorthand for the stack bucket — `%stack['foo']` is always explicit. Method dispatch tracks which stack is currently dispatching automatically, so `%stack` resolves without ambiguity.
 
-The same invariants apply as the object-level bucket: when present, the platter bucket must be a hash (never a scalar, array, or null); empty `{}` is fine; no reserved keys inside. Most platters do NOT have a per-platter bucket — the field is absent. Only classes that need to carry per-platter state separate from the host's data use it.
+The same invariants apply as the object-level bucket: when present, the stack bucket must be a hash (never a scalar, array, or null); empty `{}` is fine; no reserved keys inside. Most stack do NOT have a per-stack bucket — the field is absent. Only classes that need to carry per-stack state separate from the host's data use it.
 
 Serialized form:
 
@@ -168,9 +168,9 @@ Serialized form:
 }
 ~~~
 
-### vibecode (per-platter)
+### vibecode (per-stack)
 
-A platter can carry its own `vibecode` block — an AI-readable hash of hints, context, or annotations about the platter. Use cases: an AI that generated the object recording what it was doing, why this platter is here, what assumptions it made, where it pulled data from. Anything an AI (or a human auditing the trail later) might want to know about this platter that isn't load-bearing data.
+A stack can carry its own `vibecode` block — an AI-readable hash of hints, context, or annotations about the stack. Use cases: an AI that generated the object recording what it was doing, why this stack is here, what assumptions it made, where it pulled data from. Anything an AI (or a human auditing the trail later) might want to know about this stack that isn't load-bearing data.
 
 ~~~json
 {
@@ -187,21 +187,21 @@ A platter can carry its own `vibecode` block — an AI-readable hash of hints, c
 }
 ~~~
 
-**Any platter can carry it.** A `vibecode` field on an existing platter (one already there for its class) is fine — the AI-info rides alongside the platter's normal purpose.
+**Any stack can carry it.** A `vibecode` field on an existing stack (one already there for its class) is fine — the AI-info rides alongside the stack's normal purpose.
 
-**A standalone vibecode-only platter is also fine.** Add a platter whose only purpose is to carry vibecode — useful when the generating AI wants to attach metadata without affecting the object's class identity. Such a platter has no `class` (or an empty inline `{}`), carries `vibecode: {...}`, and nothing else. Its presence in the stack contributes nothing to method dispatch; it's pure annotation.
+**A standalone vibecode-only stack is also fine.** Add a stack whose only purpose is to carry vibecode — useful when the generating AI wants to attach metadata without affecting the object's class identity. Such a stack has no `class` (or an empty inline `{}`), carries `vibecode: {...}`, and nothing else. Its presence in the stack contributes nothing to method dispatch; it's pure annotation.
 
 The contents of `vibecode` are free-form. The engine doesn't enforce a schema. Conventions for what to put in are situation-specific.
 
 ## Nested objects
 
-A nested object's data sits **inside the parent's bucket**; its class identity lives in **the parent's stack** as a `nested` platter. The two pieces are linked by a UUID.
+A nested object's data sits **inside the parent's bucket**; its class identity lives in **the parent's stack** as a `nested` stack. The two pieces are linked by a UUID.
 
 The mechanism:
 
 1. The nested object's data is a hash inside the parent's bucket — at any depth.
 2. That hash carries a **UUID-formatted key** as a marker. The value associated with the marker key is unconstrained; convention is `true`, but the engine doesn't care.
-3. The parent's stack carries one or more platters with `nested: "<UUID>"`. Each such platter pairs the marker with class metadata for the nested object.
+3. The parent's stack carries one or more stack with `nested: "<UUID>"`. Each such stack pairs the marker with class metadata for the nested object.
 
 The engine recognizes a nested object **because the stack lists it**, not because the bucket key looks like a UUID. A developer is free to put UUID-formatted keys in a bucket for their own reasons — only UUIDs the stack nominates are interpreted as nested-object markers.
 
@@ -224,13 +224,13 @@ Example — a text object with a foreground color:
 }
 ~~~
 
-The `foreground` hash in the bucket carries two kinds of keys: the UUID marker (`9c440335-...`) and ordinary data (`hex`). The matching `nested:` platter in the stack carries the color class. Together they say: "the foreground hash is also a color object."
+The `foreground` hash in the bucket carries two kinds of keys: the UUID marker (`9c440335-...`) and ordinary data (`hex`). The matching `nested:` stack in the stack carries the color class. Together they say: "the foreground hash is also a color object."
 
 **Why the indirection.** Inline embedding (`"foreground": {"bucket": ..., "stack": ...}`) would force the engine to reserve `bucket` and `stack` as bucket-key names — breaking the no-reserved-keys guarantee. The UUID marker is the only way to flag a nested object without reserving any spelling in the bucket. The 128-bit UUID space is large enough that accidental collision with a developer's chosen field name is not a concern.
 
-**Multiple nested objects.** Each nested object gets its own UUID and its own `nested:` platter in the stack. Nested objects can themselves carry nested objects, recursively — the same mechanism applies at every level.
+**Multiple nested objects.** Each nested object gets its own UUID and its own `nested:` stack in the stack. Nested objects can themselves carry nested objects, recursively — the same mechanism applies at every level.
 
-**Reaching nested platter fields.** A `nested:` platter is otherwise a regular platter — it can carry `bucket`, `warning`, `vibecode` (each scoped to the nested object's purpose in the parent), in addition to `class`. The shadow flag is the one exception: a nested platter can't be the shadow, since the shadow belongs to the parent object's identity.
+**Reaching nested stack fields.** A `nested:` stack is otherwise a regular stack — it can carry `bucket`, `warning`, `vibecode` (each scoped to the nested object's purpose in the parent), in addition to `class`. The shadow flag is the one exception: a nested stack can't be the shadow, since the shadow belongs to the parent object's identity.
 
 ## Primitive field
 
@@ -286,51 +286,51 @@ The Caspian-level surface is [`$foo.obj.truthy?`](../methods/#truthy), which rea
 
 ### Stack
 
-- **Fresh object's stack contains just its class** — a `Widget.new()` produces an object whose stack has exactly one platter carrying the Widget class.
-- **Bare object's stack contains just Object** — a `%('puck.uno/object').new()` has exactly one platter carrying Object.
-- **Platter without `class` is skipped by dispatch** — a stack with a warning-only platter followed by a class platter still resolves methods against the class platter.
-- **`class` field is a class object, not a string** — inspecting a platter's `class` value returns something for which class-object operations work; string identifiers are rejected at load.
-- **Dispatch walks top-to-bottom** — a method defined on the platter at index 0 wins over the same method defined at index 1.
+- **Fresh object's stack contains just its class** — a `Widget.new()` produces an object whose stack has exactly one stack carrying the Widget class.
+- **Bare object's stack contains just Object** — a `%('puck.uno/object').new()` has exactly one stack carrying Object.
+- **Stack without `class` is skipped by dispatch** — a stack with a warning-only stack followed by a class stack still resolves methods against the class stack.
+- **`class` field is a class object, not a string** — inspecting a stack's `class` value returns something for which class-object operations work; string identifiers are rejected at load.
+- **Dispatch walks top-to-bottom** — a method defined on the stack at index 0 wins over the same method defined at index 1.
 
 ### Shadow
 
-- **New object has no shadow** — a fresh object's stack has no platter with `shadow: true`.
-- **Defining a singleton method creates the shadow** — after `method $w.greet() ... end`, the stack has exactly one shadow platter.
-- **Shadow appears at position 0 by convention** — the shadow platter created by a singleton method definition sits at the top of the stack.
-- **Only one shadow per stack** — attempting to load an object whose serialized stack has two `shadow: true` platters raises as malformed.
+- **New object has no shadow** — a fresh object's stack has no stack with `shadow: true`.
+- **Defining a singleton method creates the shadow** — after `method $w.greet() ... end`, the stack has exactly one shadow stack.
+- **Shadow appears at position 0 by convention** — the shadow stack created by a singleton method definition sits at the top of the stack.
+- **Only one shadow per stack** — attempting to load an object whose serialized stack has two `shadow: true` stack raises as malformed.
 - **Shadow methods win** — a method defined on the shadow wins over the same method name on the base class.
-- **Shadow can be created explicitly via `ensure: true`** — `$w.obj.classes.shadow(ensure: true)` creates the shadow platter without adding any singleton methods.
+- **Shadow can be created explicitly via `ensure: true`** — `$w.obj.classes.shadow(ensure: true)` creates the shadow stack without adding any singleton methods.
 
 ### Nested objects
 
-- **Nested platter with UUID marks a bucket entry** — a stack with `{nested: 'UUID', class: Color}` combined with a bucket hash containing the UUID key marks that hash as a Color object.
-- **UUID key in bucket without matching nested platter is plain data** — a bucket hash containing a UUID-formatted key that no `nested:` platter nominates is treated as ordinary data, not as a nested-object marker.
-- **Nested object at any bucket depth is recognized** — a UUID marker inside a value nested inside a value inside the bucket is still matched to the corresponding `nested:` platter.
-- **Multiple nested objects with distinct UUIDs coexist** — two `nested:` platters with different UUIDs each match their own bucket hash and each carry their own class.
+- **Nested stack with UUID marks a bucket entry** — a stack with `{nested: 'UUID', class: Color}` combined with a bucket hash containing the UUID key marks that hash as a Color object.
+- **UUID key in bucket without matching nested stack is plain data** — a bucket hash containing a UUID-formatted key that no `nested:` stack nominates is treated as ordinary data, not as a nested-object marker.
+- **Nested object at any bucket depth is recognized** — a UUID marker inside a value nested inside a value inside the bucket is still matched to the corresponding `nested:` stack.
+- **Multiple nested objects with distinct UUIDs coexist** — two `nested:` stack with different UUIDs each match their own bucket hash and each carry their own class.
 - **Nested objects can themselves carry nested objects** — recursion through nested objects works to arbitrary depth.
-- **Nested platter can carry `bucket`, `warning`, `vibecode`** — those fields on a nested platter round-trip through serialization.
-- **Nested platter cannot be the shadow** — a platter carrying both `nested: ...` and `shadow: true` is malformed and raises on load.
+- **Nested stack can carry `bucket`, `warning`, `vibecode`** — those fields on a nested stack round-trip through serialization.
+- **Nested stack cannot be the shadow** — a stack carrying both `nested: ...` and `shadow: true` is malformed and raises on load.
 
-### Per-platter bucket
+### Per-stack bucket
 
-- **Per-platter bucket is separate from the object's bucket** — writing to `%platter['key']` from a method running under a platter does not affect `%bucket['key']`.
-- **`%platter` resolves to the currently dispatching platter** — inside a method, `%platter` is the platter that supplied the method, not any other.
-- **`@field` continues to reach the object bucket** — `@field` inside a method still means `%bucket['field']`, not `%platter['field']`.
-- **No `@`-shorthand for per-platter bucket** — `%platter['key']` is the only spelling; there is no per-platter `@` sigil.
-- **Per-platter bucket must be a hash when present** — an array or scalar in the `bucket` field of a platter raises on load.
-- **Missing per-platter bucket is fine** — most platters have no `bucket` field.
+- **Per-stack bucket is separate from the object's bucket** — writing to `%stack['key']` from a method running under a stack does not affect `%bucket['key']`.
+- **`%stack` resolves to the currently dispatching stack** — inside a method, `%stack` is the stack that supplied the method, not any other.
+- **`@field` continues to reach the object bucket** — `@field` inside a method still means `%bucket['field']`, not `%stack['field']`.
+- **No `@`-shorthand for per-stack bucket** — `%stack['key']` is the only spelling; there is no per-stack `@` sigil.
+- **Per-stack bucket must be a hash when present** — an array or scalar in the `bucket` field of a stack raises on load.
+- **Missing per-stack bucket is fine** — most stack have no `bucket` field.
 
-### Per-platter vibecode
+### Per-stack vibecode
 
-- **Any platter can carry `vibecode`** — a class platter with a `vibecode` block round-trips through serialization.
-- **Standalone vibecode-only platter is legal** — a platter with only `vibecode` (no `class`) round-trips and does not affect dispatch.
-- **Vibecode-only platter is skipped by dispatch** — a stack whose first platter is vibecode-only still resolves methods against the next platter down.
+- **Any stack can carry `vibecode`** — a class stack with a `vibecode` block round-trips through serialization.
+- **Standalone vibecode-only stack is legal** — a stack with only `vibecode` (no `class`) round-trips and does not affect dispatch.
+- **Vibecode-only stack is skipped by dispatch** — a stack whose first stack is vibecode-only still resolves methods against the next stack down.
 - **Vibecode contents are free-form** — arbitrary JSON-serializable values inside a `vibecode` block are preserved without validation.
 
-### Warning platter
+### Warning stack
 
-- **Warning-only platter is legal** — a stack with a platter carrying only `warning: <obj>` (no `class`) round-trips.
-- **Warning-only platter is skipped by dispatch** — method resolution walks past a warning-only platter to the next class-carrying platter.
+- **Warning-only stack is legal** — a stack with a stack carrying only `warning: <obj>` (no `class`) round-trips.
+- **Warning-only stack is skipped by dispatch** — method resolution walks past a warning-only stack to the next class-carrying stack.
 - **Warning travels with the object** — after serializing and deserializing an object with a warning, the warning is still on the stack.
 
 ### Truthiness
@@ -368,11 +368,11 @@ The Caspian-level surface is [`$foo.obj.truthy?`](../methods/#truthy), which rea
 
 - **Empty bucket is optional in JSON** — an object serialized with no bucket field rehydrates identically to one with `bucket: {}`.
 - **Empty stack is optional in JSON** — same for `stack: []`.
-- **Round-trip preserves shape** — serializing and deserializing an arbitrary object produces the same structure (bucket, stack, per-platter fields, nested-object markers, warnings, vibecode).
-- **Class is embedded inline as a class object** — the serialized platter's `class` field is a full class-object hash, not a URL or lookup key.
+- **Round-trip preserves shape** — serializing and deserializing an arbitrary object produces the same structure (bucket, stack, per-stack fields, nested-object markers, warnings, vibecode).
+- **Class is embedded inline as a class object** — the serialized stack's `class` field is a full class-object hash, not a URL or lookup key.
 - **Reserved-field rule survives round-trip** — writing arbitrary UUIDs and reserved-looking key names into a bucket, serializing, and deserializing preserves them exactly.
-- **Warnings survive round-trip** — a warning-carrying platter comes out with the same warning after serialize-then-deserialize.
-- **Nested objects survive round-trip** — the UUID marker and matching `nested:` platter remain paired after serialize-then-deserialize.
+- **Warnings survive round-trip** — a warning-carrying stack comes out with the same warning after serialize-then-deserialize.
+- **Nested objects survive round-trip** — the UUID marker and matching `nested:` stack remain paired after serialize-then-deserialize.
 - **Vibecode blocks survive round-trip** — vibecode contents come through unchanged.
 
 ## Related
