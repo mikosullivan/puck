@@ -3,7 +3,7 @@
   "module": "orlando.route",
   "role": "Resolve an incoming URL path to either a markdown file (to be rendered), a directory listing (for dirs without an index.md), a static file (to be served verbatim), or a 301 redirect target. The entire repo is the doc root — any URL path /foo/bar maps to <repo-root>/foo/bar (with .md rendering, dir-index / dir-listing conventions, and static fallback). No caching, no I/O retries; one lookup per call.",
   "exports": {
-    "resolve": "url_path -> { kind = 'markdown'|'dir_listing'|'static'|'lua_annotated'|'redirect'|'not_found', path? = '...', location? = '...' }"
+    "resolve": "url_path -> { kind = 'markdown'|'dir_listing'|'static'|'lua_annotated'|'sql_annotated'|'caspian_annotated'|'redirect'|'not_found', path? = '...', location? = '...' }"
   },
   "rules": {
     "site_root":     "GET / serves orlando/static/index.html — a hand-editable landing page",
@@ -145,6 +145,12 @@ function M.resolve(url_path)
     -- else → syntax-highlighted SQL).
     if rel:match("%.sql$") and file_exists(rel) and not dir_exists(rel) then
         return { kind = "sql_annotated", path = rel }
+    end
+
+    -- .casp files get the Caspian annotator (see orlando.caspian_page).
+    -- Same shape as .lua / .sql; comment prefix is `#`.
+    if rel:match("%.casp$") and file_exists(rel) and not dir_exists(rel) then
+        return { kind = "caspian_annotated", path = rel }
     end
 
     -- If the literal URL points at a real non-markdown file, serve as static

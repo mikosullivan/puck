@@ -281,6 +281,30 @@ local function respond(client, request_line)
         return
     end
 
+    if r.kind == "caspian_annotated" then
+        -- ?raw=1 bypasses the annotator; same shape as lua_annotated / sql_annotated.
+        if query and query:find("raw=1", 1, true) then
+            local data, read_err = read_file(r.path)
+            if not data then
+                client:send(build_response("500 Internal Server Error",
+                    "Failed to read Caspian file: " .. tostring(read_err) .. "\n",
+                    "text/plain; charset=utf-8"))
+                return
+            end
+            client:send(build_response("200 OK", data, "text/plain; charset=utf-8"))
+            return
+        end
+
+        local title = r.path:match("([^/]+)$") or r.path
+        local html = page.render_caspian_annotated({
+            path      = r.path,
+            title     = title,
+            client_ip = client_ip,
+        })
+        client:send(build_response("200 OK", html, content_type.for_ext("html")))
+        return
+    end
+
     -- not_found
     client:send(build_response("404 Not Found", NOT_FOUND_BODY, content_type.for_ext("html")))
 end

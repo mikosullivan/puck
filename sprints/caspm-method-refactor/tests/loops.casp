@@ -1,0 +1,1118 @@
+#!/usr/bin/caspian
+
+vibecode <<EOF
+{
+	"doc":    "test_cases_parsing_loops",
+	"role":   "sibling of parse.casp holding all loop-related transpiler fixtures — begin-while / while / until / .each-with-do-block, plus their nested and single-line variants. Split out to keep parse.casp focused on core syntax; same fixture format (boxed by `#===...` outer borders, sections `#--- code ---` / `#--- CaspJ ---` / `#--- CaspM ---` or `#--- CaspM refactor ---`), read by the same parse-extract module.",
+	"status": "growing; N.times / .upto / .downto / .each control-flow deferred until the parser handles them"
+}
+EOF
+
+#====================================================================
+# Loops
+#====================================================================
+
+
+#====================================================================
+# name: integer times [ghi]
+#
+
+#--- code -----------------------------------------------------------
+10.times do
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		{
+			"left": {
+				"line": 1,
+				"value": 10
+			},
+			"line": 1,
+			"op": ".",
+			"right": "times"
+		},
+		{
+			"blocks": [
+				{
+					"closure": {
+						"body": [],
+						"params": []
+					}
+				}
+			]
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"primitive": 10,
+		"fn": "times",
+		"blocks": [
+			[]
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+
+#
+# name: integer times
+#====================================================================
+
+
+#====================================================================
+# name: integer times with block param [ghi]
+#
+
+#--- code -----------------------------------------------------------
+10.times do ($i)
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		{
+			"left": {
+				"line": 1,
+				"value": 10
+			},
+			"line": 1,
+			"op": ".",
+			"right": "times"
+		},
+		{
+			"blocks": [
+				{
+					"closure": {
+						"body": [],
+						"params": ["i"]
+					}
+				}
+			]
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"primitive": 10,
+		"fn": "times",
+		"blocks": [
+			{"frame": true, "fn": "closure", "params": {"i": {}}, "body": []}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+
+#
+# name: integer times with block param
+#====================================================================
+
+
+#====================================================================
+# name: single-line nested while-end inside while-end [ghi]
+#
+
+#--- code -----------------------------------------------------------
+while &foo while &bar end end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		"scope",
+		"while_end",
+		[
+			{
+				"amp": "foo",
+				"line": 1
+			}
+		],
+		{
+			"body": [
+				[
+					"scope",
+					"while_end",
+					[
+						{
+							"amp": "bar",
+							"line": 1
+						}
+					],
+					{
+						"body": []
+					},
+					{
+						"line": 1
+					}
+				]
+			]
+		},
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"frame": true,
+		"fn": "while_end",
+		"condition": [
+			{"var": "foo", "fn": "call", "syn": true}
+		],
+		"body": [
+			{
+				"frame": true,
+				"fn": "while_end",
+				"condition": [
+					{"var": "bar", "fn": "call", "syn": true}
+				],
+				"body": []
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: single-line nested while-end inside while-end
+#====================================================================
+
+
+#====================================================================
+# name: single-line begin-while inside while-end (do-while inside a while) [ghi]
+#
+
+#--- code -----------------------------------------------------------
+while &foo begin while &bar end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		"scope",
+		"while_end",
+		[
+			{
+				"amp": "foo",
+				"line": 1
+			}
+		],
+		{
+			"body": [
+				[
+					"scope",
+					"begin_while",
+					[
+						{
+							"amp": "bar",
+							"line": 1
+						}
+					],
+					{
+						"body": []
+					},
+					{
+						"line": 1
+					}
+				]
+			]
+		},
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"frame": true,
+		"fn": "while_end",
+		"condition": [
+			{"var": "foo", "fn": "call", "syn": true}
+		],
+		"body": [
+			{
+				"frame": true,
+				"fn": "begin_while",
+				"condition": [
+					{"var": "bar", "fn": "call", "syn": true}
+				],
+				"body": []
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: single-line begin-while inside while-end (do-while inside a while)
+#====================================================================
+
+
+#====================================================================
+# name: single-line while-end with binop condition and do-while with unary-not condition [ghi]
+#
+
+#--- code -----------------------------------------------------------
+while &foo == true begin while ! &bar end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		"scope",
+		"while_end",
+		{
+			"left": [
+				{
+					"amp": "foo",
+					"line": 1
+				}
+			],
+			"line": 1,
+			"op": "==",
+			"right": {
+				"line": 1,
+				"value": true
+			}
+		},
+		{
+			"body": [
+				[
+					"scope",
+					"begin_while",
+					{
+						"line": 1,
+						"op": "!",
+						"operand": [
+							{
+								"amp": "bar",
+								"line": 1
+							}
+						]
+					},
+					{
+						"body": []
+					},
+					{
+						"line": 1
+					}
+				]
+			]
+		},
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"frame": true,
+		"fn": "while_end",
+		"condition": [
+			{"var": "foo", "fn": "call", "syn": true},
+			{"rv": true, "fn": "==", "args": [{"primitive": true}]}
+		],
+		"body": [
+			{
+				"frame": true,
+				"fn": "begin_while",
+				"condition": [
+					{"var": "bar", "fn": "call", "syn": true},
+					{"rv": true, "fn": "!"}
+				],
+				"body": []
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: single-line while-end with binop condition and do-while with unary-not condition
+#====================================================================
+
+
+# design decisions for Section 9 (loops):
+#
+#   Caspian is INDENT-INSENSITIVE and mostly NEWLINE-AGNOSTIC. The parser
+#   handles loops the same whether the source is spread across many lines
+#   with indentation or written on one line with no line breaks. Only
+#   heredocs care about line structure; loops do not.
+#
+#   Shapes (all use the same clause-dict — body/before/between/after/noloop —
+#   with all five keys always present, empty array when no statements):
+#
+#     while COND ... end        -> ["scope", "while_end",   COND, clauses]
+#     until COND ... end        -> ["scope", "until_end",   COND, clauses]
+#     begin ... while COND      -> ["scope", "begin_while", COND, clauses]
+#     begin ... until COND      -> ["scope", "begin_until", COND, clauses]
+#     begin ... end             -> ["scope", "begin_end",         clauses]
+#
+#   Disambiguation of `while COND` (opener vs do-while closer for a preceding
+#   begin) is STACK-BASED: if the top-of-stack open block is a `begin`, the
+#   `while COND` closes it as a do-while; otherwise it opens a new while-end.
+#   Same rule for `until COND`.
+#
+#   Clause markers `before` / `between` / `after` / `noloop` are keywords when
+#   they appear (anywhere) inside an open begin block; they switch the "current
+#   clause" that subsequent statements land in. Content before any marker is
+#   the `body` clause. Clause markers OUTSIDE a begin raise.
+#
+#   Still deferred (untested here): `.each do ... end`, `N.times do ... end`,
+#   `.upto`, `.downto`, `break`, `break N`, `next`, `as $loop` bindings.
+#   Section 8 (if/elsif/else/unless) and other multi-line block constructs
+#   (function/closure/class) are also deferred; they'd follow the same
+#   opener/closer stack pattern once wired in.
+
+# while and until
+#====================================================================
+# name: while loop [ghi]
+#
+
+#--- code -----------------------------------------------------------
+while $x < 10
+	$x += 1
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		"scope",
+		"while_end",
+		{
+			"left": {
+				"line": 3,
+				"var": "x"
+			},
+			"line": 3,
+			"op": "<",
+			"right": {
+				"line": 3,
+				"value": 10
+			}
+		},
+		{
+			"body": [
+				[
+					"scope",
+					"setvar_op",
+					"+",
+					"x",
+					{
+						"line": 2,
+						"value": 1
+					},
+					{
+						"line": 2
+					}
+				]
+			]
+		},
+		{
+			"line": 3
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"frame": true,
+		"fn": "while_end",
+		"condition": [
+			{"var": "x", "fn": "<", "args": [{"primitive": 10}]}
+		],
+		"body": [
+			{"var": "x", "fn": "+", "args": [{"primitive": 1}]},
+			{
+				"frame": true,
+				"fn": "=",
+				"syn": true,
+				"args": ["x", {"rv": true}]
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: while loop
+#====================================================================
+
+
+#====================================================================
+# name: until loop [ghi]
+#
+
+#--- code -----------------------------------------------------------
+until $ready
+	&poll
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		"scope",
+		"until_end",
+		{
+			"line": 3,
+			"var": "ready"
+		},
+		{
+			"body": [
+				[
+					{
+						"amp": "poll",
+						"line": 2
+					}
+				]
+			]
+		},
+		{
+			"line": 3
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"frame": true,
+		"fn": "until",
+		"condition": [
+			{"var": "ready"}
+		],
+		"body": [
+			{"var": "poll", "fn": "call", "syn": true}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: until loop
+#====================================================================
+
+
+# deferred: nested begin-while and dangling begin-until forms not yet parsed.
+# Target source — nested `begin ... while COND` where the inner begin's
+# terminating `while` is on its own line (dangling), with subsequent statements
+# still belonging to the outer begin:
+#
+#     begin
+#         begin
+#             $next_val = &get_next
+#             &process $next_val
+#         while $next_val != null
+#
+#         &foo
+#
+#         while &bar
+#         end
+#     end
+
+
+# deferred: expression-form `begin ... while COND` (loop-at-least-once) with
+# `as $block` controller binding usable as a value-atom on the RHS of setvar.
+# Two things not yet in the transpiler:
+#   (a) begin_while / begin_until usable as value-atoms at expression position.
+#       Currently they emit statement rows only.
+#   (b) `as $name` lifted to a dedicated `as: NAME` field on the atom (Option
+#       B — appears only when declared).
+#
+# Target source:
+#
+#     $foo = begin as $block
+#         $block.return 'my block'
+#     while $bar
+#
+# Target full CaspJ:
+#
+#     [
+#         ["scope", "setvar", "foo", {
+#             "begin_while": {
+#                 "as": "block",
+#                 "condition": {"var": "bar"},
+#                 "body": [
+#                     [{"var": "block"}, "return", {"args": [{"value": "my block"}]}]
+#                 ],
+#                 "before": [],
+#                 "between": [],
+#                 "after": [],
+#                 "noloop": []
+#             }
+#         }]
+#     ]
+
+#====================================================================
+# name: while loop with nested begin-as-var-while [ghi]
+#
+
+#--- code -----------------------------------------------------------
+while &bar
+	begin as $retry_loop
+		$attempt += 1
+		&try_connect
+	while $attempt < 5
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		"scope",
+		"while_end",
+		[
+			{
+				"amp": "bar",
+				"line": 6
+			}
+		],
+		{
+			"body": [
+				[
+					"scope",
+					"begin_while",
+					{
+						"left": {
+							"line": 5,
+							"var": "attempt"
+						},
+						"line": 5,
+						"op": "<",
+						"right": {
+							"line": 5,
+							"value": 5
+						}
+					},
+					{
+						"body": [
+							[
+								"scope",
+								"setvar_op",
+								"+",
+								"attempt",
+								{
+									"line": 3,
+									"value": 1
+								},
+								{
+									"line": 3
+								}
+							],
+							[
+								{
+									"amp": "try_connect",
+									"line": 4
+								}
+							]
+						]
+					},
+					{
+						"line": 5
+					}
+				]
+			]
+		},
+		{
+			"line": 6
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"frame": true,
+		"fn": "while_end",
+		"condition": [
+			{"var": "bar", "fn": "call", "syn": true}
+		],
+		"body": [
+			{
+				"frame": true,
+				"fn": "begin_while",
+				"as": "retry_loop",
+				"condition": [
+					{"var": "attempt", "fn": "<", "args": [{"primitive": 5}]}
+				],
+				"body": [
+					{"var": "attempt", "fn": "+", "args": [{"primitive": 1}]},
+					{
+						"frame": true,
+						"fn": "=",
+						"syn": true,
+						"args": ["attempt", {"rv": true}]
+					},
+					{"var": "try_connect", "fn": "call", "syn": true}
+				]
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: while loop with nested begin-as-var-while
+#====================================================================
+
+
+#====================================================================
+# name: .each with do-block parameter [ghi]
+#
+
+#--- code -----------------------------------------------------------
+$items.each do ($item)
+	&handle $item
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		{
+			"left": {
+				"line": 1,
+				"var": "items"
+			},
+			"line": 1,
+			"op": ".",
+			"right": "each"
+		},
+		{
+			"blocks": [
+				{
+					"closure": {
+						"body": [
+							[
+								{
+									"amp": "handle"
+								},
+								{
+									"line": 2,
+									"var": "item"
+								},
+								{
+									"line": 2
+								}
+							]
+						],
+						"params": [
+							"item"
+						]
+					}
+				}
+			]
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"var": "items",
+		"fn": "each",
+		"blocks": [
+			{
+				"frame": true,
+				"fn": "closure",
+				"params": {"item": {}},
+				"body": [
+					{"var": "handle", "fn": "call", "syn": true, "args": [{"var": "item"}]}
+				]
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: .each with do-block parameter
+#====================================================================
+
+
+#====================================================================
+# name: .each with do-block parameter and `as $loop` binding [ghi]
+#
+
+#--- code -----------------------------------------------------------
+$items.each do ($item) as $loop
+	&emit $loop.count + ': ' + $item
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		{
+			"left": {
+				"line": 1,
+				"var": "items"
+			},
+			"line": 1,
+			"op": ".",
+			"right": "each"
+		},
+		{
+			"blocks": [
+				{
+					"closure": {
+						"as": "loop",
+						"body": [
+							[
+								{
+									"amp": "emit"
+								},
+								{
+									"left": {
+										"left": {
+											"line": 2,
+											"var": "loop"
+										},
+										"line": 2,
+										"op": ".",
+										"right": "count"
+									},
+									"line": 2,
+									"op": "+",
+									"right": {
+										"left": {
+											"line": 2,
+											"value": ": "
+										},
+										"line": 2,
+										"op": "+",
+										"right": {
+											"line": 2,
+											"var": "item"
+										}
+									}
+								},
+								{
+									"line": 2
+								}
+							]
+						],
+						"params": [
+							"item"
+						]
+					}
+				}
+			]
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"var": "items",
+		"fn": "each",
+		"blocks": [
+			{
+				"frame": true,
+				"fn": "closure",
+				"params": {"item": {}},
+				"as": "loop",
+				"body": [
+					{"var": "loop", "fn": "count"},
+					{"rv": true, "fn": "+", "args": [{"primitive": ": "}]},
+					{"rv": true, "fn": "+", "args": [{"var": "item"}]},
+					{"var": "emit", "fn": "call", "syn": true, "args": [{"rv": true}]}
+				]
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: .each with do-block parameter and `as $loop` binding
+#====================================================================
+
+
+#====================================================================
+# name: while loop with `as $loop` binding [ghi]
+#
+
+#--- code -----------------------------------------------------------
+while $x < 20 as $loop
+	$x += 1
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		"scope",
+		"while_end",
+		{
+			"left": {
+				"line": 3,
+				"var": "x"
+			},
+			"line": 3,
+			"op": "<",
+			"right": {
+				"line": 3,
+				"value": 20
+			}
+		},
+		{
+			"as": "loop",
+			"body": [
+				[
+					"scope",
+					"setvar_op",
+					"+",
+					"x",
+					{
+						"line": 2,
+						"value": 1
+					},
+					{
+						"line": 2
+					}
+				]
+			]
+		},
+		{
+			"line": 3
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"frame": true,
+		"fn": "while_end",
+		"as": "loop",
+		"condition": [
+			{"var": "x", "fn": "<", "args": [{"primitive": 20}]}
+		],
+		"body": [
+			{"var": "x", "fn": "+", "args": [{"primitive": 1}]},
+			{
+				"frame": true,
+				"fn": "=",
+				"syn": true,
+				"args": ["x", {"rv": true}]
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: while loop with `as $loop` binding
+#====================================================================
+
+
+# break and break N
+# deferred: `.each do` control-flow (break / next / clause markers) not yet parsed
+# $people.each do ($person)
+# 	if $person.suspicious?
+# 		break
+# 	end
+# end
+
+#====================================================================
+# name: nested .each do with break 2 [ghi]
+#
+
+#--- code -----------------------------------------------------------
+$people.each do ($person) as $person_loop
+	$person.addresses.each do ($address)
+		if $address.matches($target)
+			break 2
+		end
+	end
+end
+#--------------------------------------------------------------------
+
+#--- CaspJ -----------------------------------------------------------
+[
+	[
+		{
+			"left": {
+				"line": 1,
+				"var": "people"
+			},
+			"line": 1,
+			"op": ".",
+			"right": "each"
+		},
+		{
+			"blocks": [
+				{
+					"closure": {
+						"as": "person_loop",
+						"body": [
+							[
+								{
+									"left": {
+										"left": {
+											"line": 2,
+											"var": "person"
+										},
+										"line": 2,
+										"op": ".",
+										"right": "addresses"
+									},
+									"line": 2,
+									"op": ".",
+									"right": "each"
+								},
+								{
+									"blocks": [
+										{
+											"closure": {
+												"body": [
+													[
+														"scope",
+														"if_end",
+														{
+															"branches": [
+																{
+																	"body": {
+																		"closure": {
+																			"body": [
+																				[
+																					{
+																						"bwc": "break"
+																					},
+																					{
+																						"line": 4,
+																						"value": 2
+																					},
+																					{
+																						"line": 4
+																					}
+																				]
+																			],
+																			"params": []
+																		}
+																	},
+																	"condition": [
+																		{
+																			"line": 3,
+																			"var": "address"
+																		},
+																		"matches",
+																		{
+																			"args": [
+																				{
+																					"line": 3,
+																					"var": "target"
+																				}
+																			],
+																			"line": 3
+																		}
+																	]
+																}
+															]
+														},
+														{
+															"line": 5
+														}
+													]
+												],
+												"params": [
+													"address"
+												]
+											}
+										}
+									]
+								}
+							]
+						],
+						"params": [
+							"person"
+						]
+					}
+				}
+			]
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- CaspM refactor --------------------------------------------------
+[
+	{
+		"var": "people",
+		"fn": "each",
+		"blocks": [
+			{
+				"frame": true,
+				"fn": "closure",
+				"params": {"person": {}},
+				"as": "person_loop",
+				"body": [
+					{"var": "person", "fn": "addresses"},
+					{
+						"rv": true,
+						"fn": "each",
+						"blocks": [
+							{
+								"frame": true,
+								"fn": "closure",
+								"params": {"address": {}},
+								"body": [
+									{
+										"frame": true,
+										"fn": "if_end",
+										"branches": [
+											{
+												"condition": [
+													{"var": "address", "fn": "matches", "args": [{"var": "target"}]}
+												],
+												"body": [
+													{"frame": true, "fn": "break", "args": [{"primitive": 2}]}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+]
+#--------------------------------------------------------------------
+
+#
+# name: nested .each do with break 2
+#====================================================================

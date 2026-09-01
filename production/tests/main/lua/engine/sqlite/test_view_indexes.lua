@@ -190,3 +190,107 @@ test("uspace's cap-frame branch uses the objects_process_cap partial index", fun
 	assert_plan_contains(p, "USING INDEX objects_process_cap")
 	db:close()
 end)
+
+-- =============================================================================
+-- object_with_stack view + refs_key_p partial index
+-- =============================================================================
+
+test("object_with_stack: lookup by object_pk uses an index (not a scan)", function()
+	local db = fresh_db()
+	local p = plan(db, "select stack_pk from object_with_stack where object_pk = 'x'")
+	-- The refs half of the view's inner join must be an index probe.
+	-- Two indexes are candidates:
+	--   - refs_key_p (partial index on parent where key='p') — added
+	--     specifically to support this view
+	--   - sqlite_autoindex_refs_1 (the auto-index for unique(parent,
+	--     key)) — already there for the uniqueness constraint
+	-- Either serves as O(log n). Assert only that SOME refs index is
+	-- picked — if a future refactor breaks index eligibility, the plan
+	-- degrades to `SCAN r` and this test catches it.
+	assert_plan_contains(p, "SEARCH r USING INDEX",
+		"refs lookup for object_with_stack should be an index probe (not a scan)")
+	-- Objects half must also probe by pk, not scan.
+	assert_plan_contains(p, "SEARCH o USING INDEX",
+		"objects lookup for object_with_stack should be a pk probe (not a scan)")
+	db:close()
+end)
+
+test("object_with_stack: excludes objects that don't have a stack", function()
+	-- Seed an engine so we have a valid owner_role plus a couple of
+	-- plain-'o' rows to work with, then bind a stack (via a refs row
+	-- with key='p') to one but not the other.
+	local engine = require('engine')
+	local e = engine:new()
+
+	-- Fetch the user role's pk for owner_role assignment.
+	local user_pk
+	for row in e.cvm:nrows("select object_pk from objects where role_core = 'u'") do
+		user_pk = row.object_pk
+	end
+
+	-- Insert two hashless-'o' rows and one array (target for the p ref).
+	local a_pk, b_pk, arr_pk
+	for row in e.cvm:nrows(
+		"insert into objects (base, owner_role) values ('o', '" .. user_pk .. "') returning object_pk") do
+		a_pk = row.object_pk
+	end
+	for row in e.cvm:nrows(
+		"insert into objects (base, owner_role) values ('o', '" .. user_pk .. "') returning object_pk") do
+		b_pk = row.object_pk
+	end
+	for row in e.cvm:nrows(
+		"insert into objects (base, owner_role) values ('a', '" .. user_pk .. "') returning object_pk") do
+		arr_pk = row.object_pk
+	end
+
+	-- Give a_pk a stack; leave b_pk without one.
+	e.cvm:exec("insert into refs (parent, child, key, idx) values ('"
+		.. a_pk .. "', '" .. arr_pk .. "', 'p', 0)")
+
+	-- object_with_stack should list a_pk (with stack_pk = arr_pk) but
+	-- NOT b_pk.
+	local seen = {}
+	for row in e.cvm:nrows("select object_pk, stack_pk from object_with_stack") do
+		seen[row.object_pk] = row.stack_pk
+	end
+	assert(seen[a_pk] == arr_pk, "a_pk should appear with stack_pk = arr_pk; got " .. tostring(seen[a_pk]))
+	assert(seen[b_pk] == nil,    "b_pk should NOT appear (no stack)")
+end)
+
+test("object_with_stack: has-stack existence check is a single row lookup", function()
+	local engine = require('engine')
+	local e = engine:new()
+
+	local user_pk
+	for row in e.cvm:nrows("select object_pk from objects where role_core = 'u'") do
+		user_pk = row.object_pk
+	end
+
+	local o_pk, arr_pk
+	for row in e.cvm:nrows(
+		"insert into objects (base, owner_role) values ('o', '" .. user_pk .. "') returning object_pk") do
+		o_pk = row.object_pk
+	end
+	for row in e.cvm:nrows(
+		"insert into objects (base, owner_role) values ('a', '" .. user_pk .. "') returning object_pk") do
+		arr_pk = row.object_pk
+	end
+
+	-- Before binding a stack: has_stack query returns no row.
+	local before_count = 0
+	for _ in e.cvm:nrows("select 1 from object_with_stack where object_pk = '" .. o_pk .. "'") do
+		before_count = before_count + 1
+	end
+	assert(before_count == 0, "before stack binding: no row in object_with_stack; got " .. before_count)
+
+	-- Bind the stack.
+	e.cvm:exec("insert into refs (parent, child, key, idx) values ('"
+		.. o_pk .. "', '" .. arr_pk .. "', 'p', 0)")
+
+	-- After: exactly one row.
+	local after_count = 0
+	for _ in e.cvm:nrows("select 1 from object_with_stack where object_pk = '" .. o_pk .. "'") do
+		after_count = after_count + 1
+	end
+	assert(after_count == 1, "after stack binding: exactly one row in object_with_stack; got " .. after_count)
+end)

@@ -64,6 +64,7 @@ h.test('String: name, parent, methods', function()
 	h.assert_true(type(String.methods.to_s) == 'function', 'to_s method exists')
 	h.assert_true(type(String.methods['==']) == 'function', '== method exists')
 	h.assert_true(type(String.methods['!=']) == 'function', '!= method exists')
+	h.assert_true(type(String.methods.length) == 'function', 'length method exists')
 end)
 
 h.test('Boolean: name, parent, methods', function()
@@ -208,6 +209,38 @@ h.test('String:== against a Number returns false (type mismatch)', function()
 	local result_pk = String.methods['=='](frame, s, n)
 	local val = scalar(e.cvm, "select scalar_bool from objects where object_pk = ?", result_pk)
 	h.assert_eq(tonumber(val), 0, 'String vs Number compares unequal')
+end)
+
+h.test("String:length returns 3 for 'foo' as a scalar_number", function()
+	local e, frame, user_pk = fresh()
+	local pk = e.data:add_scalar('foo', user_pk)
+
+	local result_pk = String.methods.length(frame, pk)
+
+	local val = scalar(e.cvm, "select scalar_number from objects where object_pk = ?", result_pk)
+	h.assert_eq(tonumber(val), 3, "length of 'foo' is 3")
+end)
+
+h.test("String:length of the empty string is 0", function()
+	local e, frame, user_pk = fresh()
+	local pk = e.data:add_scalar('', user_pk)
+
+	local result_pk = String.methods.length(frame, pk)
+
+	local val = scalar(e.cvm, "select scalar_number from objects where object_pk = ?", result_pk)
+	h.assert_eq(tonumber(val), 0, 'empty string has length 0')
+end)
+
+h.test('String:length is byte length — multibyte UTF-8 measured in bytes, not codepoints', function()
+	-- `é` in UTF-8 is 0xC3 0xA9 — two bytes for one codepoint.
+	-- `length` returns bytes; a future codepoint-aware method returns 1.
+	local e, frame, user_pk = fresh()
+	local pk = e.data:add_scalar('é', user_pk)
+
+	local result_pk = String.methods.length(frame, pk)
+
+	local val = scalar(e.cvm, "select scalar_number from objects where object_pk = ?", result_pk)
+	h.assert_eq(tonumber(val), 2, "byte length of 'é' is 2 (UTF-8: 0xC3 0xA9)")
 end)
 
 

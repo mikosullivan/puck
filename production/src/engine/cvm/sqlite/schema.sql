@@ -29,7 +29,8 @@
 		"uspace":            "GC anchor set — roles + persistent=1 rows + process caps. Anything transitively reachable from uspace via refs is alive.",
 		"frame_scoped_vars": "(frame_pk, scope_idx, var_name, value_pk) — every variable visible from a frame's scope chain, ordered by scope depth. scope_idx=0 is the frame's own scope; higher indexes are captured scopes.",
 		"object_bucket":     "(object_pk, bucket_pk) — every base='o' row with its bucket pk (or null if not yet materialized).",
-		"object_stack":   "(object_pk, stack_pk) — same shape for the stack (the object's ordered class array). Stack is the ref keyed 'p'.",
+		"object_stack":      "(object_pk, stack_pk) — same shape for the stack (the object's ordered class array). Stack is the ref keyed 'p'.",
+		"object_with_stack": "(object_pk, stack_pk) — subset of object_stack containing only objects that have a stack (drops the null-stack rows via inner join). Backed by the refs_key_p partial index for O(log n) has-stack lookup. Purpose: the engine's fast 'does object X have a stack?' check.",
 		"object_shadow":     "(object_pk, shadow_pk) — same shape for the shadow. Shadow is the ref keyed 's'; targets a hash, same as bucket."},
 	"gc_cycle_state_machine": "A frame's (frame_stmt_idx, frame_gc) pair moves through a strict state machine enforced by triggers on `objects`. The walker's per-statement operation is `UPDATE frame SET frame_stmt_idx = frame_stmt_idx + 1` — the trigger stack takes care of frame_gc auto-null, child-delete cascades, and the parent's frame_gc auto-set. Names to grep: frames_advance_requires_gc, frames_advance_sets_gc_null, frames_advance_rejects_non_null_gc, frames_gc_change_requires_no_child, frames_gc_set_rejects_at_terminal, frames_gc_reset_requires_empty_needs_trace, frames_delete_requires_no_child, frames_child_delete_sets_parent_gc, frames_child_delete_propagates_rv, frames_no_child_under_terminal_parent, frames_stmt_idx_starts_at_zero, frames_stmt_idx_advances_by_one, frames_gc_starts_null. Each raises with its trigger name as the error id — grep to see what invariant fired.",
 	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:garbage_collect` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
@@ -500,6 +501,13 @@ create table refs (
 
 create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
+
+-- Partial index on refs supporting the `object_with_stack` view — the
+-- lookup "does the object at ? have a stack?" becomes an index probe
+-- rather than a scan. `key = 'p'` is one of only three well-known
+-- keys under an 'o'-parent (b / p / s), so scoping the index to just
+-- 'p' keeps it small — one entry per stacked object, not per ref. [ghi]
+create index refs_key_p on refs(parent) where key = 'p';
 
 -- Non-container parents (base = 'o', which covers plain objects,
 -- frames, and roles alike — control layers on top of 'o') carry their
@@ -1511,6 +1519,27 @@ select
 		where r.parent = o.object_pk and r.key = 'p'
 	) as stack_pk
 from objects o
+where o.base = 'o';
+
+
+-- ------------------------------------------------------------
+-- object_with_stack — every non-container object THAT HAS a stack,
+-- paired with its stack_pk. Sibling of object_stack, which lists
+-- every object (with a null stack_pk when the object has no stack);
+-- this view drops the "no stack" rows via an inner join so callers
+-- can existence-check with a straight `where object_pk = ?` instead
+-- of adding `and stack_pk is not null` every time.
+--
+-- Purpose: the engine's fast "does this object have a stack?" check.
+-- Backed by the `refs_key_p` partial index on `refs(parent) where
+-- key = 'p'` — the lookup collapses to a single index probe. [ghi]
+-- ------------------------------------------------------------
+create view object_with_stack as
+select
+	o.object_pk as object_pk,
+	r.child as stack_pk
+from objects o
+join refs r on r.parent = o.object_pk and r.key = 'p'
 where o.base = 'o';
 
 
